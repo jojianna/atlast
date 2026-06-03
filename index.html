@@ -162,7 +162,7 @@ ul.tight { margin: 4px 0 0; padding-left: 18px; } ul.tight li { padding: 1px 0; 
     <button class="tab" data-tab="records"><span class="tab-ico" aria-hidden="true">▤</span><span class="tab-label">Records</span></button>
     <button class="tab" data-tab="timeline"><span class="tab-ico" aria-hidden="true">◷</span><span class="tab-label">Timeline</span></button>
   </nav>
-  <script src="https://alcdn.msauth.net/browser/3.10.0/js/msal-browser.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@3/lib/msal-browser.min.js"></script>
   <script>
 /* AUTO-GENERATED — Atlast (hosted; blank template; OneDrive sync) */
 
@@ -1258,8 +1258,6 @@ return { isOpen, open, close, renderForm, onInput, onClick };
 const OneDrive = (function(){
 
 // onedrive.js — Microsoft sign-in (MSAL) + OneDrive (Graph) read/write source.
-// Plugs into the data-layer source interface: { name, read(), write(data) }.
-// MSAL is loaded globally from a CDN <script> in index.html as window.msal.
 const LS_CLIENT = 'ht.od.clientId';
 const LS_PATH = 'ht.od.path';
 const DEFAULT_PATH = 'Apps/Atlast/health-data.json';
@@ -1277,10 +1275,26 @@ function setTemplateProvider(fn) { if (typeof fn === 'function') _templateProvid
 let _pca = null, _inited = false, _account = null, _etag = null;
 function msalAvailable() { return typeof window !== 'undefined' && window.msal && window.msal.PublicClientApplication; }
 
+const MSAL_URLS = [
+  'https://cdn.jsdelivr.net/npm/@azure/msal-browser@3/lib/msal-browser.min.js',
+  'https://unpkg.com/@azure/msal-browser@3/lib/msal-browser.min.js',
+  'https://alcdn.msauth.net/browser/3.7.1/js/msal-browser.min.js',
+];
+function loadScript(src) { return new Promise((resolve, reject) => { const s = document.createElement('script'); s.src = src; s.async = true; s.onload = resolve; s.onerror = () => reject(new Error('failed ' + src)); document.head.appendChild(s); }); }
+let _msalLoading = null;
+async function ensureMsal() {
+  if (msalAvailable()) return;
+  if (!_msalLoading) _msalLoading = (async () => {
+    for (const u of MSAL_URLS) { try { await loadScript(u); if (msalAvailable()) return; } catch (e) { /* try next */ } }
+    throw new Error('Could not load the Microsoft sign-in library (network blocked?)');
+  })();
+  await _msalLoading;
+}
+
 async function pca() {
   const clientId = getClientId();
   if (!clientId) throw new Error('NO_CLIENT_ID');
-  if (!msalAvailable()) throw new Error('MSAL library not loaded');
+  await ensureMsal();
   if (!_pca) {
     _pca = new window.msal.PublicClientApplication({
       auth: { clientId, authority: 'https://login.microsoftonline.com/consumers', redirectUri: location.origin + location.pathname },
