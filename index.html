@@ -58,7 +58,7 @@ details.msgs { margin-top:8px; } details.msgs summary { cursor:pointer; font-siz
 .sev-chip { display:inline-block; min-width:22px; text-align:center; color:#fff; border-radius:999px; padding:2px 9px; font-weight:700; font-size:13px; } .sev-chip .small { color:rgba(255,255,255,.85); }
 .med { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:8px 0; border-bottom:1px solid var(--line); } .med:last-child { border-bottom:0; }
 .med-name { font-weight:600; } .med-toggle { display:flex; gap:6px; }
-.tgl { width:42px; height:38px; border:1px solid var(--line); background:#fff; border-radius:9px; font-size:16px; cursor:pointer; color:var(--muted); }
+.tgl { width:40px; height:31px; border:1px solid var(--line); background:#fff; border-radius:8px; font-size:14px; cursor:pointer; color:var(--muted); }
 .tgl.is-yes { background:var(--ok); color:#fff; border-color:transparent; } .tgl.is-no { background:var(--err); color:#fff; border-color:transparent; }
 #noteBox { width:100%; border:1px solid var(--line); border-radius:10px; padding:10px; font:inherit; resize:vertical; }
 .ep-ongoing { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:6px 0; }
@@ -167,6 +167,27 @@ ul.tight { margin: 4px 0 0; padding-left: 18px; } ul.tight li { padding: 1px 0; 
 .bp-med { display:flex; align-items:baseline; justify-content:space-between; gap:10px; padding:4px 0; border-top:1px solid #f4f6f7; }
 .bp-med:first-of-type { border-top:0; }
 .bp-med-name { font-weight:600; font-size:14px; }
+.bp-med-dose { font-size:13.5px; color:var(--ink); text-align:right; }
+.med-status { font-size:11px; background:#fef3c7; color:var(--warn); border-radius:999px; padding:1px 8px; margin-left:7px; font-weight:600; }
+.tick-btn { width:34px; height:34px; border-radius:50%; border:1px solid #bbf7d0; background:#f0fdf4; color:#15803d; font-size:16px; font-weight:700; cursor:pointer; }
+.tick-btn:hover { background:#dcfce7; }
+.q-row.answering { flex-direction:column; align-items:stretch; gap:8px; }
+.q-note { width:100%; border:1px solid var(--line); border-radius:9px; padding:9px; font:inherit; font-size:14px; resize:vertical; }
+.q-actions { display:flex; justify-content:flex-end; }
+.q-continue { background:var(--ok); }
+.tl-filters { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px; }
+.tl-filter { display:inline-flex; align-items:center; gap:5px; border:1px solid var(--line); background:#fff; border-radius:999px; padding:4px 10px; font-size:11.5px; color:var(--ink); cursor:pointer; }
+.tl-filter.off { opacity:.4; text-decoration:line-through; }
+.tl-fdot { width:10px; height:10px; border-radius:50%; display:inline-block; }
+.tl-year { font-weight:700; font-size:14px; color:var(--teal-d); margin:6px 0 4px; }
+.tl-rail { position:relative; padding-left:34px; }
+.tl-rail::before { content:''; position:absolute; left:13px; top:8px; bottom:8px; width:2px; background:var(--line); }
+.tl-item2 { position:relative; display:flex; gap:8px; width:100%; border:0; background:transparent; cursor:pointer; text-align:left; padding:7px 0; font:inherit; }
+.tl-dot2 { position:absolute; left:-29px; top:7px; width:26px; height:26px; border-radius:50%; border:3px solid var(--card); display:flex; align-items:center; justify-content:center; font-size:12px; color:#fff; }
+.tl-body2 { display:flex; flex-direction:column; flex:1; }
+.tl-date2 { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.03em; }
+.tl-label2 { font-weight:500; font-size:13.5px; line-height:1.3; }
+.tl-chev2 { margin-left:auto; color:#cbd5dc; font-size:18px; align-self:center; }
 </style>
   <title>Atlast</title>
 </head>
@@ -185,9 +206,9 @@ ul.tight { margin: 4px 0 0; padding-left: 18px; } ul.tight li { padding: 1px 0; 
   <main id="screen" class="screen" aria-live="polite"></main>
   <nav class="tabbar" aria-label="Main">
     <button class="tab is-active" data-tab="today"><span class="tab-ico" aria-hidden="true">✓</span><span class="tab-label">Log</span></button>
-    <button class="tab" data-tab="appointment"><span class="tab-ico" aria-hidden="true">＋</span><span class="tab-label">Prep</span></button>
+    <button class="tab" data-tab="appointment"><span class="tab-ico" aria-hidden="true">🗓</span><span class="tab-label">Prep</span></button>
     <button class="tab" data-tab="records"><span class="tab-ico" aria-hidden="true">▤</span><span class="tab-label">Records</span></button>
-    <button class="tab" data-tab="timeline"><span class="tab-ico" aria-hidden="true">◷</span><span class="tab-label">Timeline</span></button>
+    <button class="tab" data-tab="timeline"><span class="tab-ico" aria-hidden="true">🗺</span><span class="tab-label">Map</span></button>
   </nav>
   <script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@3/lib/msal-browser.min.js"></script>
   <script>
@@ -759,19 +780,19 @@ const { tx, specialistLabel } = DL;
 
 
 
-const ui = { specialistId: null, sub: 'big' };
+const ui = { specialistId: null, sub: 'big', answering: null };
 
 const STR = {
   en: { appointmentWith: 'Appointment with', change: 'Change', bigPicture: 'Big picture', questions: 'Questions',
         pickSpecialist: 'Pick a specialist', next: 'Next', question: 'question', questionsLc: 'questions', noOpen: 'No open questions',
         dx: 'Diagnosed', conditions: 'Active conditions', currentMeds: 'Current medications',
-        ruledOut: 'Ruled out', other: 'Other', none: 'None', nextAppt: 'Next appointment', forCond: 'for', revisit: 'may re-test',
-        questionsFor: 'Questions for', markAnswered: 'Answered', noQuestions: 'No open questions for this specialist.', addQ: 'Add question', appointments: 'Upcoming appointments', pastAppts: 'Past appointments', addAppt: 'Add appointment', noAppt: 'No appointments yet' },
+        ruledOut: 'Ruled out', other: 'Other', provShort: 'Provisional', none: 'None', nextAppt: 'Next appointment', forCond: 'for', revisit: 'may re-test',
+        questionsFor: 'Questions for', markAnswered: 'Mark answered', cont: 'Continue', answerNotePh: 'Add a note (optional)…', medStatus: { tapering: 'tapering off', prn: 'as needed', stopped: 'stopped' }, noQuestions: 'No open questions for this specialist.', addQ: 'Add question', appointments: 'Upcoming appointments', pastAppts: 'Past appointments', addAppt: 'Add appointment', noAppt: 'No appointments yet' },
   es: { appointmentWith: 'Cita con', change: 'Cambiar', bigPicture: 'Resumen', questions: 'Preguntas',
         pickSpecialist: 'Elige un especialista', next: 'Próxima', question: 'pregunta', questionsLc: 'preguntas', noOpen: 'Sin preguntas pendientes',
         dx: 'Diagnóstico', conditions: 'Condiciones activas', currentMeds: 'Medicación actual',
-        ruledOut: 'Descartado', other: 'Otros', none: 'Ninguno', nextAppt: 'Próxima cita', forCond: 'para', revisit: 'puede reevaluarse',
-        questionsFor: 'Preguntas para', markAnswered: 'Respondida', noQuestions: 'Sin preguntas pendientes para este especialista.', addQ: 'Añadir pregunta', appointments: 'Próximas citas', pastAppts: 'Citas anteriores', addAppt: 'Añadir cita', noAppt: 'Sin citas todavía' },
+        ruledOut: 'Descartado', other: 'Otros', provShort: 'Provisional', none: 'Ninguno', nextAppt: 'Próxima cita', forCond: 'para', revisit: 'puede reevaluarse',
+        questionsFor: 'Preguntas para', markAnswered: 'Marcar respondida', cont: 'Continuar', answerNotePh: 'Añadir una nota (opcional)…', medStatus: { tapering: 'en reducción', prn: 'según necesidad', stopped: 'suspendido' }, noQuestions: 'Sin preguntas pendientes para este especialista.', addQ: 'Añadir pregunta', appointments: 'Próximas citas', pastAppts: 'Citas anteriores', addAppt: 'Añadir cita', noAppt: 'Sin citas todavía' },
 };
 const STATUS = {
   en: { confirmed: 'Confirmed', under_review: 'Under review', provisionally_excluded: 'Provisionally excluded', ruled_out: 'Ruled out' },
@@ -828,13 +849,18 @@ function renderBig(state) {
   const groupFor = (key, label) => { if (!gmap[key]) { gmap[key] = { label, meds: [] }; medGroups.push(gmap[key]); } return gmap[key]; };
   bp.conditions.forEach((c) => bp.medications.forEach((m) => { if (m.conditionId === c.id) { groupFor('c:' + c.id, tx(c.name, lang)).meds.push(m); placed.add(m); } }));
   bp.medications.forEach((m) => { if (placed.has(m)) return; if (m.conditionId && condById[m.conditionId]) { groupFor('c:' + m.conditionId, tx(condById[m.conditionId].name, lang)).meds.push(m); } else { const p = tx(m.purpose, lang) || T.other; groupFor('p:' + p, p).meds.push(m); } });
-  const meds = medGroups.map((g) => `<div class="med-group-label">${esc(g.label)}</div>` + g.meds.map((m) =>
-    `<div class="bp-med"><span class="bp-med-name">${esc(tx(m.name, lang))}</span><span class="muted small">${esc(m.dose)}${m.schedule ? ' · ' + esc(m.schedule) : ''}</span></div>`).join('')).join('') || `<p class="muted small">${T.none}</p>`;
+  const meds = medGroups.map((g) => `<div class="med-group-label">${esc(g.label)}</div>` + g.meds.map((m) => {
+    const st = (m.status && m.status !== 'active') ? `<span class="med-status">${(T.medStatus && T.medStatus[m.status]) || m.status}</span>` : '';
+    return `<div class="bp-med"><span class="bp-med-name">${esc(tx(m.name, lang))}${st}</span><span class="bp-med-dose">${esc(m.dose)}${m.schedule ? ` <span class="muted small">· ${esc(m.schedule)}</span>` : ''}</span></div>`;
+  }).join('')).join('') || `<p class="muted small">${T.none}</p>`;
   const ro = bp.excluded.map((r) => {
-    const tag = r.status === 'provisionally_excluded' ? ` <span class="badge prov">↺ ${T.revisit}</span>` : '';
+    const prov = r.status === 'provisionally_excluded';
+    const reTag = prov ? ` <span class="muted small">↺ ${T.revisit}</span>` : '';
     const reason = tx(r.reason, lang);
     const revisit = r.revisitNote ? tx(r.revisitNote, lang) : '';
-    return `<div class="bp-row"><div><div class="bp-name">${esc(tx(r.name, lang))}${tag}</div>${reason ? `<div class="muted small">${esc(reason)}</div>` : ''}${revisit ? `<div class="muted small">↺ ${esc(revisit)}</div>` : ''}</div>${r.date ? `<span class="muted small">${fmtDate(r.date, lang)}</span>` : ''}</div>`;
+    const meta = [reason, r.date ? fmtDate(r.date, lang) : ''].filter(Boolean).join(' · ');
+    const badge = `<span class="badge ${prov ? 'prov' : 'err'}">${prov ? T.provShort : STATUS[lang].ruled_out}</span>`;
+    return `<div class="bp-row"><div><div class="bp-name">${esc(tx(r.name, lang))}${reTag}</div>${meta ? `<div class="muted small">${esc(meta)}</div>` : ''}${revisit ? `<div class="muted small">↺ ${esc(revisit)}</div>` : ''}</div><span class="row-right">${badge}</span></div>`;
   }).join('') || `<p class="muted small">${T.none}</p>`;
   return `<div class="card"><div class="sec-head"><h2>${T.conditions}</h2><span class="prog-chip">${bp.conditions.length}</span></div>${conds}</div>
     <div class="card"><h2>${T.currentMeds}</h2>${meds}</div>
@@ -852,8 +878,13 @@ function renderQuestions(state, sp) {
   const upRows = upcoming.map(apptRow).join('') || `<p class="muted small">${T.noAppt}</p>`;
   const pastRows = past.length ? `<div class="card"><h2>${T.pastAppts}</h2>${past.map(apptRow).join('')}</div>` : '';
   const next = `<div class="card"><h2>${T.appointments}</h2>${upRows}<button class="btn ghost addbtn" data-add="appointments" data-prefill='${JSON.stringify({ specialistId: sp.id })}'>+ ${T.addAppt}</button></div>${pastRows}`;
-  const qs = open.map((q) =>
-    `<div class="q-row"><div class="q-text">${esc(tx(q.text, lang))}</div><span class="row-right"><button class="btn-sm q-done" data-answered="${q.id}">✓ ${T.markAnswered}</button><button class="ed-btn" data-edit="questions:${q.id}">✎</button></span></div>`).join('') || `<p class="muted small">${T.noQuestions}</p>`;
+  const qs = open.map((q) => {
+    if (ui.answering === q.id) {
+      const note = (q.answerNote && q.answerNote[lang]) || '';
+      return `<div class="q-row answering"><div class="q-text">${esc(tx(q.text, lang))}</div><textarea class="q-note" data-qnote="${q.id}" rows="2" placeholder="${T.answerNotePh}">${esc(note)}</textarea><div class="q-actions"><button class="btn q-continue" data-continue="${q.id}">${T.cont}</button></div></div>`;
+    }
+    return `<div class="q-row"><div class="q-text">${esc(tx(q.text, lang))}</div><span class="row-right"><button class="tick-btn" data-answer="${q.id}" aria-label="${T.markAnswered}">✓</button><button class="ed-btn" data-edit="questions:${q.id}">✎</button></span></div>`;
+  }).join('') || `<p class="muted small">${T.noQuestions}</p>`;
   return `${next}<div class="card"><h2>${T.questionsFor} ${esc(specialistLabel(sp, lang))}</h2>${qs}<button class="btn ghost addbtn" data-add="questions">+ ${T.addQ}</button></div>`;
 }
 
@@ -863,7 +894,8 @@ async function onClick(e, state, rerender) {
   if (t.dataset.pick) { ui.specialistId = t.dataset.pick; ui.sub = 'big'; rerender(); return; }
   if (t.dataset.appt === 'change') { ui.specialistId = null; rerender(); return; }
   if (t.dataset.sub) { ui.sub = t.dataset.sub; rerender(); return; }
-  if (t.dataset.answered) { DL.markQuestionAnswered(t.dataset.answered); await DL.persist(); rerender(); return; }
+  if (t.dataset.answer) { ui.answering = (ui.answering === t.dataset.answer) ? null : t.dataset.answer; rerender(); return; }
+  if (t.dataset.continue) { const qid = t.dataset.continue; const ta = document.querySelector('.q-note[data-qnote="' + qid + '"]'); const rec = DL.getRecord('questions', qid); if (rec && ta) { rec.answerNote = rec.answerNote || { en: '', es: '' }; rec.answerNote[state.lang] = ta.value; } DL.markQuestionAnswered(qid); ui.answering = null; await DL.persist(); rerender(); return; }
 }
 
 return { ui, renderAppointment, onClick };
@@ -874,26 +906,28 @@ const { tx, specialistLabel } = DL;
 
 
 
-const ui = { sub: 'conditions', labId: null, win: '1y', epType: 'all', openMs: null };
+const ui = { sub: 'conditions', labId: null, win: '1y', epType: 'all', openMs: null, tlHidden: new Set() };
 
 const STR = {
   en: { conditions: 'Conditions', meds: 'Meds', symptoms: 'Symptoms', episodes: 'Episodes', labs: 'Labs', timeline: 'Timeline',
-        dx: 'Diagnosed', managedBy: 'Managed by', ruledOut: 'Ruled out / excluded', none: 'None', revisit: 'may re-test', notTracked: 'Not tracked daily',
+        dx: 'Diagnosed', managedBy: 'Managed by', ruledOut: 'Ruled out', provShort: 'Provisional', none: 'None', revisit: 'may re-test', notTracked: 'Not tracked daily',
         status: { confirmed: 'Confirmed', under_review: 'Under review', provisionally_excluded: 'Provisionally excluded', ruled_out: 'Ruled out' },
         medStatus: { active: 'Active', tapering: 'Tapering', stopped: 'Stopped', prn: 'PRN' },
         doseHistory: 'Dose history', since: 'since', latest: 'Latest', daysUnwell: 'Days unwell', ongoing: 'ongoing',
         all: 'All', noData: 'No data in this window.', window: { '3m': '3 mo', '1y': '1 yr', all: 'All' }, back: '‹ All labs', close: 'Close',
         epTypes: { cold_flu: 'Cold / flu', infection: 'Infection', gi: 'GI', flare: 'Flare', other: 'Other' },
+        msTypes: { diagnosis: 'Diagnosis', medication: 'Medication', new_symptom: 'Symptom', episode: 'Episode', milestone: 'Milestone' },
         thisYear: 'This year', refRange: 'Ref', ulnLine: 'ULN (×1)', archived: 'Archived', locations: 'locations', single: 'single',
         positive: 'positive', negative: 'negative',
         addC: 'Add condition', addM: 'Add medication', addS: 'Add symptom', addE: 'Add episode', addL: 'Add marker', addMs: 'Add milestone', addR: 'Add ruled-out', editMarker: 'Edit marker / results' },
   es: { conditions: 'Condiciones', meds: 'Medicación', symptoms: 'Síntomas', episodes: 'Episodios', labs: 'Analíticas', timeline: 'Cronología',
-        dx: 'Diagnóstico', managedBy: 'Seguimiento', ruledOut: 'Descartado / excluido', none: 'Ninguno', revisit: 'puede reevaluarse', notTracked: 'No se registra a diario',
+        dx: 'Diagnóstico', managedBy: 'Seguimiento', ruledOut: 'Descartado', provShort: 'Provisional', none: 'Ninguno', revisit: 'puede reevaluarse', notTracked: 'No se registra a diario',
         status: { confirmed: 'Confirmado', under_review: 'En revisión', provisionally_excluded: 'Excluido provisionalmente', ruled_out: 'Descartado' },
         medStatus: { active: 'Activo', tapering: 'En reducción', stopped: 'Suspendido', prn: 'PRN' },
         doseHistory: 'Historial de dosis', since: 'desde', latest: 'Último', daysUnwell: 'Días enfermo', ongoing: 'en curso',
         all: 'Todos', noData: 'Sin datos en este periodo.', window: { '3m': '3 m', '1y': '1 año', all: 'Todo' }, back: '‹ Analíticas', close: 'Cerrar',
         epTypes: { cold_flu: 'Resfriado / gripe', infection: 'Infección', gi: 'Digestivo', flare: 'Brote', other: 'Otro' },
+        msTypes: { diagnosis: 'Diagnóstico', medication: 'Medicación', new_symptom: 'Síntoma', episode: 'Episodio', milestone: 'Hito' },
         thisYear: 'Este año', refRange: 'Ref', ulnLine: 'ULN (×1)', archived: 'Archivado', locations: 'localizaciones', single: 'único',
         positive: 'positivo', negative: 'negativo',
         addC: 'Añadir condición', addM: 'Añadir medicación', addS: 'Añadir síntoma', addE: 'Añadir episodio', addL: 'Añadir marcador', addMs: 'Añadir hito', addR: 'Añadir descartado', editMarker: 'Editar marcador / resultados' },
@@ -930,11 +964,13 @@ function renderConditions(state) {
       ${notes ? `<div class="muted small" style="margin-top:6px;">${esc(notes)}</div>` : ''}</div>`;
   }).join('');
   const ro = DL.excludedList(data, lang).map((r) => {
-    const tag = r.status === 'provisionally_excluded' ? ` <span class="badge prov">↺ ${T.revisit}</span>` : '';
+    const prov = r.status === 'provisionally_excluded';
+    const reTag = prov ? ` <span class="muted small">↺ ${T.revisit}</span>` : '';
     const reason = tx(r.reason, lang);
     const revisit = r.revisitNote ? tx(r.revisitNote, lang) : '';
     const edBtn = r._src === 'ruledOut' ? ed('ruledOut', r.id) : ed('conditions', r.id);
-    return `<div class="bp-row"><div><div class="bp-name">${esc(tx(r.name, lang))}${tag}</div><div class="muted small">${esc(reason)}${r.date ? ' · ' + fmtDate(r.date, lang) : ''}</div>${revisit ? `<div class="muted small">↺ ${esc(revisit)}</div>` : ''}</div>${edBtn}</div>`;
+    const badge = `<span class="badge ${prov ? 'prov' : 'err'}">${prov ? T.provShort : T.status.ruled_out}</span>`;
+    return `<div class="bp-row"><div><div class="bp-name">${esc(tx(r.name, lang))}${reTag}</div><div class="muted small">${esc(reason)}${r.date ? ' · ' + fmtDate(r.date, lang) : ''}</div>${revisit ? `<div class="muted small">↺ ${esc(revisit)}</div>` : ''}</div><span class="row-right">${badge}${edBtn}</span></div>`;
   }).join('') || `<p class="muted small">${T.none}</p>`;
   return add('conditions', T.addC) + conds + `<div class="card"><h2>${T.ruledOut}</h2>${ro}${add('ruledOut', T.addR)}</div>`;
 }
@@ -1044,9 +1080,20 @@ function lineChart(lab, win, lang) {
 
 function renderTimeline(state) {
   const lang = state.lang; const T = STR[lang]; const data = DL.getData();
-  const ms = (data.milestones || []).slice().sort((a, b) => (a.date < b.date ? -1 : 1));
-  const items = ms.map((m) => { const [icon, color] = MS_TYPE[m.type] || MS_TYPE.milestone; const hasDetail = !!tx(m.detail, lang); return `<button class="tl-item" data-ms="${m.id}"><span class="tl-dot" style="background:${color}">${icon}</span><span class="tl-body"><span class="tl-date">${fmtMonth(m.date, lang)}</span><span class="tl-label">${esc(tx(m.label, lang))}</span></span>${hasDetail ? '<span class="tl-chev">›</span>' : ''}</button>`; }).join('');
-  return add('milestones', T.addMs) + `<div class="card"><div class="tl">${items}</div></div>`;
+  const hidden = ui.tlHidden || (ui.tlHidden = new Set());
+  const types = ['diagnosis', 'medication', 'new_symptom', 'episode', 'milestone'];
+  const chips = types.map((ty) => { const [, color] = MS_TYPE[ty]; return `<button class="tl-filter ${hidden.has(ty) ? 'off' : ''}" data-tlt="${ty}"><span class="tl-fdot" style="background:${color}"></span>${T.msTypes[ty]}</button>`; }).join('');
+  const ms = (data.milestones || []).slice().filter((m) => !hidden.has(m.type)).sort((a, b) => (a.date < b.date ? 1 : -1));
+  let body = ''; let curYear = null;
+  ms.forEach((m) => {
+    const y = m.date.slice(0, 4);
+    if (y !== curYear) { if (curYear !== null) body += '</div>'; body += `<div class="tl-year">${y}</div><div class="tl-rail">`; curYear = y; }
+    const [icon, color] = MS_TYPE[m.type] || MS_TYPE.milestone; const hasDetail = !!tx(m.detail, lang);
+    body += `<button class="tl-item2" data-ms="${m.id}"><span class="tl-dot2" style="background:${color}">${icon}</span><span class="tl-body2"><span class="tl-date2">${fmtMonth(m.date, lang)}</span><span class="tl-label2">${esc(tx(m.label, lang))}</span></span>${hasDetail ? '<span class="tl-chev2">›</span>' : ''}</button>`;
+  });
+  if (curYear !== null) body += '</div>';
+  if (!ms.length) body = `<p class="muted small" style="padding:12px 4px">${T.noData}</p>`;
+  return add('milestones', T.addMs) + `<div class="card"><div class="tl-filters">${chips}</div>${body}</div>`;
 }
 
 function renderModal(state) {
@@ -1066,6 +1113,7 @@ async function onClick(e, state, rerender) {
   if (t.dataset.lab) { ui.labId = t.dataset.lab === '__back' ? null : t.dataset.lab; ui.win = '1y'; rerender(); return; }
   if (t.dataset.win) { ui.win = t.dataset.win; rerender(); return; }
   if (t.dataset.eptype) { ui.epType = t.dataset.eptype; rerender(); return; }
+  if (t.dataset.tlt) { const k = t.dataset.tlt; ui.tlHidden.has(k) ? ui.tlHidden.delete(k) : ui.tlHidden.add(k); rerender(); return; }
   if (t.dataset.ms !== undefined) { if (t.classList.contains('sheet-bg') && e.target !== t) return; ui.openMs = t.dataset.ms === '__close' ? null : t.dataset.ms; rerender(); return; }
 }
 
@@ -1400,7 +1448,7 @@ function buildSummary(d) {
   const meds = (d.medications || []).filter((m) => m.status !== 'stopped');
   if (meds.length) { lines.push('## Current medications'); meds.forEach((m) => lines.push('- ' + tx(m.name, L) + ' ' + (m.dose || '') + ' — ' + (m.schedule || ''))); lines.push(''); }
   const excl = (d.ruledOut || []);
-  if (excl.length) { lines.push('## Ruled out / excluded'); excl.forEach((r) => lines.push('- ' + tx(r.condition, L) + ' — ' + tx(r.how, L) + (r.status === 'provisionally_excluded' ? ' (may re-test)' : ''))); lines.push(''); }
+  if (excl.length) { lines.push('## Ruled out'); excl.forEach((r) => lines.push('- ' + tx(r.condition, L) + ' — ' + tx(r.how, L) + (r.status === 'provisionally_excluded' ? ' (may re-test)' : ''))); lines.push(''); }
   const ongoing = (d.episodes || []).filter((e) => e.endDate == null);
   if (ongoing.length) { lines.push('## Ongoing episodes'); ongoing.forEach((e) => lines.push('- ' + tx(e.name, L) + ' (since ' + e.startDate + ')')); lines.push(''); }
   if (d.meta && d.meta.updatedAt) lines.push('_Updated ' + d.meta.updatedAt + '_');
@@ -1427,8 +1475,7 @@ const state = { lang: 'en', tab: 'today', showData: false, date: Today.todayISO(
 const screen = document.getElementById('screen');
 const titleEl = document.getElementById('screenTitle');
 const statusStrip = document.getElementById('statusStrip');
-const TAB_TITLES = { today: 'Log', appointment: 'Prep', records: 'Records', timeline: 'Timeline' };
-const TAB_TITLES_ES = { today: 'Diario', appointment: 'Preparar', records: 'Registros', timeline: 'Cronología' };
+const TAB_TITLES = { today: 'Log', appointment: 'Prep', records: 'Records', timeline: 'Map' };
 (async function boot() {
   registerSW(); wireChrome();
   if (OneDrive.isConfigured()) { setActiveSource(OneDrive.oneDriveSource); try { await OneDrive.refreshAccount(); } catch {} setStatus('Loading from OneDrive …'); }
@@ -1469,7 +1516,7 @@ function setLang(lang) { state.lang = lang; document.documentElement.lang = lang
 function setTab(tab) { state.tab = tab; document.querySelectorAll('.tab').forEach((b) => b.classList.toggle('is-active', b.dataset.tab === tab)); render(); }
 function setStatus(msg, kind) { if (!msg) { statusStrip.hidden = true; return; } statusStrip.hidden = false; statusStrip.className = 'status-strip' + (kind ? ' ' + kind : ''); statusStrip.textContent = msg; }
 function render() {
-  const titles = state.lang === 'es' ? TAB_TITLES_ES : TAB_TITLES;
+  const titles = TAB_TITLES;
   document.querySelectorAll('.tab').forEach((b) => { const el = b.querySelector('.tab-label'); if (el && titles[b.dataset.tab]) el.textContent = titles[b.dataset.tab]; });
   let content;
   if (state.showData) { titleEl.textContent = 'Data'; content = renderDataScreen(); }
