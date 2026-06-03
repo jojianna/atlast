@@ -140,12 +140,39 @@ ul.tight { margin: 4px 0 0; padding-left: 18px; } ul.tight li { padding: 1px 0; 
 .sheet-handle { width:40px; height:4px; border-radius:999px; background:var(--line); margin:0 auto 12px; }
 @keyframes sheetUp { from { transform:translateY(100%); } to { transform:translateY(0); } }
 
+.daynav.past { background:#fff8e1; border-color:#f3e2b3; }
+.daynav.past .dayname input[type="date"], .daynav.past .daysub { color:#92400e; }
+.daynav.past .navbtn { background:#fff; border:1px solid #f3e2b3; color:#b45309; }
+.overall-card .overall-hero { display:flex; align-items:center; gap:11px; margin-bottom:10px; }
+.overall-dial { width:42px; height:42px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:19px; font-weight:700; color:#fff; flex:none; }
+.overall-dial.empty { background:#fff; border:2px dashed #cbd5dc; color:#94a3b8; }
+.overall-dial.sev-0 { background:#94a3b8; } .overall-dial.sev-1 { background:#65a30d; } .overall-dial.sev-2 { background:#ca8a04; } .overall-dial.sev-3 { background:#ea580c; } .overall-dial.sev-4 { background:#dc2626; }
+.overall-label { font-weight:600; }
+.sec-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; }
+.sec-head h2 { margin:0; }
+.prog-chip { font-size:12px; color:var(--teal-d); background:#e1f5ee; border-radius:999px; padding:2px 9px; font-weight:600; }
+.symrow { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:7px 0; border-top:1px solid #eef1f3; }
+.symrow.loc { padding:5px 0; }
+.symrow-name { background:none; border:0; padding:0; font:inherit; font-weight:600; font-size:14px; color:var(--ink); text-align:left; cursor:pointer; flex:1; min-width:0; display:flex; align-items:center; gap:6px; }
+.symrow .sev-row { flex:none; width:auto; display:flex; gap:5px; }
+.symrow .sev { width:30px; padding:6px 0; font-size:13px; border-radius:8px; }
+.symrow.loc .sev { width:28px; padding:5px 0; font-size:12.5px; }
+.notedot { width:6px; height:6px; border-radius:50%; background:var(--teal); display:inline-block; }
+.loc-list { border-left:2px solid var(--chip); padding-left:10px; margin:2px 0 2px 4px; }
+.scale-foot { text-align:center; border-top:1px solid var(--line); padding-top:8px; margin-top:6px; font-size:11px; }
+.med { padding:6px 0; }
+.linkbtn { background:none; border:0; color:var(--teal); font:inherit; font-size:13px; cursor:pointer; text-decoration:underline; }
+.linkbtn.danger { color:var(--err); }
+.med-group-label { font-size:11px; text-transform:uppercase; letter-spacing:.04em; color:var(--teal-d); font-weight:600; margin:9px 0 1px; }
+.bp-med { display:flex; align-items:baseline; justify-content:space-between; gap:10px; padding:4px 0; border-top:1px solid #f4f6f7; }
+.bp-med:first-of-type { border-top:0; }
+.bp-med-name { font-weight:600; font-size:14px; }
 </style>
   <title>Atlast</title>
 </head>
 <body>
   <header class="topbar">
-    <div class="topbar-title" id="screenTitle">Today</div>
+    <div class="topbar-title" id="screenTitle">Log</div>
     <div class="topbar-actions">
       <button id="dataBtn" class="chip" aria-label="Data screen">⚙︎ Data</button>
       <div class="lang-toggle" role="group" aria-label="Language">
@@ -157,8 +184,8 @@ ul.tight { margin: 4px 0 0; padding-left: 18px; } ul.tight li { padding: 1px 0; 
   <div id="statusStrip" class="status-strip" hidden></div>
   <main id="screen" class="screen" aria-live="polite"></main>
   <nav class="tabbar" aria-label="Main">
-    <button class="tab is-active" data-tab="today"><span class="tab-ico" aria-hidden="true">✓</span><span class="tab-label">Today</span></button>
-    <button class="tab" data-tab="appointment"><span class="tab-ico" aria-hidden="true">＋</span><span class="tab-label">Appointment</span></button>
+    <button class="tab is-active" data-tab="today"><span class="tab-ico" aria-hidden="true">✓</span><span class="tab-label">Log</span></button>
+    <button class="tab" data-tab="appointment"><span class="tab-ico" aria-hidden="true">＋</span><span class="tab-label">Prep</span></button>
     <button class="tab" data-tab="records"><span class="tab-ico" aria-hidden="true">▤</span><span class="tab-label">Records</span></button>
     <button class="tab" data-tab="timeline"><span class="tab-ico" aria-hidden="true">◷</span><span class="tab-label">Timeline</span></button>
   </nav>
@@ -566,7 +593,9 @@ const STR = {
         scaleHint: '0 none · 1 noticeable · 2 distracting · 3 interferes · 4 prevents activity', clear: 'clear',
         markZero: 'Mark untouched symptoms as 0 (not experienced)', allZeroed: 'All symptoms logged',
         clearDay: 'Clear this day', confirmClear: 'Tap again to clear',
-        overallPain: 'Overall pain (today)', overallHint: 'Your own overall score for the day.',
+        overallPain: 'Overall', overallTap: 'Tap to set your score for the day',
+        painLevels: ['No pain','Noticeable','Distracting','Interferes with activities','Prevents activity'],
+        prevDay: 'Previous day', nextDay: 'Next day', noData: 'No data.', sites: 'sites',
         rowNotePh: 'Add a detail (optional)…', addNote: 'Add note', epNotePh: 'Add a note (e.g. still burning today)…', reopen: 'Reopen', morning: 'Morning', midday: 'Midday', evening: 'Evening' },
   es: { today: 'Hoy', symptoms: 'Síntomas', meds: 'Medicación', asNeeded: 'Según necesidad (PRN)',
         note: 'Nota (opcional)', notePlaceholder: 'Algo que recordar de hoy…',
@@ -577,7 +606,9 @@ const STR = {
         scaleHint: '0 ninguno · 1 leve · 2 molesto · 3 interfiere · 4 impide actividad', clear: 'borrar',
         markZero: 'Marcar síntomas sin tocar como 0 (no experimentado)', allZeroed: 'Todos los síntomas registrados',
         clearDay: 'Borrar este día', confirmClear: 'Toca otra vez para borrar',
-        overallPain: 'Dolor general (hoy)', overallHint: 'Tu propia puntuación general del día.',
+        overallPain: 'General', overallTap: 'Toca para registrar tu puntuación del día',
+        painLevels: ['Sin dolor','Leve','Molesto','Interfiere con la actividad','Impide la actividad'],
+        prevDay: 'Día anterior', nextDay: 'Día siguiente', noData: 'Sin datos.', sites: 'zonas',
         rowNotePh: 'Añadir un detalle (opcional)…', addNote: 'Añadir nota', epNotePh: 'Añadir una nota (p. ej. sigue el ardor hoy)…', reopen: 'Reabrir', morning: 'Mañana', midday: 'Mediodía', evening: 'Noche' },
 };
 const EP_TYPES = {
@@ -607,38 +638,55 @@ function symRow(state, symId, locId, label) {
   const note = DL.getSymptomNote(date, symId, locId, data);
   const key = rowKey(symId, locId);
   const showNote = ui.noteOpen.has(key) || !!note;
-  const chip = v != null ? `<span class="sev-chip sev-${v}">${v}</span>` : '';
-  const noteBtn = `<button class="notebtn ${note ? 'has' : ''}" data-note="${key}" aria-label="${STR[lang].addNote}">🗒</button>`;
+  const noteDot = note ? '<span class="notedot" aria-hidden="true"></span>' : '';
   const noteArea = showNote ? `<textarea class="rownote" data-sym="${symId}"${locId ? ` data-loc="${locId}"` : ''} rows="2" placeholder="${STR[lang].rowNotePh}">${esc(note)}</textarea>` : '';
-  return `<div class="sym${locId ? ' loc' : ''}">
-    <div class="sym-head"><span class="sym-name">${esc(label)}</span><span class="row-right">${chip}${noteBtn}</span></div>
+  return `<div class="symrow${locId ? ' loc' : ''}">
+    <button class="symrow-name" data-note="${key}" aria-label="${STR[lang].addNote}">${esc(label)}${noteDot}</button>
     ${sevSelector(symId, locId, v)}
-    ${noteArea}
-  </div>`;
+  </div>${noteArea}`;
 }
+
+function agoLabel(n, lang) { return lang === 'es' ? (n === 1 ? 'hace 1 día' : 'hace ' + n + ' días') : (n === 1 ? '1 day ago' : n + ' days ago'); }
+function daysBetween(aISO, bISO) { const a = new Date(aISO + 'T00:00:00Z'); const b = new Date(bISO + 'T00:00:00Z'); return Math.round((b - a) / 86400000); }
 
 function renderToday(state) {
   const lang = state.lang; const T = STR[lang]; const date = state.date; const data = DL.getData();
-  if (!data) return '<div class="card"><p class="muted">No data.</p></div>';
+  if (!data) return `<div class="card"><p class="muted">${T.noData}</p></div>`;
   const isToday = date === todayISO();
-  const head = `<div class="card daynav">
-    <button class="navbtn" data-nav="-1" aria-label="Previous day">‹</button>
-    <div class="dayname"><input type="date" id="dateInput" value="${date}" /><div class="muted small">${esc(fmtDate(date, lang))}${isToday ? ' · ' + T.today : ''}</div></div>
-    <button class="navbtn" data-nav="1" aria-label="Next day" ${isToday ? 'disabled' : ''}>›</button>
+  const sub = isToday ? T.today : agoLabel(daysBetween(date, todayISO()), lang);
+  const head = `<div class="card daynav${isToday ? '' : ' past'}">
+    <button class="navbtn" data-nav="-1" aria-label="${T.prevDay}">‹</button>
+    <div class="dayname"><input type="date" id="dateInput" value="${date}" max="${todayISO()}" /><div class="muted small daysub">${esc(fmtDate(date, lang))} · ${sub}</div></div>
+    <button class="navbtn" data-nav="1" aria-label="${T.nextDay}" ${isToday ? 'disabled' : ''}>›</button>
   </div>`;
-  const symptomCards = DL.activeSymptomTypes(data).map((s) => {
-    const name = esc(tx(s.name, lang));
+
+  const overallVal = DL.getOverallPain(date, data);
+  const dialCls = overallVal != null ? 'sev-' + overallVal : 'empty';
+  const overallSub = overallVal != null ? T.painLevels[overallVal] : T.overallTap;
+  const overallCard = `<div class="card overall-card">
+    <div class="overall-hero"><div class="overall-dial ${dialCls}">${overallVal != null ? overallVal : '–'}</div><div class="overall-meta"><div class="overall-label">${T.overallPain}</div><div class="muted small">${overallSub}</div></div></div>
+    ${overallSelector(overallVal)}</div>`;
+
+  const types = DL.activeSymptomTypes(data);
+  const dayLog = DL.getDailyLog(date, data);
+  const isLogged = (s) => s.trackBy === 'single' ? DL.getSeverity(date, s.id, null, data) != null : DL.derivedOverall(s, (dayLog?.symptoms) || []) != null;
+  const doneCount = types.filter(isLogged).length;
+  const symptomCards = types.map((s) => {
     if (s.trackBy === 'single') return symRow(state, s.id, null, tx(s.name, lang));
     const open = ui.expanded.has(s.id);
-    const overall = DL.derivedOverall(s, (DL.getDailyLog(date, data)?.symptoms) || []);
-    const locs = DL.activeLocations(s).map((l) => symRow(state, s.id, l.id, tx(l.name, lang))).join('');
-    return `<div class="sym located">
-      <div class="sym-head expandable" data-expand="${s.id}"><span class="sym-name">▸ ${name}<span class="caret ${open ? 'open' : ''}"></span></span><span>${overall != null ? `<span class="sev-chip sev-${overall}">${overall} <span class="muted small">${T.overall}</span></span>` : `<span class="muted small">${T.none}</span>`}</span></div>
-      <div class="loc-list" ${open ? '' : 'hidden'}>${locs}</div>
-    </div>`;
+    const overall = DL.derivedOverall(s, (dayLog?.symptoms) || []);
+    const chip = overall != null ? `<span class="sev-chip sev-${overall}">${overall}</span>` : '<span class="muted small">—</span>';
+    const locsArr = DL.activeLocations(s);
+    const locs = locsArr.map((l) => symRow(state, s.id, l.id, tx(l.name, lang))).join('');
+    return `<div class="symrow located-head sym-head expandable" data-expand="${s.id}"><span class="symrow-name as-text">${open ? '▾' : '▸'} ${esc(tx(s.name, lang))} <span class="muted small">${locsArr.length} ${T.sites}</span></span>${chip}</div>
+    <div class="loc-list" ${open ? '' : 'hidden'}>${locs}</div>`;
   }).join('');
+  const allLogged = doneCount === types.length;
+  const zeroLink = allLogged ? `<div class="submit-block"><div class="muted small submit-hint">✓ ${T.allZeroed}</div></div>` : `<div class="submit-block"><button class="linkbtn" id="markZero">${T.markZero}</button></div>`;
+  const symptomsCard = `<div class="card"><div class="sec-head"><h2>${T.symptoms}</h2><span class="prog-chip">${doneCount} / ${types.length}</span></div>${symptomCards}${zeroLink}<div class="scale-foot muted">${T.scaleHint}</div></div>`;
+
   const { scheduled, prn } = DL.medsForDate(date, data);
-  const medRow = (m) => { const taken = DL.getMedTaken(date, m.id, data); return `<div class="med"><div class="med-name">${esc(tx(m.name, lang))}<div class="muted small">${esc(m.dose)} · ${esc(m.schedule)}</div></div><div class="med-toggle"><button class="tgl ${taken === true ? 'is-yes' : ''}" data-med="${m.id}" data-taken="yes">✓</button><button class="tgl ${taken === false ? 'is-no' : ''}" data-med="${m.id}" data-taken="no">✗</button></div></div>`; };
+  const medRow = (m) => { const taken = DL.getMedTaken(date, m.id, data); return `<div class="med"><div class="med-name">${esc(tx(m.name, lang))} <span class="muted small">${esc(m.dose)}</span></div><div class="med-toggle"><button class="tgl ${taken === true ? 'is-yes' : ''}" data-med="${m.id}" data-taken="yes">✓</button><button class="tgl ${taken === false ? 'is-no' : ''}" data-med="${m.id}" data-taken="no">✗</button></div></div>`; };
   const TL = TIME_LABEL(T);
   let medsHtml = '';
   if (scheduled.length) {
@@ -648,8 +696,8 @@ function renderToday(state) {
     }
   } else { medsHtml = `<p class="muted small">${T.noMeds}</p>`; }
   const prnHtml = prn.length ? `<div class="subhead">${T.asNeeded}</div>${prn.map(medRow).join('')}` : '';
-  const log = DL.getDailyLog(date, data);
-  const noteVal = esc(log?.note?.[lang] || '');
+
+  const noteVal = esc(dayLog?.note?.[lang] || '');
   const ongoing = DL.ongoingEpisodes(data);
   const epNote = (e) => esc((e.note && e.note[lang]) || '');
   const ongoingHtml = ongoing.map((e) => `<div class="ep-ongoing-block">
@@ -661,17 +709,10 @@ function renderToday(state) {
   const typeOpts = Object.entries(EP_TYPES[lang]).map(([k, v]) => `<option value="${k}">${v}</option>`).join('');
   const epForm = ui.epFormOpen ? `<div class="ep-form"><input id="epName" placeholder="${T.name}" /><div class="ep-form-row"><select id="epType">${typeOpts}</select><input type="date" id="epStart" value="${date}" /></div><div class="ep-form-actions"><button class="btn" id="epSave">${T.start2}</button><button class="btn ghost" id="epCancel">${T.cancel}</button></div></div>` : `<button class="btn ghost wide" id="epStartBtn">${T.startEp}</button>`;
   const savedNote = ui.savedAt ? `<div class="muted small saved-tag">✓ ${T.saved} · ${ui.savedAt}</div>` : '';
-  // Auto-save symptoms (no submit gate). Optional helper to log any untouched active symptom as 0.
-  const allLogged = DL.activeSymptomTypes(data).every((s) => s.trackBy === 'single'
-    ? DL.getSeverity(date, s.id, null, data) != null
-    : DL.activeLocations(s).every((l) => DL.getSeverity(date, s.id, l.id, data) != null));
-  const zeroLink = `<div class="submit-block">${allLogged ? `<div class="muted small submit-hint">✓ ${T.allZeroed}</div>` : `<button class="linkbtn" id="markZero">${T.markZero}</button>`}</div>`;
-  const overallVal = DL.getOverallPain(date, data);
-  return `${head}
-    <div class="card"><h2>${T.overallPain}</h2>${overallSelector(overallVal)}<p class="muted small">${T.overallHint}</p></div>
+  return `${head}${overallCard}
     <div class="card"><h2>${T.episodes}</h2>${ongoing.length ? `<div class="subhead">${T.ongoing}</div>${ongoingHtml}` : ''}${endedHtml}${epForm}</div>
     <div class="card"><h2>${T.note}</h2><textarea id="noteBox" rows="2" placeholder="${T.notePlaceholder}">${noteVal}</textarea></div>
-    <div class="card"><h2>${T.symptoms} <span class="muted small">${T.scaleHint}</span></h2>${symptomCards}${zeroLink}</div>
+    ${symptomsCard}
     <div class="card"><h2>${T.meds}</h2>${medsHtml}${prnHtml}</div>
     ${savedNote}
     <div class="clearday-row"><button class="linkbtn ${ui.confirmClear?'danger':''}" data-clearday>${ui.confirmClear?T.confirmClear:T.clearDay}</button></div>`;
@@ -724,12 +765,12 @@ const STR = {
   en: { appointmentWith: 'Appointment with', change: 'Change', bigPicture: 'Big picture', questions: 'Questions',
         pickSpecialist: 'Pick a specialist', next: 'Next', question: 'question', questionsLc: 'questions', noOpen: 'No open questions',
         dx: 'Diagnosed', conditions: 'Active conditions', currentMeds: 'Current medications',
-        ruledOut: 'Ruled out / excluded', none: 'None', nextAppt: 'Next appointment', forCond: 'for', revisit: 'may re-test',
+        ruledOut: 'Ruled out', other: 'Other', none: 'None', nextAppt: 'Next appointment', forCond: 'for', revisit: 'may re-test',
         questionsFor: 'Questions for', markAnswered: 'Answered', noQuestions: 'No open questions for this specialist.', addQ: 'Add question', appointments: 'Upcoming appointments', pastAppts: 'Past appointments', addAppt: 'Add appointment', noAppt: 'No appointments yet' },
   es: { appointmentWith: 'Cita con', change: 'Cambiar', bigPicture: 'Resumen', questions: 'Preguntas',
         pickSpecialist: 'Elige un especialista', next: 'Próxima', question: 'pregunta', questionsLc: 'preguntas', noOpen: 'Sin preguntas pendientes',
         dx: 'Diagnóstico', conditions: 'Condiciones activas', currentMeds: 'Medicación actual',
-        ruledOut: 'Descartado / excluido', none: 'Ninguno', nextAppt: 'Próxima cita', forCond: 'para', revisit: 'puede reevaluarse',
+        ruledOut: 'Descartado', other: 'Otros', none: 'Ninguno', nextAppt: 'Próxima cita', forCond: 'para', revisit: 'puede reevaluarse',
         questionsFor: 'Preguntas para', markAnswered: 'Respondida', noQuestions: 'Sin preguntas pendientes para este especialista.', addQ: 'Añadir pregunta', appointments: 'Próximas citas', pastAppts: 'Citas anteriores', addAppt: 'Añadir cita', noAppt: 'Sin citas todavía' },
 };
 const STATUS = {
@@ -782,19 +823,20 @@ function renderBig(state) {
   const condById = Object.fromEntries((data.conditions || []).map((c) => [c.id, c]));
   const conds = bp.conditions.map((c) =>
     `<div class="bp-row"><div><div class="bp-name">${esc(tx(c.name, lang))}</div>${c.diagnosedDate ? `<div class="muted small">${T.dx}: ${fmtDate(c.diagnosedDate, lang)}</div>` : ''}</div><span class="badge ${STATUS_CLS[c.status]}">${STATUS[lang][c.status]}</span></div>`).join('') || `<p class="muted small">${T.none}</p>`;
-  const meds = bp.medications.slice().sort((a, b) => (a.conditionId ? 0 : 1) - (b.conditionId ? 0 : 1)).map((m) => {
-    const cond = m.conditionId && condById[m.conditionId];
-    const purpose = tx(m.purpose, lang);
-    const tag = cond ? `<span class="badge cond-tag">${T.forCond} ${esc(tx(cond.name, lang))}</span>` : (purpose ? `<span class="muted small">${esc(purpose)}</span>` : '');
-    return `<div class="bp-row"><div><div class="bp-name">${esc(tx(m.name, lang))}</div><div class="muted small">${esc(m.dose)} · ${esc(m.schedule)}</div></div><span class="row-right">${tag}</span></div>`;
-  }).join('') || `<p class="muted small">${T.none}</p>`;
+  // Group medications under the condition they treat; fall back to purpose for the rest.
+  const medGroups = []; const gmap = {}; const placed = new Set();
+  const groupFor = (key, label) => { if (!gmap[key]) { gmap[key] = { label, meds: [] }; medGroups.push(gmap[key]); } return gmap[key]; };
+  bp.conditions.forEach((c) => bp.medications.forEach((m) => { if (m.conditionId === c.id) { groupFor('c:' + c.id, tx(c.name, lang)).meds.push(m); placed.add(m); } }));
+  bp.medications.forEach((m) => { if (placed.has(m)) return; if (m.conditionId && condById[m.conditionId]) { groupFor('c:' + m.conditionId, tx(condById[m.conditionId].name, lang)).meds.push(m); } else { const p = tx(m.purpose, lang) || T.other; groupFor('p:' + p, p).meds.push(m); } });
+  const meds = medGroups.map((g) => `<div class="med-group-label">${esc(g.label)}</div>` + g.meds.map((m) =>
+    `<div class="bp-med"><span class="bp-med-name">${esc(tx(m.name, lang))}</span><span class="muted small">${esc(m.dose)}${m.schedule ? ' · ' + esc(m.schedule) : ''}</span></div>`).join('')).join('') || `<p class="muted small">${T.none}</p>`;
   const ro = bp.excluded.map((r) => {
     const tag = r.status === 'provisionally_excluded' ? ` <span class="badge prov">↺ ${T.revisit}</span>` : '';
     const reason = tx(r.reason, lang);
     const revisit = r.revisitNote ? tx(r.revisitNote, lang) : '';
     return `<div class="bp-row"><div><div class="bp-name">${esc(tx(r.name, lang))}${tag}</div>${reason ? `<div class="muted small">${esc(reason)}</div>` : ''}${revisit ? `<div class="muted small">↺ ${esc(revisit)}</div>` : ''}</div>${r.date ? `<span class="muted small">${fmtDate(r.date, lang)}</span>` : ''}</div>`;
   }).join('') || `<p class="muted small">${T.none}</p>`;
-  return `<div class="card"><h2>${T.conditions}</h2>${conds}</div>
+  return `<div class="card"><div class="sec-head"><h2>${T.conditions}</h2><span class="prog-chip">${bp.conditions.length}</span></div>${conds}</div>
     <div class="card"><h2>${T.currentMeds}</h2>${meds}</div>
     <div class="card"><h2>${T.ruledOut}</h2>${ro}</div>`;
 }
@@ -1385,8 +1427,8 @@ const state = { lang: 'en', tab: 'today', showData: false, date: Today.todayISO(
 const screen = document.getElementById('screen');
 const titleEl = document.getElementById('screenTitle');
 const statusStrip = document.getElementById('statusStrip');
-const TAB_TITLES = { today: 'Today', appointment: 'Appointment', records: 'Records', timeline: 'Timeline' };
-const TAB_TITLES_ES = { today: 'Hoy', appointment: 'Cita', records: 'Registros', timeline: 'Cronología' };
+const TAB_TITLES = { today: 'Log', appointment: 'Prep', records: 'Records', timeline: 'Timeline' };
+const TAB_TITLES_ES = { today: 'Diario', appointment: 'Preparar', records: 'Registros', timeline: 'Cronología' };
 (async function boot() {
   registerSW(); wireChrome();
   if (OneDrive.isConfigured()) { setActiveSource(OneDrive.oneDriveSource); try { await OneDrive.refreshAccount(); } catch {} setStatus('Loading from OneDrive …'); }
@@ -1428,6 +1470,7 @@ function setTab(tab) { state.tab = tab; document.querySelectorAll('.tab').forEac
 function setStatus(msg, kind) { if (!msg) { statusStrip.hidden = true; return; } statusStrip.hidden = false; statusStrip.className = 'status-strip' + (kind ? ' ' + kind : ''); statusStrip.textContent = msg; }
 function render() {
   const titles = state.lang === 'es' ? TAB_TITLES_ES : TAB_TITLES;
+  document.querySelectorAll('.tab').forEach((b) => { const el = b.querySelector('.tab-label'); if (el && titles[b.dataset.tab]) el.textContent = titles[b.dataset.tab]; });
   let content;
   if (state.showData) { titleEl.textContent = 'Data'; content = renderDataScreen(); }
   else { titleEl.textContent = titles[state.tab] || '';
