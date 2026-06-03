@@ -1,0 +1,1480 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1" />
+  <meta name="theme-color" content="#0f766e" />
+  
+  
+  <style>
+:root { --teal:#0f766e; --teal-d:#0b5e57; --bg:#f6f7f8; --card:#fff; --ink:#16202a; --muted:#5b6b7a; --line:#e3e8ec; --ok:#15803d; --warn:#b45309; --err:#b91c1c; --chip:#eef2f4; --radius:14px; --tabbar-h:60px; }
+* { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html,body { margin:0; padding:0; }
+body { font:16px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; background:var(--bg); color:var(--ink); padding-bottom:calc(var(--tabbar-h) + env(safe-area-inset-bottom)); }
+.topbar { position:sticky; top:0; z-index:10; display:flex; align-items:center; justify-content:space-between; gap:8px; padding:calc(env(safe-area-inset-top) + 10px) 14px 10px; background:var(--teal); color:#fff; box-shadow:0 1px 0 rgba(0,0,0,.06); }
+.topbar-title { font-weight:600; font-size:18px; }
+.topbar-actions { display:flex; align-items:center; gap:8px; }
+.chip { border:0; background:rgba(255,255,255,.16); color:#fff; padding:6px 10px; border-radius:999px; font-size:13px; cursor:pointer; }
+.lang-toggle { display:inline-flex; background:rgba(255,255,255,.16); border-radius:999px; padding:2px; }
+.lang-btn { border:0; background:transparent; color:#fff; opacity:.8; padding:5px 12px; border-radius:999px; font-weight:600; font-size:13px; cursor:pointer; }
+.lang-btn.is-active { background:#fff; color:var(--teal); opacity:1; }
+.status-strip { font-size:13px; padding:8px 14px; background:#fff8e1; color:var(--warn); border-bottom:1px solid var(--line); }
+.status-strip.ok { background:#ecfdf3; color:var(--ok); }
+.status-strip.err { background:#fef2f2; color:var(--err); }
+.screen { padding:14px; max-width:720px; margin:0 auto; }
+.card { background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:14px; margin-bottom:12px; }
+.card h2 { font-size:15px; margin:0 0 10px; }
+.muted { color:var(--muted); } .small { font-size:13px; }
+.placeholder { text-align:center; color:var(--muted); padding:36px 12px; } .placeholder .big { font-size:40px; margin-bottom:8px; }
+.grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+.stat { background:var(--chip); border-radius:12px; padding:10px; text-align:center; }
+.stat .n { font-size:22px; font-weight:700; color:var(--teal-d); } .stat .k { font-size:11px; color:var(--muted); text-transform:uppercase; }
+.kv { display:flex; justify-content:space-between; gap:10px; padding:5px 0; border-bottom:1px dashed var(--line); }
+.kv:last-child { border-bottom:0; } .kv .k { color:var(--muted); } .kv .v { font-weight:600; text-align:right; }
+.badge { display:inline-block; font-size:12px; font-weight:700; padding:2px 8px; border-radius:999px; }
+.badge.ok { background:#dcfce7; color:var(--ok); } .badge.err { background:#fee2e2; color:var(--err); }
+details.msgs { margin-top:8px; } details.msgs summary { cursor:pointer; font-size:13px; color:var(--muted); }
+.msglist { margin:8px 0 0; padding:0; list-style:none; font-size:12.5px; } .msglist li { padding:4px 0; border-bottom:1px solid var(--line); color:var(--muted); }
+.chips-row { display:flex; flex-wrap:wrap; gap:6px; } .pill { font-size:12px; background:var(--chip); border-radius:999px; padding:4px 10px; color:var(--ink); }
+.tabbar { position:fixed; left:0; right:0; bottom:0; z-index:10; height:calc(var(--tabbar-h) + env(safe-area-inset-bottom)); padding-bottom:env(safe-area-inset-bottom); display:grid; grid-template-columns:repeat(4,1fr); background:#fff; border-top:1px solid var(--line); }
+.tab { border:0; background:transparent; cursor:pointer; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; color:var(--muted); font-size:11px; }
+.tab .tab-ico { font-size:20px; line-height:1; } .tab.is-active { color:var(--teal); font-weight:600; }
+.btn { border:0; background:var(--teal); color:#fff; border-radius:10px; padding:10px 14px; font-size:14px; font-weight:600; cursor:pointer; }
+.btn.ghost { background:var(--chip); color:var(--ink); } .btn.wide { width:100%; }
+.btn-sm { border:1px solid var(--line); background:#fff; color:var(--err); border-radius:8px; padding:5px 10px; font-size:13px; cursor:pointer; }
+.subhead { font-size:12px; text-transform:uppercase; letter-spacing:.03em; color:var(--muted); margin:10px 0 6px; }
+.saved-tag { text-align:center; padding:4px; } h2 .small { font-weight:400; text-transform:none; }
+.daynav { display:flex; align-items:center; justify-content:space-between; gap:10px; } .daynav .dayname { text-align:center; flex:1; }
+.daynav input[type="date"] { border:0; font-size:16px; font-weight:600; color:var(--ink); background:transparent; text-align:center; }
+.navbtn { border:0; background:var(--chip); width:40px; height:40px; border-radius:50%; font-size:22px; color:var(--teal-d); cursor:pointer; } .navbtn:disabled { opacity:.35; }
+.sym { padding:8px 0; border-bottom:1px solid var(--line); } .sym:last-child { border-bottom:0; } .sym.loc { padding-left:6px; }
+.sym-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; } .sym-head.expandable { cursor:pointer; }
+.sym-name { font-weight:600; } .located .loc-list { border-left:3px solid var(--chip); padding-left:10px; margin-top:4px; }
+.sev-row { display:grid; grid-template-columns:repeat(5,1fr); gap:6px; }
+.sev { border:1px solid var(--line); background:#fff; color:var(--muted); border-radius:9px; padding:9px 0; font-size:15px; font-weight:700; cursor:pointer; }
+.sev.is-on { color:#fff; border-color:transparent; }
+.sev-0.is-on,.sev-chip.sev-0 { background:#94a3b8; color:#fff; } .sev-1.is-on,.sev-chip.sev-1 { background:#65a30d; }
+.sev-2.is-on,.sev-chip.sev-2 { background:#ca8a04; } .sev-3.is-on,.sev-chip.sev-3 { background:#ea580c; } .sev-4.is-on,.sev-chip.sev-4 { background:#dc2626; }
+.sev-chip { display:inline-block; min-width:22px; text-align:center; color:#fff; border-radius:999px; padding:2px 9px; font-weight:700; font-size:13px; } .sev-chip .small { color:rgba(255,255,255,.85); }
+.med { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:8px 0; border-bottom:1px solid var(--line); } .med:last-child { border-bottom:0; }
+.med-name { font-weight:600; } .med-toggle { display:flex; gap:6px; }
+.tgl { width:42px; height:38px; border:1px solid var(--line); background:#fff; border-radius:9px; font-size:16px; cursor:pointer; color:var(--muted); }
+.tgl.is-yes { background:var(--ok); color:#fff; border-color:transparent; } .tgl.is-no { background:var(--err); color:#fff; border-color:transparent; }
+#noteBox { width:100%; border:1px solid var(--line); border-radius:10px; padding:10px; font:inherit; resize:vertical; }
+.ep-ongoing { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:6px 0; }
+.ep-form { display:flex; flex-direction:column; gap:8px; } .ep-form input,.ep-form select { border:1px solid var(--line); border-radius:9px; padding:9px; font:inherit; }
+.ep-form-row { display:grid; grid-template-columns:1fr 1fr; gap:8px; } .ep-form-actions { display:flex; gap:8px; }
+.submit-block { margin-top:12px; padding-top:12px; border-top:1px solid var(--line); } .submit-hint { text-align:center; margin-top:6px; }
+.row-right { display:inline-flex; align-items:center; gap:8px; }
+.notebtn { border:1px solid var(--line); background:#fff; border-radius:8px; padding:3px 8px; font-size:13px; cursor:pointer; opacity:.55; }
+.notebtn.has { opacity:1; border-color:var(--teal); background:#ecfeff; }
+.rownote { width:100%; margin-top:8px; border:1px solid var(--line); border-radius:9px; padding:8px; font:inherit; font-size:14px; resize:vertical; }
+.appt-head { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.appt-sp { font-size:18px; font-weight:700; color:var(--teal-d); }
+.subtabs { display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:12px; }
+.subtab { border:1px solid var(--line); background:#fff; color:var(--muted); border-radius:10px; padding:9px; font-weight:600; cursor:pointer; }
+.subtab.is-active { background:var(--teal); color:#fff; border-color:transparent; }
+.appt-list { display:flex; flex-direction:column; gap:8px; }
+.appt-pick { text-align:left; border:1px solid var(--line); background:#fff; border-radius:12px; padding:12px; cursor:pointer; display:flex; flex-direction:column; gap:3px; }
+.appt-pick-name { font-weight:600; font-size:16px; }
+.bp-row { display:flex; align-items:flex-start; justify-content:space-between; gap:10px; padding:8px 0; border-bottom:1px solid var(--line); }
+.bp-row:last-child { border-bottom:0; }
+.bp-name { font-weight:600; }
+.appt-next { display:flex; align-items:center; justify-content:space-between; }
+.appt-next-date { font-weight:700; color:var(--teal-d); }
+.q-row { display:flex; align-items:flex-start; justify-content:space-between; gap:10px; padding:10px 0; border-bottom:1px solid var(--line); }
+.q-row:last-child { border-bottom:0; }
+.q-text { flex:1; }
+.q-done { color:var(--ok); white-space:nowrap; }
+.subtabs-5 { grid-template-columns: repeat(5, 1fr); gap: 4px; }
+.subtabs-5 .subtab { padding: 8px 2px; font-size: 12px; }
+ul.tight { margin: 4px 0 0; padding-left: 18px; } ul.tight li { padding: 1px 0; }
+.pill-on { background: var(--teal); color: #fff; }
+.lab-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; border: 0; background: transparent; border-bottom: 1px solid var(--line); padding: 10px 0; cursor: pointer; text-align: left; font: inherit; }
+.lab-row:last-child { border-bottom: 0; }
+.lab-val { color: var(--teal-d); font-weight: 600; white-space: nowrap; }
+.chart { width: 100%; height: auto; margin-top: 8px; background: #fbfdfd; border: 1px solid var(--line); border-radius: 10px; }
+.tl { position: relative; }
+.tl-item { display: flex; gap: 10px; align-items: flex-start; width: 100%; border: 0; background: transparent; cursor: pointer; text-align: left; padding: 6px 0; font: inherit; position: relative; }
+.tl-item:not(:last-child)::before { content: ''; position: absolute; left: 13px; top: 30px; bottom: -6px; width: 2px; background: var(--line); }
+.tl-dot { flex: 0 0 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; color: #fff; z-index: 1; }
+.tl-body { display: flex; flex-direction: column; }
+.tl-date { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .03em; }
+.tl-label { font-weight: 600; }
+.modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,.4); display: flex; align-items: center; justify-content: center; padding: 20px; z-index: 50; }
+.modal { background: #fff; border-radius: 16px; padding: 18px; max-width: 420px; width: 100%; }
+.modal h2 { margin: 4px 0 8px; } .modal p { margin: 0 0 14px; }
+.subtabs-multi { display:flex; flex-wrap:wrap; gap:4px; margin-bottom:12px; }
+.subtabs-multi .subtab { flex:1 1 28%; padding:8px 2px; font-size:12px; }
+.ed-btn { border:1px solid var(--line); background:#fff; border-radius:8px; padding:2px 8px; font-size:14px; cursor:pointer; color:var(--muted); }
+.addbtn { width:100%; margin-bottom:12px; }
+.linkbtn { background:none; border:0; color:var(--muted); text-decoration:underline; font-size:13px; cursor:pointer; padding:6px; }
+.linkbtn.danger { color:var(--err); font-weight:600; }
+.clearday-row { text-align:center; }
+.modal-form { max-width:520px; max-height:88vh; display:flex; flex-direction:column; }
+.form-body { overflow:auto; }
+.f { margin-bottom:10px; } .f-label { font-size:12px; font-weight:600; color:var(--muted); margin-bottom:3px; }
+.f input[type=text], .f input[type=number], .f input[type=date], .f select, .f textarea { width:100%; border:1px solid var(--line); border-radius:8px; padding:8px; font:inherit; }
+.f-i18n { display:grid; grid-template-columns:auto 1fr; gap:4px 8px; align-items:center; } .f-i18n span { font-size:11px; color:var(--muted); }
+.f-row label { display:flex; align-items:center; gap:8px; }
+.f-chks { display:flex; flex-wrap:wrap; gap:6px 12px; } .f-chk { display:inline-flex; align-items:center; gap:4px; font-size:13px; }
+.f-rowitem { display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin-bottom:6px; background:var(--chip); padding:6px; border-radius:8px; }
+.f-rowitem input { flex:1 1 80px; border:1px solid var(--line); border-radius:6px; padding:6px; font:inherit; }
+.form-actions { display:flex; align-items:center; gap:8px; margin-top:12px; padding-top:10px; border-top:1px solid var(--line); } .form-actions .spacer { flex:1; }
+
+/* ---- feedback round 1 additions ---- */
+.badge.warn { background:#fef3c7; color:var(--warn); }
+.badge.prov { background:#e0e7ff; color:#3730a3; }
+.badge.cond-tag { background:var(--chip); color:var(--muted); font-weight:600; }
+.lab-dot { display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:7px; vertical-align:middle; }
+.lab-dot.lab-ok { background:var(--ok); } .lab-dot.lab-warn { background:var(--warn); } .lab-dot.lab-err { background:var(--err); }
+.lab-trend { color:var(--muted); font-weight:700; }
+.posneg { font-size:12px; font-weight:700; } .posneg-positive { color:var(--err); } .posneg-negative { color:var(--ok); }
+.med .subhead, .card > .subhead:first-child { margin-top:0; }
+.ep-ongoing-block { padding:6px 0; border-bottom:1px solid var(--line); } .ep-ongoing-block:last-child { border-bottom:0; }
+.epnote { width:100%; margin-top:6px; border:1px solid var(--line); border-radius:8px; padding:7px; font:inherit; font-size:14px; resize:vertical; }
+.tl-chev { margin-left:auto; color:var(--muted); font-size:18px; align-self:center; }
+.sheet-bg { position:fixed; inset:0; background:rgba(0,0,0,.4); display:flex; align-items:flex-end; justify-content:center; z-index:50; }
+.sheet { background:#fff; border-radius:18px 18px 0 0; padding:16px 18px calc(20px + env(safe-area-inset-bottom)); width:100%; max-width:720px; box-shadow:0 -4px 24px rgba(0,0,0,.18); animation:sheetUp .18s ease-out; }
+.sheet h2 { margin:6px 0 8px; } .sheet p { margin:0 0 14px; }
+.sheet-handle { width:40px; height:4px; border-radius:999px; background:var(--line); margin:0 auto 12px; }
+@keyframes sheetUp { from { transform:translateY(100%); } to { transform:translateY(0); } }
+
+</style>
+  <title>Atlast</title>
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-title" id="screenTitle">Today</div>
+    <div class="topbar-actions">
+      <button id="dataBtn" class="chip" aria-label="Data screen">⚙︎ Data</button>
+      <div class="lang-toggle" role="group" aria-label="Language">
+        <button data-lang="en" class="lang-btn is-active">EN</button>
+        <button data-lang="es" class="lang-btn">ES</button>
+      </div>
+    </div>
+  </header>
+  <div id="statusStrip" class="status-strip" hidden></div>
+  <main id="screen" class="screen" aria-live="polite"></main>
+  <nav class="tabbar" aria-label="Main">
+    <button class="tab is-active" data-tab="today"><span class="tab-ico" aria-hidden="true">✓</span><span class="tab-label">Today</span></button>
+    <button class="tab" data-tab="appointment"><span class="tab-ico" aria-hidden="true">＋</span><span class="tab-label">Appointment</span></button>
+    <button class="tab" data-tab="records"><span class="tab-ico" aria-hidden="true">▤</span><span class="tab-label">Records</span></button>
+    <button class="tab" data-tab="timeline"><span class="tab-ico" aria-hidden="true">◷</span><span class="tab-label">Timeline</span></button>
+  </nav>
+  <script src="https://alcdn.msauth.net/browser/3.10.0/js/msal-browser.min.js"></script>
+  <script>
+/* AUTO-GENERATED — Atlast (hosted; blank template; OneDrive sync) */
+
+"use strict";
+
+const __HT_TEMPLATE__ = {
+  "meta": { "version": 1, "updatedAt": "", "defaultLanguage": "en", "severityScaleMax": 4, "patient": { "name": "", "dob": "", "city": "" }, "_note": "BLANK TEMPLATE — no personal data. Ships inside the hosted app; real records live only in OneDrive after sign-in." },
+  "specialists": [],
+  "conditions": [],
+  "medications": [],
+  "symptomTypes": [
+    { "id": "sym_jointpain", "name": { "en": "Joint pain", "es": "Dolor articular" }, "trackBy": "locations", "overall": "max", "archived": false,
+      "locations": [
+        { "id": "loc_neck", "name": { "en": "Neck", "es": "Cuello" }, "addedDate": null, "archived": false },
+        { "id": "loc_shoulder", "name": { "en": "Shoulder", "es": "Hombro" }, "addedDate": null, "archived": false },
+        { "id": "loc_wrist", "name": { "en": "Wrist", "es": "Muñeca" }, "addedDate": null, "archived": false },
+        { "id": "loc_hand", "name": { "en": "Hand & fingers", "es": "Mano y dedos" }, "addedDate": null, "archived": false },
+        { "id": "loc_hip", "name": { "en": "Hip", "es": "Cadera" }, "addedDate": null, "archived": false },
+        { "id": "loc_knee", "name": { "en": "Knee", "es": "Rodilla" }, "addedDate": null, "archived": false },
+        { "id": "loc_ankle", "name": { "en": "Ankle", "es": "Tobillo" }, "addedDate": null, "archived": false },
+        { "id": "loc_foot", "name": { "en": "Foot", "es": "Pie" }, "addedDate": null, "archived": false }
+      ] },
+    { "id": "sym_fatigue", "name": { "en": "Fatigue", "es": "Fatiga" }, "trackBy": "single", "archived": false, "locations": [] },
+    { "id": "sym_migraine", "name": { "en": "Migraine", "es": "Migraña" }, "trackBy": "single", "archived": false, "locations": [] },
+    { "id": "sym_nausea", "name": { "en": "Nausea", "es": "Náuseas" }, "trackBy": "single", "archived": false, "locations": [] },
+    { "id": "sym_brainfog", "name": { "en": "Brain fog", "es": "Niebla mental" }, "trackBy": "single", "archived": false, "locations": [] },
+    { "id": "sym_eyes", "name": { "en": "Eye pain", "es": "Dolor ocular" }, "trackBy": "single", "archived": false, "locations": [] }
+  ],
+  "dailyLogs": [], "episodes": [], "labs": [], "questions": [], "milestones": [], "ruledOut": [], "appointments": [], "glossary": []
+};
+
+const SCHEMA = (function(){
+
+const SEVERITY_MIN = 0;
+const SEVERITY_MAX = 4;
+const ENUMS = {
+  conditionStatus: ['confirmed', 'under_review', 'provisionally_excluded', 'ruled_out'],
+  medStatus: ['active', 'tapering', 'stopped', 'prn'],
+  trackBy: ['single', 'locations'], overall: ['max', 'mean'],
+  episodeType: ['cold_flu', 'infection', 'gi', 'flare', 'other'],
+  labDisplayMode: ['raw', 'x_uln'], questionStatus: ['open', 'answered'],
+  milestoneType: ['diagnosis', 'medication', 'new_symptom', 'episode', 'milestone'],
+  weekday: ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'],
+};
+const COLLECTIONS = ['specialists','conditions','medications','symptomTypes','dailyLogs','episodes','labs','questions','milestones','ruledOut','appointments','glossary'];
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+const isObj = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
+const isArr = Array.isArray; const isStr = (v) => typeof v === 'string';
+const isNum = (v) => typeof v === 'number' && !Number.isNaN(v); const isBool = (v) => typeof v === 'boolean';
+const isNullableDate = (v) => v === null || (isStr(v) && ISO_DATE.test(v));
+const isI18n = (v) => isObj(v) && isStr(v.en) && isStr(v.es);
+function validate(data) {
+  const errors = []; const warnings = []; const counts = {};
+  const E = (m) => errors.push(m); const W = (m) => warnings.push(m);
+  if (!isObj(data)) return { ok: false, errors: ['root is not an object'], warnings, counts };
+  const meta = data.meta;
+  if (!isObj(meta)) E('meta: missing or not an object');
+  else {
+    if (!isNum(meta.version)) E('meta.version: expected number');
+    if (!isStr(meta.updatedAt)) E('meta.updatedAt: expected ISO timestamp string');
+    if (!['en','es'].includes(meta.defaultLanguage)) E('meta.defaultLanguage: expected "en" | "es"');
+    if (meta.severityScaleMax !== SEVERITY_MAX) W('meta.severityScaleMax is ' + meta.severityScaleMax + '; app constant is ' + SEVERITY_MAX);
+    if (!isObj(meta.patient) || !isStr(meta.patient.name)) E('meta.patient.name: expected string');
+  }
+  for (const c of COLLECTIONS) { if (data[c] === undefined) { W(c + ': missing — treated as []'); data[c] = []; } else if (!isArr(data[c])) E(c + ': expected an array'); counts[c] = isArr(data[c]) ? data[c].length : 0; }
+  const ids = { specialist: new Set((data.specialists||[]).map((x)=>x.id)), condition: new Set((data.conditions||[]).map((x)=>x.id)), medication: new Set((data.medications||[]).map((x)=>x.id)), symptom: new Set((data.symptomTypes||[]).map((x)=>x.id)) };
+  const locIds = new Set(); (data.symptomTypes||[]).forEach((s)=>(s.locations||[]).forEach((l)=>locIds.add(l.id)));
+  (data.specialists||[]).forEach((s,i)=>{ const at='specialists['+i+']'; if(!isStr(s.id))E(at+'.id'); if(!isStr(s.name))E(at+'.name'); if(!isStr(s.es))W(at+'.es missing'); });
+  (data.conditions||[]).forEach((c,i)=>{ const at='conditions['+i+'] ('+c.id+')'; if(!isStr(c.id))E(at+'.id'); if(!isI18n(c.name))E(at+'.name'); if(!ENUMS.conditionStatus.includes(c.status))E(at+'.status invalid'); if(!isNullableDate(c.diagnosedDate))E(at+'.diagnosedDate'); if(!isArr(c.testsPending))E(at+'.testsPending'); });
+  (data.medications||[]).forEach((m,i)=>{
+    const at='medications['+i+'] ('+m.id+')'; if(!isStr(m.id))E(at+'.id'); if(!isI18n(m.name))E(at+'.name');
+    const hasInterval=m.everyNDays!=null;
+    if(hasInterval){ if(!(Number.isInteger(m.everyNDays)&&m.everyNDays>=1))E(at+'.everyNDays'); if(!isStr(m.anchorDate)||!ISO_DATE.test(m.anchorDate))E(at+'.anchorDate'); }
+    else if(!(m.scheduledDays==='prn'||(isArr(m.scheduledDays)&&m.scheduledDays.every((d)=>ENUMS.weekday.includes(d)))))E(at+'.scheduledDays');
+    if(!ENUMS.medStatus.includes(m.status))E(at+'.status invalid');
+    if(!isNullableDate(m.startDate))E(at+'.startDate'); if(!isNullableDate(m.stopDate))E(at+'.stopDate');
+    if(!isNullableDate(m.lastDoseChange))E(at+'.lastDoseChange');
+    if(m.doseHistory===undefined){W(at+'.doseHistory missing');m.doseHistory=[];} else if(!isArr(m.doseHistory))E(at+'.doseHistory');
+    else m.doseHistory.forEach((h,j)=>{ if(!isStr(h.date)||!ISO_DATE.test(h.date))E(at+'.doseHistory['+j+'].date'); if(!isStr(h.dose))E(at+'.doseHistory['+j+'].dose'); });
+  });
+  (data.symptomTypes||[]).forEach((s,i)=>{
+    const at='symptomTypes['+i+'] ('+s.id+')'; if(!isStr(s.id))E(at+'.id'); if(!isI18n(s.name))E(at+'.name');
+    if(!ENUMS.trackBy.includes(s.trackBy))E(at+'.trackBy'); if(!isBool(s.archived))E(at+'.archived');
+    if(s.trackBy==='locations'){ if(!ENUMS.overall.includes(s.overall))E(at+'.overall'); if(!isArr(s.locations)||!s.locations.length)E(at+'.locations'); }
+    (s.locations||[]).forEach((l,j)=>{ const lat=at+'.locations['+j+'] ('+l.id+')'; if(!isStr(l.id))E(lat+'.id'); if(!isI18n(l.name))E(lat+'.name'); if(!isNullableDate(l.addedDate))E(lat+'.addedDate'); if(!isBool(l.archived))E(lat+'.archived'); });
+  });
+  (data.dailyLogs||[]).forEach((d,i)=>{
+    const at='dailyLogs['+i+'] ('+d.date+')'; if(!isStr(d.date)||!ISO_DATE.test(d.date))E(at+'.date'); if(!isArr(d.symptoms))E(at+'.symptoms');
+    else d.symptoms.forEach((r,j)=>{ const rat=at+'.symptoms['+j+']'; if(!ids.symptom.has(r.symptomId))W(rat+'.symptomId unknown'); if(r.locationId!=null&&!locIds.has(r.locationId))W(rat+'.locationId unknown');
+      if(r.severity!==undefined&&r.severity!==null){ if(!isNum(r.severity)||r.severity<SEVERITY_MIN||r.severity>SEVERITY_MAX||!Number.isInteger(r.severity))E(rat+'.severity out of 0-4'); }
+      if(r.note!==undefined&&!isStr(r.note))E(rat+'.note'); });
+    if(d.overallPain!==undefined&&d.overallPain!==null&&!(Number.isInteger(d.overallPain)&&d.overallPain>=SEVERITY_MIN&&d.overallPain<=SEVERITY_MAX))E(at+'.overallPain out of 0-4');
+    if(!isArr(d.medsTaken))E(at+'.medsTaken'); else d.medsTaken.forEach((mt,j)=>{ if(!ids.medication.has(mt.medId))W(at+'.medsTaken['+j+'].medId unknown'); if(!isBool(mt.taken))E(at+'.medsTaken['+j+'].taken'); });
+  });
+  (data.episodes||[]).forEach((e,i)=>{ const at='episodes['+i+'] ('+e.id+')'; if(!isStr(e.id))E(at+'.id'); if(!isI18n(e.name))E(at+'.name'); if(!ENUMS.episodeType.includes(e.type))E(at+'.type invalid'); if(!isStr(e.startDate)||!ISO_DATE.test(e.startDate))E(at+'.startDate'); if(!isNullableDate(e.endDate))E(at+'.endDate'); if(!isBool(e.showOnTimeline))E(at+'.showOnTimeline'); });
+  (data.labs||[]).forEach((l,i)=>{ const at='labs['+i+'] ('+l.id+')'; if(!isStr(l.id))E(at+'.id'); if(!isI18n(l.marker))E(at+'.marker'); if(!ENUMS.labDisplayMode.includes(l.displayMode))E(at+'.displayMode'); if(l.referenceRange!==null&&!(isObj(l.referenceRange)&&('low' in l.referenceRange)&&('high' in l.referenceRange)))E(at+'.referenceRange'); if(l.referenceRange===null)W(at+'.referenceRange null'); if(!isArr(l.results))E(at+'.results'); else l.results.forEach((r,j)=>{ const rat=at+'.results['+j+']'; if(!isStr(r.date)||!ISO_DATE.test(r.date))E(rat+'.date'); if(!isNum(r.value)&&!isStr(r.qualitative))E(rat+' needs value or qualitative'); }); });
+  (data.questions||[]).forEach((q,i)=>{ const at='questions['+i+'] ('+q.id+')'; if(!isStr(q.id))E(at+'.id'); if(!isI18n(q.text))E(at+'.text'); if(!isStr(q.specialistId))E(at+'.specialistId required'); else if(!ids.specialist.has(q.specialistId))W(at+'.specialistId unknown'); if(!ENUMS.questionStatus.includes(q.status))E(at+'.status invalid'); });
+  (data.milestones||[]).forEach((m,i)=>{ const at='milestones['+i+'] ('+m.id+')'; if(!isStr(m.id))E(at+'.id'); if(!isStr(m.date)||!ISO_DATE.test(m.date))E(at+'.date'); if(!ENUMS.milestoneType.includes(m.type))E(at+'.type invalid'); if(!isI18n(m.label))E(at+'.label'); });
+  (data.ruledOut||[]).forEach((r,i)=>{ const at='ruledOut['+i+'] ('+r.id+')'; if(!isStr(r.id))E(at+'.id'); if(!isI18n(r.condition))E(at+'.condition'); if(!isI18n(r.how))E(at+'.how'); if(!isNullableDate(r.date))E(at+'.date'); });
+  (data.appointments||[]).forEach((a,i)=>{ const at='appointments['+i+'] ('+a.id+')'; if(!isStr(a.id))E(at+'.id'); if(!isStr(a.date)||!ISO_DATE.test(a.date))E(at+'.date'); if(!ids.specialist.has(a.specialistId))W(at+'.specialistId unknown'); });
+  (data.glossary||[]).forEach((g,i)=>{ if(!isStr(g.en)||!isStr(g.es))E('glossary['+i+']'); });
+  return { ok: errors.length === 0, errors, warnings, counts };
+}
+
+return { SEVERITY_MIN, SEVERITY_MAX, ENUMS, COLLECTIONS, validate };
+})();
+
+const DL = (function(){
+const { validate, COLLECTIONS } = SCHEMA;
+
+const CONFIG = { liveFileName: 'health-data.json', seedFileName: '../health-data.seed.json', cacheKey: 'ht.cache.v1' };
+let _data = null; let _meta = null; const _subs = new Set();
+function getData() { return _data; }
+function getLoadMeta() { return _meta; }
+function subscribe(fn) { _subs.add(fn); return () => _subs.delete(fn); }
+function _notify() { _subs.forEach((fn) => { try { fn(_data); } catch (e) { console.error(e); } }); }
+function seedFetchSource() {
+  return { name: 'seed (local file)',
+    async read() { const res = await fetch(CONFIG.seedFileName, { cache: 'no-store' }); if (!res.ok) throw new Error('Could not load ' + CONFIG.seedFileName + ' (HTTP ' + res.status + ')'); return { data: await res.json(), etag: res.headers.get('etag') || null }; },
+    async write() { throw new Error('Seed source is read-only in step 1; OneDrive write arrives in step 7.'); } };
+}
+let _activeSource = null;
+function setActiveSource(s) { _activeSource = s; }
+function getActiveSource() { return _activeSource; }
+function defaultSource() { return _activeSource || seedFetchSource(); }
+const localCache = {
+  read() { try { const raw = (typeof localStorage !== 'undefined') && localStorage.getItem(CONFIG.cacheKey); return raw ? JSON.parse(raw) : null; } catch { return null; } },
+  write(data) { try { if (typeof localStorage !== 'undefined') localStorage.setItem(CONFIG.cacheKey, JSON.stringify(data)); } catch (e) { console.warn('cache write failed', e); } },
+};
+async function loadData(source = defaultSource()) {
+  let data, etag = null, from = source.name;
+  try { ({ data, etag } = await source.read()); }
+  catch (err) { const cached = localCache.read(); if (!cached) throw err; data = cached; from = 'offline cache'; }
+  const cached = localCache.read();
+  if (cached && from === source.name) { const cu = cached?.meta?.updatedAt || ''; const su = data?.meta?.updatedAt || ''; if (cu && cu >= su) { data = cached; from = 'local edits (cache)'; } }
+  const report = validate(data); _data = data;
+  _meta = { source: from, loadedAt: new Date().toISOString(), etag, validation: report };
+  localCache.write(_data); _notify(); return { data: _data, report, meta: _meta };
+}
+async function resetToSeed(source = defaultSource()) { try { if (typeof localStorage !== 'undefined') localStorage.removeItem(CONFIG.cacheKey); } catch {} return loadData(source); }
+async function saveData(source = defaultSource()) {
+  if (!_data) throw new Error('no data loaded');
+  _data.meta = _data.meta || {}; _data.meta.updatedAt = new Date().toISOString();
+  const report = validate(_data); localCache.write(_data);
+  let wrote = 'cache only';
+  if (typeof source.write === 'function') { try { await source.write(_data); wrote = source.name; } catch (e) { wrote = 'cache only (' + e.message + ')'; } }
+  _meta = { ..._meta, savedAt: _data.meta.updatedAt, wroteTo: wrote, validation: report }; _notify(); return { report, wroteTo: wrote };
+}
+function t(field, lang) {
+  if (field == null) return { text: '', untranslated: false };
+  if (typeof field === 'string') return { text: field, untranslated: false };
+  const want = field[lang]; if (want && want.trim()) return { text: want, untranslated: false };
+  const other = lang === 'es' ? field.en : field.es;
+  return { text: (other || '').trim(), untranslated: lang === 'es' && !(field.es && field.es.trim()) };
+}
+const tx = (field, lang) => t(field, lang).text;
+function specialistLabel(sp, lang) { if (!sp) return ''; return lang === 'es' ? (sp.es || sp.name) : sp.name; }
+function derivedOverall(symptomType, dayRows) {
+  if (!symptomType || symptomType.trackBy !== 'locations') return null;
+  const vals = (dayRows || []).filter((r) => r.symptomId === symptomType.id && r.locationId != null && typeof r.severity === 'number').map((r) => r.severity);
+  if (!vals.length) return null;
+  if (symptomType.overall === 'mean') return Math.round((vals.reduce((a, b) => a + b, 0) / vals.length) * 10) / 10;
+  return Math.max(...vals);
+}
+function activeSymptomTypes(data = _data) { return (data.symptomTypes || []).filter((s) => !s.archived); }
+function activeLocations(symptomType) { return (symptomType?.locations || []).filter((l) => !l.archived); }
+function episodeFrequency(data = _data) {
+  const byTypeYear = {}; const byYear = {}; let ongoing = 0;
+  (data.episodes || []).forEach((e) => { const year = (e.startDate || '').slice(0, 4) || 'unknown'; byTypeYear[year] = byTypeYear[year] || {}; byTypeYear[year][e.type] = (byTypeYear[year][e.type] || 0) + 1; byYear[year] = (byYear[year] || 0) + 1; if (e.endDate == null) ongoing += 1; });
+  return { byTypeYear, byYear, ongoing };
+}
+function daysUnwell(year, data = _data, today = new Date()) {
+  let days = 0;
+  (data.episodes || []).forEach((e) => { if (!e.startDate || !e.startDate.startsWith(String(year))) return; const start = new Date(e.startDate + 'T00:00:00Z'); const end = e.endDate ? new Date(e.endDate + 'T00:00:00Z') : today; days += Math.max(1, Math.round((end - start) / 86400000) + 1); });
+  return days;
+}
+function latestLab(lab) { const sorted = [...(lab.results || [])].sort((a, b) => (a.date < b.date ? 1 : -1)); return sorted[0] || null; }
+function labWindow(lab, windowKey, now = new Date()) {
+  const all = [...(lab.results || [])].sort((a, b) => (a.date < b.date ? -1 : 1));
+  if (windowKey === 'all') return all;
+  const cutoff = new Date(now);
+  if (windowKey === '3m') cutoff.setMonth(cutoff.getMonth() - 3); else if (windowKey === '1y') cutoff.setFullYear(cutoff.getFullYear() - 1);
+  return all.filter((r) => new Date(r.date + 'T00:00:00Z') >= cutoff);
+}
+const CONDITION_STATUS_ORDER = { confirmed: 0, under_review: 1, provisionally_excluded: 2, ruled_out: 3 };
+const _alpha = (lang) => (a, b) => (tx(a.name, lang) || '').localeCompare(tx(b.name, lang) || '');
+const EXCLUDED_STATUSES = ['provisionally_excluded', 'ruled_out'];
+
+// Active conditions = confirmed + under_review, grouped (confirmed first) then alphabetical.
+function activeConditions(data = _data, lang = 'en') {
+  return (data.conditions || []).filter((c) => !EXCLUDED_STATUSES.includes(c.status))
+    .slice().sort((a, b) => (CONDITION_STATUS_ORDER[a.status] - CONDITION_STATUS_ORDER[b.status]) || _alpha(lang)(a, b));
+}
+// Unified "excluded" list: conditions flipped to ruled_out/provisionally_excluded + the ruledOut[] collection.
+function excludedList(data = _data, lang = 'en') {
+  const fromConditions = (data.conditions || []).filter((c) => EXCLUDED_STATUSES.includes(c.status))
+    .map((c) => ({ name: c.name, reason: c.notes || { en: '', es: '' }, date: c.ruledOutDate || null, status: c.status, revisitNote: c.revisitNote || null, _src: 'condition', id: c.id }));
+  const fromRuledOut = (data.ruledOut || []).map((r) => ({ name: r.condition, reason: r.how, date: r.date || null, status: r.status || 'ruled_out', revisitNote: r.revisitNote || null, _src: 'ruledOut', id: r.id }));
+  return [...fromConditions, ...fromRuledOut].sort((a, b) => {
+    const pa = a.status === 'provisionally_excluded' ? 0 : 1, pb = b.status === 'provisionally_excluded' ? 0 : 1;
+    return (pa - pb) || (tx(a.name, lang) || '').localeCompare(tx(b.name, lang) || '');
+  });
+}
+function bigPicture(data = _data, lang = 'en') {
+  return { conditions: activeConditions(data, lang),
+    medications: (data.medications || []).filter((m) => m.status !== 'stopped'),
+    excluded: excludedList(data, lang) };
+}
+
+// ----- Lab status / trend / positivity helpers -----
+function labStatus(lab, value) {
+  if (typeof value !== 'number' || !lab) return null;
+  const rr = lab.referenceRange; if (!rr) return null;
+  const { low, high } = rr;
+  const span = (high != null && low != null) ? (high - low) : (high != null ? high : (low != null ? low : 0));
+  const margin = Math.abs(span) * 0.1 || (Math.abs(value) * 0.05);
+  if (high != null && value > high) return 'err';
+  if (low != null && value < low) return 'err';
+  if (high != null && value > high - margin) return 'warn';
+  if (low != null && value < low + margin) return 'warn';
+  return 'ok';
+}
+function labTrend(lab) {
+  const nums = [...(lab.results || [])].filter((r) => typeof r.value === 'number').sort((a, b) => (a.date < b.date ? 1 : -1));
+  if (nums.length < 2) return null;
+  const d = nums[0].value - nums[1].value;
+  if (d === 0) return 'flat';
+  return d > 0 ? 'up' : 'down';
+}
+// For antibody / qualitative markers: positive when above the upper cutoff, else negative.
+function labPosNeg(lab, result) {
+  if (!lab || !lab.posNeg || !result) return null;
+  if (typeof result.value === 'number') {
+    const hi = lab.referenceRange && lab.referenceRange.high != null ? lab.referenceRange.high : 1;
+    return result.value > hi ? 'positive' : 'negative';
+  }
+  const q = (result.qualitative || '').toLowerCase();
+  if (!q) return null;
+  if (q.startsWith('<') || q.startsWith('neg') || q.includes('negat')) return 'negative';
+  if (q.startsWith('>') || q.startsWith('pos') || q.includes('posit')) return 'positive';
+  return null;
+}
+function labGroups(data = _data) { return [...new Set((data.labs || []).map((l) => l.group).filter(Boolean))]; }
+function questionsForSpecialist(specialistId, data = _data, today = new Date()) {
+  const open = (data.questions || []).filter((q) => q.specialistId === specialistId && q.status === 'open');
+  const upcoming = (data.appointments || []).filter((a) => a.specialistId === specialistId && new Date(a.date + 'T00:00:00Z') >= startOfDay(today)).sort((a, b) => (a.date < b.date ? -1 : 1));
+  return { open, nextAppointment: upcoming[0] || null };
+}
+function startOfDay(d) { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; }
+function parseReport(data = _data, meta = _meta) {
+  const counts = {}; COLLECTIONS.forEach((c) => (counts[c] = (data[c] || []).length));
+  const jointPain = (data.symptomTypes || []).find((s) => s.trackBy === 'locations');
+  return { source: meta?.source, patient: data.meta?.patient?.name, defaultLanguage: data.meta?.defaultLanguage, severityScaleMax: data.meta?.severityScaleMax, counts,
+    locatedSymptom: jointPain ? { name: jointPain.name.en, overall: jointPain.overall, locations: (jointPain.locations || []).length } : null,
+    labMarkers: (data.labs || []).map((l) => l.marker.en), validation: meta?.validation };
+}
+const WD = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+function weekdayOf(dateStr) { return WD[new Date(dateStr + 'T00:00:00Z').getUTCDay()]; }
+function getDailyLog(date, data = _data) { return (data.dailyLogs || []).find((d) => d.date === date) || null; }
+function ensureLog(date) {
+  let log = getDailyLog(date);
+  if (!log) { log = { date, symptoms: [], medsTaken: [], note: { en: '', es: '' } }; _data.dailyLogs = _data.dailyLogs || []; _data.dailyLogs.push(log); _data.dailyLogs.sort((a, b) => (a.date < b.date ? 1 : -1)); }
+  return log;
+}
+function _rowIdx(log, sym, loc) { return log.symptoms.findIndex((r) => r.symptomId === sym && (r.locationId || null) === (loc || null)); }
+function _row(log, sym, loc) { const i = _rowIdx(log, sym, loc); return i >= 0 ? log.symptoms[i] : null; }
+function _ensureRow(log, sym, loc) { let r = _row(log, sym, loc); if (!r) { r = { symptomId: sym, locationId: loc || null }; log.symptoms.push(r); } return r; }
+function _pruneRow(log, sym, loc) { const i = _rowIdx(log, sym, loc); if (i < 0) return; const r = log.symptoms[i]; if (r.severity == null && !(r.note && String(r.note).trim())) log.symptoms.splice(i, 1); }
+function setSeverity(date, symptomId, locationId, severity) {
+  const log = ensureLog(date);
+  if (severity == null) { const r = _row(log, symptomId, locationId); if (r) { delete r.severity; _pruneRow(log, symptomId, locationId); } }
+  else { _ensureRow(log, symptomId, locationId).severity = severity; }
+  return log;
+}
+function getSeverity(date, symptomId, locationId, data = _data) { const r = _row(getDailyLog(date, data) || { symptoms: [] }, symptomId, locationId); return r && typeof r.severity === 'number' ? r.severity : null; }
+function setSymptomNote(date, symptomId, locationId, text) {
+  const log = ensureLog(date);
+  if (!(text && text.trim())) { const r = _row(log, symptomId, locationId); if (r) { delete r.note; _pruneRow(log, symptomId, locationId); } }
+  else { _ensureRow(log, symptomId, locationId).note = text; }
+  return log;
+}
+function getSymptomNote(date, symptomId, locationId, data = _data) { const r = _row(getDailyLog(date, data) || { symptoms: [] }, symptomId, locationId); return r?.note || ''; }
+function setOverallPain(date, val) { const log = ensureLog(date); if (val == null) delete log.overallPain; else log.overallPain = val; return log; }
+function getOverallPain(date, data = _data) { const log = getDailyLog(date, data); return log && typeof log.overallPain === 'number' ? log.overallPain : null; }
+function setMedTaken(date, medId, taken) {
+  const log = ensureLog(date); const i = log.medsTaken.findIndex((r) => r.medId === medId);
+  if (taken == null) { if (i >= 0) log.medsTaken.splice(i, 1); } else { const row = { medId, taken }; if (i >= 0) log.medsTaken[i] = row; else log.medsTaken.push(row); }
+  return log;
+}
+function getMedTaken(date, medId, data = _data) { const log = getDailyLog(date, data); const row = log?.medsTaken.find((r) => r.medId === medId); return row ? row.taken : null; }
+function setNote(date, lang, text) { const log = ensureLog(date); log.note = log.note || { en: '', es: '' }; log.note[lang] = text; return log; }
+function medDueOn(m, date) {
+  if (m.everyNDays && m.anchorDate) { const diff = Math.round((new Date(date + 'T00:00:00Z') - new Date(m.anchorDate + 'T00:00:00Z')) / 86400000); return diff >= 0 && diff % m.everyNDays === 0; }
+  return Array.isArray(m.scheduledDays) && m.scheduledDays.includes(weekdayOf(date));
+}
+const TIME_ORDER = { morning: 0, midday: 1, evening: 2, bedtime: 2, prn: 3 };
+function medTimeOfDay(m) { return m.timeOfDay || 'morning'; }
+// Daily view: only meds flagged track !== false, ordered morning → midday → evening.
+function medsForDate(date, data = _data) {
+  const active = (data.medications || []).filter((m) => m.status !== 'stopped' && m.track !== false);
+  const isPrn = (m) => m.scheduledDays === 'prn' || (m.status === 'prn' && m.everyNDays == null);
+  const byTime = (a, b) => (TIME_ORDER[medTimeOfDay(a)] - TIME_ORDER[medTimeOfDay(b)]);
+  const prn = active.filter(isPrn).sort(byTime);
+  const scheduled = active.filter((m) => !isPrn(m) && medDueOn(m, date)).sort(byTime);
+  return { scheduled, prn };
+}
+function submitSymptoms(date, data = _data) {
+  const log = ensureLog(date);
+  for (const s of activeSymptomTypes(data)) {
+    if (s.trackBy === 'single') { if (getSeverity(date, s.id, null) == null) setSeverity(date, s.id, null, 0); }
+    else { for (const l of activeLocations(s)) { if (getSeverity(date, s.id, l.id) == null) setSeverity(date, s.id, l.id, 0); } }
+  }
+  log.symptomsSubmittedAt = new Date().toISOString(); return log;
+}
+function symptomsSubmitted(date, data = _data) { return getDailyLog(date, data)?.symptomsSubmittedAt || null; }
+let _epSeq = 0;
+function startEpisode({ name, type, startDate, note }) {
+  const id = 'ep_' + (startDate || '').replace(/-/g, '') + '_' + type + '_' + Date.now().toString(36) + (_epSeq++);
+  const ep = { id, name: { en: name || '', es: '' }, type, startDate, endDate: null, showOnTimeline: false, note: { en: note || '', es: '' } };
+  _data.episodes = _data.episodes || []; _data.episodes.push(ep); return ep;
+}
+function endEpisode(id, endDate) { const ep = (_data.episodes || []).find((e) => e.id === id); if (ep) ep.endDate = endDate; return ep; }
+function reopenEpisode(id) { const ep = (_data.episodes || []).find((e) => e.id === id); if (ep) ep.endDate = null; return ep; }
+function setEpisodeNote(id, lang, text) { const ep = (_data.episodes || []).find((e) => e.id === id); if (ep) { ep.note = ep.note || { en: '', es: '' }; ep.note[lang] = text; } return ep; }
+function ongoingEpisodes(data = _data) { return (data.episodes || []).filter((e) => e.endDate == null); }
+// Episodes ended on a given date (for the "reopen" undo affordance on Today).
+function episodesEndedOn(date, data = _data) { return (data.episodes || []).filter((e) => e.endDate === date); }
+async function persist() { return saveData(); }
+function markQuestionAnswered(id, answered = true) {
+  const q = (_data.questions || []).find((x) => x.id === id);
+  if (q) q.status = answered ? 'answered' : 'open';
+  return q;
+}
+
+// ===== Editing (step 5): generic CRUD + archive-don't-delete for symptoms =====
+let _idSeq = 0;
+function genId(prefix) { return prefix + '_' + Date.now().toString(36) + (_idSeq++); }
+
+function getRecord(collection, id) { return (_data[collection] || []).find((x) => x.id === id) || null; }
+function upsert(collection, obj) {
+  _data[collection] = _data[collection] || [];
+  if (!obj.id) obj.id = genId(collection.slice(0, 4));
+  const i = _data[collection].findIndex((x) => x.id === obj.id);
+  if (i >= 0) _data[collection][i] = obj; else _data[collection].push(obj);
+  return obj;
+}
+function remove(collection, id) {
+  if (_data[collection]) _data[collection] = _data[collection].filter((x) => x.id !== id);
+}
+
+// Symptom types & locations: archive (keep history), never hard-delete when logged.
+function archiveSymptomType(id, archived = true) { const s = getRecord('symptomTypes', id); if (s) s.archived = archived; return s; }
+function addSymptomType({ en, es, trackBy = 'single' }) {
+  const s = { id: genId('sym'), name: { en: en || '', es: es || '' }, trackBy, archived: false, locations: [] };
+  if (trackBy === 'locations') s.overall = 'max';
+  (_data.symptomTypes = _data.symptomTypes || []).push(s); return s;
+}
+function renameSymptomType(id, en, es) { const s = getRecord('symptomTypes', id); if (s) { s.name = { en, es }; } return s; }
+function setSymptomOverall(id, overall) { const s = getRecord('symptomTypes', id); if (s) s.overall = overall; return s; }
+function addLocation(symId, en, es) {
+  const s = getRecord('symptomTypes', symId); if (!s) return null;
+  s.trackBy = 'locations'; if (!s.overall) s.overall = 'max';
+  const loc = { id: genId('loc'), name: { en: en || '', es: es || '' }, addedDate: new Date().toISOString().slice(0, 10), archived: false };
+  (s.locations = s.locations || []).push(loc); return loc;
+}
+function renameLocation(symId, locId, en, es) { const l = (getRecord('symptomTypes', symId)?.locations || []).find((x) => x.id === locId); if (l) l.name = { en, es }; return l; }
+function archiveLocation(symId, locId, archived = true) { const l = (getRecord('symptomTypes', symId)?.locations || []).find((x) => x.id === locId); if (l) l.archived = archived; return l; }
+
+// Lab results add/remove (results editing)
+function addLabResult(labId, { date, value, qualitative }) {
+  const lab = getRecord('labs', labId); if (!lab) return null;
+  (lab.results = lab.results || []).push({ date, value: (value === '' || value == null) ? null : Number(value), qualitative: qualitative || null });
+  lab.results.sort((a, b) => (a.date < b.date ? 1 : -1)); return lab;
+}
+function removeLabResult(labId, date, idx) { const lab = getRecord('labs', labId); if (lab && lab.results) lab.results.splice(idx, 1); return lab; }
+
+// Record a dose change: push prior into history + set new current dose + lastDoseChange.
+function recordDoseChange(medId, { date, dose, note }) {
+  const m = getRecord('medications', medId); if (!m) return null;
+  m.doseHistory = m.doseHistory || [];
+  m.doseHistory.push({ date, dose, note: note || '' });
+  m.doseHistory.sort((a, b) => (a.date < b.date ? 1 : -1));
+  m.dose = dose; m.lastDoseChange = date; return m;
+}
+
+// Historic daily entries: delete a whole day's log.
+function clearDay(date) { if (_data.dailyLogs) _data.dailyLogs = _data.dailyLogs.filter((d) => d.date !== date); }
+
+// Export / import the whole document as a file (backup; bridge until OneDrive sync).
+function exportJSON() { return JSON.stringify(_data, null, 2); }
+async function importData(text) {
+  const d = JSON.parse(text);
+  const report = validate(d);
+  _data = d;
+  _meta = { source: 'imported file', loadedAt: new Date().toISOString(), etag: null, validation: report };
+  localCache.write(_data);
+  _notify();
+  return report;
+}
+
+return { CONFIG, getData, getLoadMeta, subscribe, setActiveSource, getActiveSource, loadData, resetToSeed, saveData, t, tx, specialistLabel, derivedOverall, activeSymptomTypes, activeLocations, episodeFrequency, daysUnwell, latestLab, labWindow, activeConditions, excludedList, bigPicture, labStatus, labTrend, labPosNeg, labGroups, questionsForSpecialist, parseReport, weekdayOf, getDailyLog, setSeverity, getSeverity, setSymptomNote, getSymptomNote, setOverallPain, getOverallPain, setMedTaken, getMedTaken, setNote, medDueOn, TIME_ORDER, medTimeOfDay, medsForDate, submitSymptoms, symptomsSubmitted, startEpisode, endEpisode, reopenEpisode, setEpisodeNote, ongoingEpisodes, episodesEndedOn, persist, markQuestionAnswered, genId, getRecord, upsert, remove, archiveSymptomType, addSymptomType, renameSymptomType, setSymptomOverall, addLocation, renameLocation, archiveLocation, addLabResult, removeLabResult, recordDoseChange, clearDay, exportJSON, importData };
+})();
+
+const Today = (function(){
+const { tx } = DL;
+
+
+
+const ui = { expanded: new Set(['sym_jointpain']), epFormOpen: false, savedAt: null, noteOpen: new Set(), confirmClear: false };
+
+const STR = {
+  en: { today: 'Today', symptoms: 'Symptoms', meds: 'Medications', asNeeded: 'As needed (PRN)',
+        note: 'Note (optional)', notePlaceholder: 'Anything worth remembering about today…',
+        overall: 'overall', taken: 'Taken', skipped: 'Skipped', episodes: 'Episodes',
+        ongoing: 'Ongoing', startEp: '+ Start an episode', end: 'End today', endedToday: 'Ended',
+        name: 'Short label', type: 'Type', start: 'Start date', start2: 'Start', cancel: 'Cancel',
+        none: 'none', saved: 'Saved locally', noMeds: 'No medications scheduled for this day.',
+        scaleHint: '0 none · 1 noticeable · 2 distracting · 3 interferes · 4 prevents activity', clear: 'clear',
+        markZero: 'Mark untouched symptoms as 0 (not experienced)', allZeroed: 'All symptoms logged',
+        clearDay: 'Clear this day', confirmClear: 'Tap again to clear',
+        overallPain: 'Overall pain (today)', overallHint: 'Your own overall score for the day.',
+        rowNotePh: 'Add a detail (optional)…', addNote: 'Add note', epNotePh: 'Add a note (e.g. still burning today)…', reopen: 'Reopen', morning: 'Morning', midday: 'Midday', evening: 'Evening' },
+  es: { today: 'Hoy', symptoms: 'Síntomas', meds: 'Medicación', asNeeded: 'Según necesidad (PRN)',
+        note: 'Nota (opcional)', notePlaceholder: 'Algo que recordar de hoy…',
+        overall: 'general', taken: 'Tomado', skipped: 'Omitido', episodes: 'Episodios',
+        ongoing: 'En curso', startEp: '+ Iniciar un episodio', end: 'Finalizar hoy', endedToday: 'Finalizado',
+        name: 'Etiqueta corta', type: 'Tipo', start: 'Fecha de inicio', start2: 'Inicio', cancel: 'Cancelar',
+        none: 'ninguno', saved: 'Guardado localmente', noMeds: 'No hay medicación programada para este día.',
+        scaleHint: '0 ninguno · 1 leve · 2 molesto · 3 interfiere · 4 impide actividad', clear: 'borrar',
+        markZero: 'Marcar síntomas sin tocar como 0 (no experimentado)', allZeroed: 'Todos los síntomas registrados',
+        clearDay: 'Borrar este día', confirmClear: 'Toca otra vez para borrar',
+        overallPain: 'Dolor general (hoy)', overallHint: 'Tu propia puntuación general del día.',
+        rowNotePh: 'Añadir un detalle (opcional)…', addNote: 'Añadir nota', epNotePh: 'Añadir una nota (p. ej. sigue el ardor hoy)…', reopen: 'Reabrir', morning: 'Mañana', midday: 'Mediodía', evening: 'Noche' },
+};
+const EP_TYPES = {
+  en: { cold_flu: 'Cold / flu', infection: 'Infection', gi: 'GI', flare: 'Flare', other: 'Other' },
+  es: { cold_flu: 'Resfriado / gripe', infection: 'Infección', gi: 'Digestivo', flare: 'Brote', other: 'Otro' },
+};
+const TIME_LABEL = (T) => ({ morning: T.morning, midday: T.midday, evening: T.evening });
+
+function todayISO() { return new Date().toLocaleDateString('en-CA'); }
+function fmtDate(iso, lang) { const d = new Date(iso + 'T00:00:00'); return d.toLocaleDateString(lang === 'es' ? 'es-ES' : 'en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }); }
+function shiftDate(iso, days) { const d = new Date(iso + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() + days); return d.toISOString().slice(0, 10); }
+function esc(s) { return String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
+
+function sevSelector(symptomId, locationId, value) {
+  const ctx = `data-sym="${symptomId}"${locationId ? ` data-loc="${locationId}"` : ''}`;
+  const btns = [0, 1, 2, 3, 4].map((n) => `<button class="sev ${value === n ? 'is-on sev-' + n : ''}" data-sev="${n}" ${ctx}>${n}</button>`).join('');
+  return `<div class="sev-row" ${ctx}>${btns}</div>`;
+}
+function overallSelector(value) {
+  const btns = [0, 1, 2, 3, 4].map((n) => `<button class="sev ${value === n ? 'is-on sev-' + n : ''}" data-ovsev="${n}">${n}</button>`).join('');
+  return `<div class="sev-row">${btns}</div>`;
+}
+const rowKey = (sym, loc) => sym + '|' + (loc || '');
+function symRow(state, symId, locId, label) {
+  const { date, lang } = state; const data = DL.getData();
+  const v = DL.getSeverity(date, symId, locId, data);
+  const note = DL.getSymptomNote(date, symId, locId, data);
+  const key = rowKey(symId, locId);
+  const showNote = ui.noteOpen.has(key) || !!note;
+  const chip = v != null ? `<span class="sev-chip sev-${v}">${v}</span>` : '';
+  const noteBtn = `<button class="notebtn ${note ? 'has' : ''}" data-note="${key}" aria-label="${STR[lang].addNote}">🗒</button>`;
+  const noteArea = showNote ? `<textarea class="rownote" data-sym="${symId}"${locId ? ` data-loc="${locId}"` : ''} rows="2" placeholder="${STR[lang].rowNotePh}">${esc(note)}</textarea>` : '';
+  return `<div class="sym${locId ? ' loc' : ''}">
+    <div class="sym-head"><span class="sym-name">${esc(label)}</span><span class="row-right">${chip}${noteBtn}</span></div>
+    ${sevSelector(symId, locId, v)}
+    ${noteArea}
+  </div>`;
+}
+
+function renderToday(state) {
+  const lang = state.lang; const T = STR[lang]; const date = state.date; const data = DL.getData();
+  if (!data) return '<div class="card"><p class="muted">No data.</p></div>';
+  const isToday = date === todayISO();
+  const head = `<div class="card daynav">
+    <button class="navbtn" data-nav="-1" aria-label="Previous day">‹</button>
+    <div class="dayname"><input type="date" id="dateInput" value="${date}" /><div class="muted small">${esc(fmtDate(date, lang))}${isToday ? ' · ' + T.today : ''}</div></div>
+    <button class="navbtn" data-nav="1" aria-label="Next day" ${isToday ? 'disabled' : ''}>›</button>
+  </div>`;
+  const symptomCards = DL.activeSymptomTypes(data).map((s) => {
+    const name = esc(tx(s.name, lang));
+    if (s.trackBy === 'single') return symRow(state, s.id, null, tx(s.name, lang));
+    const open = ui.expanded.has(s.id);
+    const overall = DL.derivedOverall(s, (DL.getDailyLog(date, data)?.symptoms) || []);
+    const locs = DL.activeLocations(s).map((l) => symRow(state, s.id, l.id, tx(l.name, lang))).join('');
+    return `<div class="sym located">
+      <div class="sym-head expandable" data-expand="${s.id}"><span class="sym-name">▸ ${name}<span class="caret ${open ? 'open' : ''}"></span></span><span>${overall != null ? `<span class="sev-chip sev-${overall}">${overall} <span class="muted small">${T.overall}</span></span>` : `<span class="muted small">${T.none}</span>`}</span></div>
+      <div class="loc-list" ${open ? '' : 'hidden'}>${locs}</div>
+    </div>`;
+  }).join('');
+  const { scheduled, prn } = DL.medsForDate(date, data);
+  const medRow = (m) => { const taken = DL.getMedTaken(date, m.id, data); return `<div class="med"><div class="med-name">${esc(tx(m.name, lang))}<div class="muted small">${esc(m.dose)} · ${esc(m.schedule)}</div></div><div class="med-toggle"><button class="tgl ${taken === true ? 'is-yes' : ''}" data-med="${m.id}" data-taken="yes">✓</button><button class="tgl ${taken === false ? 'is-no' : ''}" data-med="${m.id}" data-taken="no">✗</button></div></div>`; };
+  const TL = TIME_LABEL(T);
+  let medsHtml = '';
+  if (scheduled.length) {
+    for (const slot of ['morning', 'midday', 'evening']) {
+      const ms = scheduled.filter((m) => DL.medTimeOfDay(m) === slot || (slot === 'evening' && DL.medTimeOfDay(m) === 'bedtime'));
+      if (ms.length) medsHtml += `<div class="subhead">${TL[slot]}</div>${ms.map(medRow).join('')}`;
+    }
+  } else { medsHtml = `<p class="muted small">${T.noMeds}</p>`; }
+  const prnHtml = prn.length ? `<div class="subhead">${T.asNeeded}</div>${prn.map(medRow).join('')}` : '';
+  const log = DL.getDailyLog(date, data);
+  const noteVal = esc(log?.note?.[lang] || '');
+  const ongoing = DL.ongoingEpisodes(data);
+  const epNote = (e) => esc((e.note && e.note[lang]) || '');
+  const ongoingHtml = ongoing.map((e) => `<div class="ep-ongoing-block">
+      <div class="ep-ongoing"><span>${esc(tx(e.name, lang) || EP_TYPES[lang][e.type])} <span class="pill">${EP_TYPES[lang][e.type] || e.type}</span> <span class="muted small">${e.startDate}→</span></span><button class="btn-sm" data-end-ep="${e.id}">${T.end}</button></div>
+      <textarea class="epnote" data-epnote="${e.id}" rows="1" placeholder="${T.epNotePh}">${epNote(e)}</textarea>
+    </div>`).join('');
+  const endedToday = DL.episodesEndedOn(date, data);
+  const endedHtml = endedToday.map((e) => `<div class="ep-ongoing"><span class="muted">${esc(tx(e.name, lang) || EP_TYPES[lang][e.type])} <span class="pill">${EP_TYPES[lang][e.type] || e.type}</span> <span class="small">${T.endedToday} ${e.endDate}</span></span><button class="btn-sm" data-reopen-ep="${e.id}">↺ ${T.reopen}</button></div>`).join('');
+  const typeOpts = Object.entries(EP_TYPES[lang]).map(([k, v]) => `<option value="${k}">${v}</option>`).join('');
+  const epForm = ui.epFormOpen ? `<div class="ep-form"><input id="epName" placeholder="${T.name}" /><div class="ep-form-row"><select id="epType">${typeOpts}</select><input type="date" id="epStart" value="${date}" /></div><div class="ep-form-actions"><button class="btn" id="epSave">${T.start2}</button><button class="btn ghost" id="epCancel">${T.cancel}</button></div></div>` : `<button class="btn ghost wide" id="epStartBtn">${T.startEp}</button>`;
+  const savedNote = ui.savedAt ? `<div class="muted small saved-tag">✓ ${T.saved} · ${ui.savedAt}</div>` : '';
+  // Auto-save symptoms (no submit gate). Optional helper to log any untouched active symptom as 0.
+  const allLogged = DL.activeSymptomTypes(data).every((s) => s.trackBy === 'single'
+    ? DL.getSeverity(date, s.id, null, data) != null
+    : DL.activeLocations(s).every((l) => DL.getSeverity(date, s.id, l.id, data) != null));
+  const zeroLink = `<div class="submit-block">${allLogged ? `<div class="muted small submit-hint">✓ ${T.allZeroed}</div>` : `<button class="linkbtn" id="markZero">${T.markZero}</button>`}</div>`;
+  const overallVal = DL.getOverallPain(date, data);
+  return `${head}
+    <div class="card"><h2>${T.overallPain}</h2>${overallSelector(overallVal)}<p class="muted small">${T.overallHint}</p></div>
+    <div class="card"><h2>${T.episodes}</h2>${ongoing.length ? `<div class="subhead">${T.ongoing}</div>${ongoingHtml}` : ''}${endedHtml}${epForm}</div>
+    <div class="card"><h2>${T.note}</h2><textarea id="noteBox" rows="2" placeholder="${T.notePlaceholder}">${noteVal}</textarea></div>
+    <div class="card"><h2>${T.symptoms} <span class="muted small">${T.scaleHint}</span></h2>${symptomCards}${zeroLink}</div>
+    <div class="card"><h2>${T.meds}</h2>${medsHtml}${prnHtml}</div>
+    ${savedNote}
+    <div class="clearday-row"><button class="linkbtn ${ui.confirmClear?'danger':''}" data-clearday>${ui.confirmClear?T.confirmClear:T.clearDay}</button></div>`;
+}
+
+async function save() { await DL.persist(); ui.savedAt = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); }
+
+async function onClick(e, state, rerender) {
+  const t = e.target.closest('button, .sym-head.expandable');
+  if (!t) return;
+  const nb = document.getElementById('noteBox');
+  if (nb) DL.setNote(state.date, state.lang, nb.value);
+  document.querySelectorAll('.rownote').forEach((el) => DL.setSymptomNote(state.date, el.dataset.sym, el.dataset.loc || null, el.value));
+  document.querySelectorAll('.epnote').forEach((el) => DL.setEpisodeNote(el.dataset.epnote, state.lang, el.value));
+  if (t.dataset.nav) { state.date = shiftDate(state.date, Number(t.dataset.nav)); ui.savedAt = null; ui.confirmClear = false; rerender(); return; }
+  if (t.dataset.note) { const k = t.dataset.note; ui.noteOpen.has(k) ? ui.noteOpen.delete(k) : ui.noteOpen.add(k); rerender(); return; }
+  if (t.dataset.ovsev !== undefined) { const val = Number(t.dataset.ovsev); const cur = DL.getOverallPain(state.date, DL.getData()); DL.setOverallPain(state.date, cur === val ? null : val); await save(); rerender(); return; }
+  if (t.dataset.expand) { const id = t.dataset.expand; ui.expanded.has(id) ? ui.expanded.delete(id) : ui.expanded.add(id); rerender(); return; }
+  if (t.classList.contains('sev')) { const sym = t.dataset.sym, loc = t.dataset.loc || null, sev = Number(t.dataset.sev); const cur = DL.getSeverity(state.date, sym, loc, DL.getData()); DL.setSeverity(state.date, sym, loc, cur === sev ? null : sev); await save(); rerender(); return; }
+  if (t.dataset.med) { const want = t.dataset.taken === 'yes'; const cur = DL.getMedTaken(state.date, t.dataset.med, DL.getData()); DL.setMedTaken(state.date, t.dataset.med, cur === want ? null : want); await save(); rerender(); return; }
+  if (t.id === 'markZero') { DL.submitSymptoms(state.date); await save(); rerender(); return; }
+  if (t.dataset.clearday !== undefined) { if (!ui.confirmClear) { ui.confirmClear = true; rerender(); return; } DL.clearDay(state.date); ui.confirmClear = false; await save(); rerender(); return; }
+  if (t.dataset.endEp) { DL.endEpisode(t.dataset.endEp, state.date); await save(); rerender(); return; }
+  if (t.dataset.reopenEp) { DL.reopenEpisode(t.dataset.reopenEp); await save(); rerender(); return; }
+  if (t.id === 'epStartBtn') { ui.epFormOpen = true; rerender(); return; }
+  if (t.id === 'epCancel') { ui.epFormOpen = false; rerender(); return; }
+  if (t.id === 'epSave') { const name = document.getElementById('epName').value.trim(); const type = document.getElementById('epType').value; const startDate = document.getElementById('epStart').value || state.date; DL.startEpisode({ name, type, startDate }); ui.epFormOpen = false; await save(); rerender(); return; }
+}
+async function onChange(e, state, rerender) { if (e.target.id === 'dateInput') { state.date = e.target.value; ui.savedAt = null; rerender(); } }
+let _noteTimer = null;
+function onInput(e, state) {
+  if (e.target.id === 'noteBox') { DL.setNote(state.date, state.lang, e.target.value); }
+  else if (e.target.classList.contains('rownote')) { DL.setSymptomNote(state.date, e.target.dataset.sym, e.target.dataset.loc || null, e.target.value); }
+  else if (e.target.classList.contains('epnote')) { DL.setEpisodeNote(e.target.dataset.epnote, state.lang, e.target.value); }
+  else { return; }
+  clearTimeout(_noteTimer); _noteTimer = setTimeout(() => { DL.persist(); }, 600);
+}
+
+return { ui, todayISO, renderToday, onClick, onChange, onInput };
+})();
+
+const Appt = (function(){
+const { tx, specialistLabel } = DL;
+
+
+
+const ui = { specialistId: null, sub: 'big' };
+
+const STR = {
+  en: { appointmentWith: 'Appointment with', change: 'Change', bigPicture: 'Big picture', questions: 'Questions',
+        pickSpecialist: 'Pick a specialist', next: 'Next', question: 'question', questionsLc: 'questions', noOpen: 'No open questions',
+        dx: 'Diagnosed', conditions: 'Active conditions', currentMeds: 'Current medications',
+        ruledOut: 'Ruled out / excluded', none: 'None', nextAppt: 'Next appointment', forCond: 'for', revisit: 'may re-test',
+        questionsFor: 'Questions for', markAnswered: 'Answered', noQuestions: 'No open questions for this specialist.', addQ: 'Add question', appointments: 'Upcoming appointments', pastAppts: 'Past appointments', addAppt: 'Add appointment', noAppt: 'No appointments yet' },
+  es: { appointmentWith: 'Cita con', change: 'Cambiar', bigPicture: 'Resumen', questions: 'Preguntas',
+        pickSpecialist: 'Elige un especialista', next: 'Próxima', question: 'pregunta', questionsLc: 'preguntas', noOpen: 'Sin preguntas pendientes',
+        dx: 'Diagnóstico', conditions: 'Condiciones activas', currentMeds: 'Medicación actual',
+        ruledOut: 'Descartado / excluido', none: 'Ninguno', nextAppt: 'Próxima cita', forCond: 'para', revisit: 'puede reevaluarse',
+        questionsFor: 'Preguntas para', markAnswered: 'Respondida', noQuestions: 'Sin preguntas pendientes para este especialista.', addQ: 'Añadir pregunta', appointments: 'Próximas citas', pastAppts: 'Citas anteriores', addAppt: 'Añadir cita', noAppt: 'Sin citas todavía' },
+};
+const STATUS = {
+  en: { confirmed: 'Confirmed', under_review: 'Under review', provisionally_excluded: 'Provisionally excluded', ruled_out: 'Ruled out' },
+  es: { confirmed: 'Confirmado', under_review: 'En revisión', provisionally_excluded: 'Excluido provisionalmente', ruled_out: 'Descartado' },
+};
+const STATUS_CLS = { confirmed: 'ok', under_review: 'warn', provisionally_excluded: 'prov', ruled_out: 'err' };
+function docLine(sp) { const bits = []; if (sp.doctor) bits.push(sp.doctor); if (sp.clinic) bits.push(sp.clinic); return bits.join(' · '); }
+
+function esc(s) { return String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
+function fmtDate(iso, lang) { if (!iso) return ''; return new Date(iso + 'T00:00:00').toLocaleDateString(lang === 'es' ? 'es-ES' : 'en-GB', { day: 'numeric', month: 'short', year: 'numeric' }); }
+
+function renderAppointment(state) {
+  const lang = state.lang; const T = STR[lang]; const data = DL.getData();
+  if (!data) return '<div class="card"><p class="muted">No data.</p></div>';
+  if (!ui.specialistId) return renderPicker(state);
+  const sp = (data.specialists || []).find((s) => s.id === ui.specialistId);
+  if (!sp) { ui.specialistId = null; return renderPicker(state); }
+  const header = `<div class="card appt-head">
+      <div><div class="muted small">${T.appointmentWith}</div><div class="appt-sp">${esc(specialistLabel(sp, lang))}</div>${docLine(sp) ? `<div class="muted small">${esc(docLine(sp))}</div>` : ''}</div>
+      <button class="btn ghost" data-appt="change">${T.change}</button>
+    </div>
+    <div class="subtabs">
+      <button class="subtab ${ui.sub === 'big' ? 'is-active' : ''}" data-sub="big">${T.bigPicture}</button>
+      <button class="subtab ${ui.sub === 'questions' ? 'is-active' : ''}" data-sub="questions">${T.questions}</button>
+    </div>`;
+  return header + (ui.sub === 'big' ? renderBig(state) : renderQuestions(state, sp));
+}
+
+function renderPicker(state) {
+  const lang = state.lang; const T = STR[lang]; const data = DL.getData();
+  const items = (data.specialists || []).slice()
+    .sort((a, b) => specialistLabel(a, lang).localeCompare(specialistLabel(b, lang)))
+    .map((sp) => {
+    const { open, nextAppointment } = DL.questionsForSpecialist(sp.id, data);
+    const meta = [];
+    if (open.length) meta.push(open.length + ' ' + (open.length === 1 ? T.question : T.questionsLc));
+    if (nextAppointment) meta.push(T.next + ': ' + fmtDate(nextAppointment.date, lang));
+    return `<button class="appt-pick" data-pick="${sp.id}">
+      <span class="appt-pick-name">${esc(specialistLabel(sp, lang))}${docLine(sp) ? ` <span class="muted small">— ${esc(docLine(sp))}</span>` : ''}</span>
+      <span class="muted small">${meta.join(' · ') || T.noOpen}</span>
+    </button>`;
+  }).join('');
+  return `<div class="card"><h2>${T.pickSpecialist}</h2><div class="appt-list">${items}</div></div>`;
+}
+
+function renderBig(state) {
+  const lang = state.lang; const T = STR[lang]; const data = DL.getData();
+  const bp = DL.bigPicture(data, lang);
+  const condById = Object.fromEntries((data.conditions || []).map((c) => [c.id, c]));
+  const conds = bp.conditions.map((c) =>
+    `<div class="bp-row"><div><div class="bp-name">${esc(tx(c.name, lang))}</div>${c.diagnosedDate ? `<div class="muted small">${T.dx}: ${fmtDate(c.diagnosedDate, lang)}</div>` : ''}</div><span class="badge ${STATUS_CLS[c.status]}">${STATUS[lang][c.status]}</span></div>`).join('') || `<p class="muted small">${T.none}</p>`;
+  const meds = bp.medications.slice().sort((a, b) => (a.conditionId ? 0 : 1) - (b.conditionId ? 0 : 1)).map((m) => {
+    const cond = m.conditionId && condById[m.conditionId];
+    const purpose = tx(m.purpose, lang);
+    const tag = cond ? `<span class="badge cond-tag">${T.forCond} ${esc(tx(cond.name, lang))}</span>` : (purpose ? `<span class="muted small">${esc(purpose)}</span>` : '');
+    return `<div class="bp-row"><div><div class="bp-name">${esc(tx(m.name, lang))}</div><div class="muted small">${esc(m.dose)} · ${esc(m.schedule)}</div></div><span class="row-right">${tag}</span></div>`;
+  }).join('') || `<p class="muted small">${T.none}</p>`;
+  const ro = bp.excluded.map((r) => {
+    const tag = r.status === 'provisionally_excluded' ? ` <span class="badge prov">↺ ${T.revisit}</span>` : '';
+    const reason = tx(r.reason, lang);
+    const revisit = r.revisitNote ? tx(r.revisitNote, lang) : '';
+    return `<div class="bp-row"><div><div class="bp-name">${esc(tx(r.name, lang))}${tag}</div>${reason ? `<div class="muted small">${esc(reason)}</div>` : ''}${revisit ? `<div class="muted small">↺ ${esc(revisit)}</div>` : ''}</div>${r.date ? `<span class="muted small">${fmtDate(r.date, lang)}</span>` : ''}</div>`;
+  }).join('') || `<p class="muted small">${T.none}</p>`;
+  return `<div class="card"><h2>${T.conditions}</h2>${conds}</div>
+    <div class="card"><h2>${T.currentMeds}</h2>${meds}</div>
+    <div class="card"><h2>${T.ruledOut}</h2>${ro}</div>`;
+}
+
+function renderQuestions(state, sp) {
+  const lang = state.lang; const T = STR[lang]; const data = DL.getData();
+  const { open } = DL.questionsForSpecialist(sp.id, data);
+  const todayStr = new Date().toLocaleDateString('en-CA');
+  const appts = (data.appointments || []).filter((a) => a.specialistId === sp.id);
+  const apptRow = (a) => `<div class="bp-row"><div><div class="bp-name">${fmtDate(a.date, lang)}</div>${tx(a.note, lang) ? `<div class="muted small">${esc(tx(a.note, lang))}</div>` : ''}</div><button class="ed-btn" data-edit="appointments:${a.id}">✎</button></div>`;
+  const upcoming = appts.filter((a) => a.date >= todayStr).sort((a, b) => (a.date < b.date ? -1 : 1));
+  const past = appts.filter((a) => a.date < todayStr).sort((a, b) => (a.date < b.date ? 1 : -1));
+  const upRows = upcoming.map(apptRow).join('') || `<p class="muted small">${T.noAppt}</p>`;
+  const pastRows = past.length ? `<div class="card"><h2>${T.pastAppts}</h2>${past.map(apptRow).join('')}</div>` : '';
+  const next = `<div class="card"><h2>${T.appointments}</h2>${upRows}<button class="btn ghost addbtn" data-add="appointments" data-prefill='${JSON.stringify({ specialistId: sp.id })}'>+ ${T.addAppt}</button></div>${pastRows}`;
+  const qs = open.map((q) =>
+    `<div class="q-row"><div class="q-text">${esc(tx(q.text, lang))}</div><span class="row-right"><button class="btn-sm q-done" data-answered="${q.id}">✓ ${T.markAnswered}</button><button class="ed-btn" data-edit="questions:${q.id}">✎</button></span></div>`).join('') || `<p class="muted small">${T.noQuestions}</p>`;
+  return `${next}<div class="card"><h2>${T.questionsFor} ${esc(specialistLabel(sp, lang))}</h2>${qs}<button class="btn ghost addbtn" data-add="questions">+ ${T.addQ}</button></div>`;
+}
+
+async function onClick(e, state, rerender) {
+  const t = e.target.closest('button');
+  if (!t) return;
+  if (t.dataset.pick) { ui.specialistId = t.dataset.pick; ui.sub = 'big'; rerender(); return; }
+  if (t.dataset.appt === 'change') { ui.specialistId = null; rerender(); return; }
+  if (t.dataset.sub) { ui.sub = t.dataset.sub; rerender(); return; }
+  if (t.dataset.answered) { DL.markQuestionAnswered(t.dataset.answered); await DL.persist(); rerender(); return; }
+}
+
+return { ui, renderAppointment, onClick };
+})();
+
+const Records = (function(){
+const { tx, specialistLabel } = DL;
+
+
+
+const ui = { sub: 'conditions', labId: null, win: '1y', epType: 'all', openMs: null };
+
+const STR = {
+  en: { conditions: 'Conditions', meds: 'Meds', symptoms: 'Symptoms', episodes: 'Episodes', labs: 'Labs', timeline: 'Timeline',
+        dx: 'Diagnosed', managedBy: 'Managed by', ruledOut: 'Ruled out / excluded', none: 'None', revisit: 'may re-test', notTracked: 'Not tracked daily',
+        status: { confirmed: 'Confirmed', under_review: 'Under review', provisionally_excluded: 'Provisionally excluded', ruled_out: 'Ruled out' },
+        medStatus: { active: 'Active', tapering: 'Tapering', stopped: 'Stopped', prn: 'PRN' },
+        doseHistory: 'Dose history', since: 'since', latest: 'Latest', daysUnwell: 'Days unwell', ongoing: 'ongoing',
+        all: 'All', noData: 'No data in this window.', window: { '3m': '3 mo', '1y': '1 yr', all: 'All' }, back: '‹ All labs', close: 'Close',
+        epTypes: { cold_flu: 'Cold / flu', infection: 'Infection', gi: 'GI', flare: 'Flare', other: 'Other' },
+        thisYear: 'This year', refRange: 'Ref', ulnLine: 'ULN (×1)', archived: 'Archived', locations: 'locations', single: 'single',
+        positive: 'positive', negative: 'negative',
+        addC: 'Add condition', addM: 'Add medication', addS: 'Add symptom', addE: 'Add episode', addL: 'Add marker', addMs: 'Add milestone', addR: 'Add ruled-out', editMarker: 'Edit marker / results' },
+  es: { conditions: 'Condiciones', meds: 'Medicación', symptoms: 'Síntomas', episodes: 'Episodios', labs: 'Analíticas', timeline: 'Cronología',
+        dx: 'Diagnóstico', managedBy: 'Seguimiento', ruledOut: 'Descartado / excluido', none: 'Ninguno', revisit: 'puede reevaluarse', notTracked: 'No se registra a diario',
+        status: { confirmed: 'Confirmado', under_review: 'En revisión', provisionally_excluded: 'Excluido provisionalmente', ruled_out: 'Descartado' },
+        medStatus: { active: 'Activo', tapering: 'En reducción', stopped: 'Suspendido', prn: 'PRN' },
+        doseHistory: 'Historial de dosis', since: 'desde', latest: 'Último', daysUnwell: 'Días enfermo', ongoing: 'en curso',
+        all: 'Todos', noData: 'Sin datos en este periodo.', window: { '3m': '3 m', '1y': '1 año', all: 'Todo' }, back: '‹ Analíticas', close: 'Cerrar',
+        epTypes: { cold_flu: 'Resfriado / gripe', infection: 'Infección', gi: 'Digestivo', flare: 'Brote', other: 'Otro' },
+        thisYear: 'Este año', refRange: 'Ref', ulnLine: 'ULN (×1)', archived: 'Archivado', locations: 'localizaciones', single: 'único',
+        positive: 'positivo', negative: 'negativo',
+        addC: 'Añadir condición', addM: 'Añadir medicación', addS: 'Añadir síntoma', addE: 'Añadir episodio', addL: 'Añadir marcador', addMs: 'Añadir hito', addR: 'Añadir descartado', editMarker: 'Editar marcador / resultados' },
+};
+const STATUS_CLS = { confirmed: 'ok', under_review: 'warn', provisionally_excluded: 'prov', ruled_out: 'err' };
+const MS_TYPE = { diagnosis: ['🩺', '#0f766e'], medication: ['💊', '#2563eb'], new_symptom: ['⚠', '#ea580c'], episode: ['🤒', '#dc2626'], milestone: ['◆', '#64748b'] };
+
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
+function fmtDate(iso, lang) { if (!iso) return ''; return new Date(iso + 'T00:00:00').toLocaleDateString(lang === 'es' ? 'es-ES' : 'en-GB', { day: 'numeric', month: 'short', year: 'numeric' }); }
+function fmtMonth(iso, lang) { if (!iso) return ''; return new Date(iso + 'T00:00:00').toLocaleDateString(lang === 'es' ? 'es-ES' : 'en-GB', { month: 'short', year: 'numeric' }); }
+const TREND_ARROW = { up: '↑', down: '↓', flat: '→' };
+const statusDot = (st) => st ? `<span class="lab-dot lab-${st}"></span>` : '';
+const ed = (coll, id) => `<button class="ed-btn" data-edit="${coll}:${id}" aria-label="Edit">✎</button>`;
+const add = (coll, label) => `<button class="btn ghost addbtn" data-add="${coll}">+ ${label}</button>`;
+
+const TABS = ['conditions', 'meds', 'symptoms', 'episodes', 'labs'];
+function renderRecords(state) {
+  const lang = state.lang; const T = STR[lang]; const data = DL.getData();
+  if (!data) return '<div class="card"><p class="muted">No data.</p></div>';
+  const tabs = '<div class="subtabs subtabs-multi">' + TABS.map((t) => `<button class="subtab ${ui.sub === t ? 'is-active' : ''}" data-rsub="${t}">${T[t]}</button>`).join('') + '</div>';
+  const body = ({ conditions: renderConditions, meds: renderMeds, symptoms: renderSymptoms, episodes: renderEpisodes, labs: renderLabs })[ui.sub] ? ({ conditions: renderConditions, meds: renderMeds, symptoms: renderSymptoms, episodes: renderEpisodes, labs: renderLabs })[ui.sub](state) : renderConditions(state);
+  return tabs + body + renderModal(state);
+}
+
+function renderConditions(state) {
+  const lang = state.lang; const T = STR[lang]; const data = DL.getData();
+  const spName = (id) => { const s = (data.specialists || []).find((x) => x.id === id); if (!s) return id; const dl = [s.doctor].filter(Boolean).join(''); return specialistLabel(s, lang) + (dl ? ` (${dl})` : ''); };
+  const conds = DL.activeConditions(data, lang).map((c) => {
+    const specs = (c.specialistIds || []).map(spName).join(', ');
+    const notes = tx(c.notes, lang);
+    return `<div class="card"><div class="bp-row"><div class="bp-name">${esc(tx(c.name, lang))}</div><span class="row-right"><span class="badge ${STATUS_CLS[c.status]}">${T.status[c.status]}</span>${ed('conditions', c.id)}</span></div>
+      ${c.diagnosedDate ? `<div class="muted small">${T.dx}: ${fmtDate(c.diagnosedDate, lang)}</div>` : ''}
+      ${specs ? `<div class="muted small">${T.managedBy}: ${esc(specs)}</div>` : ''}
+      ${notes ? `<div class="muted small" style="margin-top:6px;">${esc(notes)}</div>` : ''}</div>`;
+  }).join('');
+  const ro = DL.excludedList(data, lang).map((r) => {
+    const tag = r.status === 'provisionally_excluded' ? ` <span class="badge prov">↺ ${T.revisit}</span>` : '';
+    const reason = tx(r.reason, lang);
+    const revisit = r.revisitNote ? tx(r.revisitNote, lang) : '';
+    const edBtn = r._src === 'ruledOut' ? ed('ruledOut', r.id) : ed('conditions', r.id);
+    return `<div class="bp-row"><div><div class="bp-name">${esc(tx(r.name, lang))}${tag}</div><div class="muted small">${esc(reason)}${r.date ? ' · ' + fmtDate(r.date, lang) : ''}</div>${revisit ? `<div class="muted small">↺ ${esc(revisit)}</div>` : ''}</div>${edBtn}</div>`;
+  }).join('') || `<p class="muted small">${T.none}</p>`;
+  return add('conditions', T.addC) + conds + `<div class="card"><h2>${T.ruledOut}</h2>${ro}${add('ruledOut', T.addR)}</div>`;
+}
+
+function renderMeds(state) {
+  const lang = state.lang; const T = STR[lang]; const data = DL.getData();
+  const cards = (data.medications || []).map((m) => {
+    const purpose = tx(m.purpose, lang);
+    const hist = (m.doseHistory || []).slice().sort((a, b) => (a.date < b.date ? 1 : -1)).map((h) => `<li>${fmtDate(h.date, lang)} — ${esc(h.dose)}${h.note ? ' <span class="muted">(' + esc(h.note) + ')</span>' : ''}</li>`).join('');
+    return `<div class="card"><div class="bp-row"><div class="bp-name">${esc(tx(m.name, lang))}</div><span class="row-right"><span class="badge ${m.status === 'active' ? 'ok' : (m.status === 'stopped' ? 'err' : 'warn')}">${T.medStatus[m.status] || m.status}</span>${ed('medications', m.id)}</span></div>
+      <div class="muted small">${esc(m.dose)} · ${esc(m.schedule)}${m.track === false ? ` · <span class="badge cond-tag">${T.notTracked}</span>` : ''}</div>
+      ${purpose ? `<div class="muted small">${esc(purpose)}</div>` : ''}
+      ${m.lastDoseChange ? `<div class="muted small">${T.since} ${fmtDate(m.lastDoseChange, lang)}</div>` : ''}
+      ${hist ? `<details class="msgs"><summary>${T.doseHistory} (${(m.doseHistory || []).length})</summary><ul class="tight small">${hist}</ul></details>` : ''}</div>`;
+  }).join('');
+  return add('medications', T.addM) + cards;
+}
+
+function renderSymptoms(state) {
+  const lang = state.lang; const T = STR[lang]; const data = DL.getData();
+  const cards = (data.symptomTypes || []).map((s) => {
+    const locs = (s.locations || []);
+    const activeLocs = locs.filter((l) => !l.archived).length;
+    const meta = s.trackBy === 'locations' ? `${activeLocs} ${T.locations}` + (locs.length > activeLocs ? ` (+${locs.length - activeLocs} ${T.archived.toLowerCase()})` : '') : T.single;
+    return `<div class="card"><div class="bp-row"><div class="bp-name">${esc(tx(s.name, lang))} ${s.archived ? `<span class="badge err">${T.archived}</span>` : ''}</div>${ed('symptomTypes', s.id)}</div><div class="muted small">${meta}</div></div>`;
+  }).join('');
+  return add('symptomTypes', T.addS) + cards;
+}
+
+function renderEpisodes(state) {
+  const lang = state.lang; const T = STR[lang]; const data = DL.getData();
+  const freq = DL.episodeFrequency(data);
+  const years = Object.keys(freq.byTypeYear).sort().reverse();
+  const summary = years.map((y) => `<div class="kv"><span class="k">${y}</span><span class="v">${Object.entries(freq.byTypeYear[y]).map(([t, n]) => (T.epTypes[t] || t) + ': ' + n).join(' · ')}</span></div>`).join('');
+  const thisYear = String(new Date().getFullYear());
+  const types = ['all', 'cold_flu', 'infection', 'gi', 'flare', 'other'];
+  const chips = types.map((t) => `<button class="pill ${ui.epType === t ? 'pill-on' : ''}" data-eptype="${t}">${t === 'all' ? T.all : T.epTypes[t]}</button>`).join('');
+  const list = (data.episodes || []).slice().sort((a, b) => (a.startDate < b.startDate ? 1 : -1))
+    .filter((e) => ui.epType === 'all' || e.type === ui.epType)
+    .map((e) => `<div class="bp-row"><div><div class="bp-name">${esc(tx(e.name, lang) || T.epTypes[e.type])} <span class="pill">${T.epTypes[e.type]}</span></div>
+      <div class="muted small">${fmtDate(e.startDate, lang)} → ${e.endDate ? fmtDate(e.endDate, lang) : '<b>' + T.ongoing + '</b>'}</div>
+      ${tx(e.note, lang) ? `<div class="muted small">${esc(tx(e.note, lang))}</div>` : ''}</div>${ed('episodes', e.id)}</div>`).join('');
+  return add('episodes', T.addE) + `<div class="card"><h2>${T.episodes} — ${T.thisYear} ${thisYear}</h2>${summary}
+      <div class="kv"><span class="k">${T.daysUnwell} (${thisYear})</span><span class="v">${DL.daysUnwell(Number(thisYear), data)}</span></div>
+      <div class="kv"><span class="k">${T.ongoing}</span><span class="v">${freq.ongoing}</span></div></div>
+    <div class="card"><div class="chips-row" style="margin-bottom:8px;">${chips}</div>${list || `<p class="muted small">${T.none}</p>`}</div>`;
+}
+
+function renderLabs(state) {
+  const lang = state.lang; const T = STR[lang]; const data = DL.getData();
+  if (ui.labId) { const lab = (data.labs || []).find((l) => l.id === ui.labId); if (lab) return renderLabDetail(state, lab); ui.labId = null; }
+  const groups = {};
+  (data.labs || []).forEach((l) => { const g = l.group || 'Other'; (groups[g] = groups[g] || []).push(l); });
+  const cards = Object.entries(groups).map(([g, labs]) => {
+    const rows = labs.map((l) => {
+      const r = DL.latestLab(l);
+      const st = r ? DL.labStatus(l, r.value) : null;
+      const pn = r ? DL.labPosNeg(l, r) : null;
+      const trend = DL.labTrend(l);
+      const val = r ? (r.value != null ? r.value : esc(r.qualitative)) : '—';
+      const mode = l.displayMode === 'x_uln' ? ' ×ULN' : '';
+      const pnHtml = pn ? ` <span class="posneg posneg-${pn}">${T[pn]}</span>` : '';
+      const trHtml = (trend && trend !== 'flat') ? ` <span class="lab-trend">${TREND_ARROW[trend]}</span>` : '';
+      return `<button class="lab-row" data-lab="${l.id}"><span class="bp-name">${statusDot(st)}${esc(tx(l.marker, lang))}</span><span class="lab-val">${val}${trHtml}${pnHtml} <span class="muted small">${esc(l.unit)}${mode}${r ? ' · ' + fmtMonth(r.date, lang) : ''}</span> ›</span></button>`;
+    }).join('');
+    return `<div class="card"><h2>${esc(g)}</h2>${rows}</div>`;
+  }).join('');
+  return add('labs', T.addL) + cards;
+}
+
+function renderLabDetail(state, lab) {
+  const lang = state.lang; const T = STR[lang];
+  const wins = ['3m', '1y', 'all'];
+  const toggle = '<div class="subtabs">' + wins.map((w) => `<button class="subtab ${ui.win === w ? 'is-active' : ''}" data-win="${w}">${T.window[w]}</button>`).join('') + '</div>';
+  const pts = DL.labWindow(lab, ui.win).slice().sort((a, b) => (a.date < b.date ? 1 : -1));
+  const rows = pts.map((p) => { const st = DL.labStatus(lab, p.value); const pn = DL.labPosNeg(lab, p); return `<div class="kv"><span class="k">${fmtDate(p.date, lang)}</span><span class="v">${statusDot(st)}${p.value != null ? p.value : esc(p.qualitative)}${pn ? ` <span class="posneg posneg-${pn}">${T[pn]}</span>` : ''}</span></div>`; }).join('') || `<p class="muted small">${T.noData}</p>`;
+  const rr = lab.referenceRange; const rangeStr = rr ? (rr.low != null && rr.high != null ? `${rr.low}–${rr.high}` : (rr.high != null ? `< ${rr.high}` : (rr.low != null ? `≥ ${rr.low}` : ''))) : '';
+  const mode = lab.displayMode === 'x_uln' ? ' ×ULN' : '';
+  return `<div class="bp-row"><button class="btn ghost" data-lab="__back">${T.back}</button><button class="btn ghost" data-edit="labs:${lab.id}">${T.editMarker}</button></div>
+    <div class="card"><h2>${esc(tx(lab.marker, lang))} <span class="muted small">${esc(lab.unit)}${mode}${rangeStr ? ' · ' + T.refRange + ' ' + rangeStr : ''}</span></h2>${toggle}${lineChart(lab, ui.win, lang)}</div>
+    <div class="card"><h2>${T.latest} → ${T.window[ui.win]}</h2>${rows}</div>`;
+}
+
+function lineChart(lab, win, lang) {
+  const T = STR[lang];
+  const pts = DL.labWindow(lab, win).slice().sort((a, b) => (a.date < b.date ? -1 : 1));
+  if (!pts.length) return `<p class="muted small">${T.noData}</p>`;
+  const W = 320, H = 130, padL = 30, padR = 12, padT = 12, padB = 22;
+  const times = pts.map((p) => new Date(p.date + 'T00:00:00Z').getTime());
+  const tmin = Math.min(...times), tmax = Math.max(...times), tspan = (tmax - tmin) || 1;
+  const numeric = pts.filter((p) => typeof p.value === 'number');
+  const vals = numeric.map((p) => p.value);
+  const refHigh = lab.referenceRange && lab.referenceRange.high != null ? lab.referenceRange.high : (lab.displayMode === 'x_uln' ? 1 : null);
+  if (refHigh != null) vals.push(refHigh);
+  let vmin = vals.length ? Math.min(...vals, 0) : 0, vmax = vals.length ? Math.max(...vals) : 1;
+  if (vmin === vmax) vmax = vmin + 1;
+  const x = (t) => padL + ((t - tmin) / tspan) * (W - padL - padR);
+  const y = (v) => padT + (1 - (v - vmin) / (vmax - vmin)) * (H - padT - padB);
+  const line = numeric.length > 1 ? `<polyline fill="none" stroke="#0f766e" stroke-width="2" points="${numeric.map((p) => x(new Date(p.date + 'T00:00:00Z').getTime()).toFixed(1) + ',' + y(p.value).toFixed(1)).join(' ')}"/>` : '';
+  const dots = numeric.map((p) => `<circle cx="${x(new Date(p.date + 'T00:00:00Z').getTime()).toFixed(1)}" cy="${y(p.value).toFixed(1)}" r="3" fill="#0f766e"/>`).join('');
+  const quals = pts.filter((p) => p.value == null && p.qualitative).map((p) => { const xx = x(new Date(p.date + 'T00:00:00Z').getTime()); return `<circle cx="${xx.toFixed(1)}" cy="${(H - padB).toFixed(1)}" r="3" fill="#94a3b8"/><text x="${xx.toFixed(1)}" y="${(H - padB - 6).toFixed(1)}" font-size="9" fill="#64748b" text-anchor="middle">${esc(p.qualitative)}</text>`; }).join('');
+  const refLine = refHigh != null ? `<line x1="${padL}" y1="${y(refHigh).toFixed(1)}" x2="${W - padR}" y2="${y(refHigh).toFixed(1)}" stroke="#dc2626" stroke-width="1" stroke-dasharray="4 3"/><text x="${W - padR}" y="${(y(refHigh) - 3).toFixed(1)}" font-size="9" fill="#dc2626" text-anchor="end">${lab.displayMode === 'x_uln' ? T.ulnLine : T.refRange + ' ' + refHigh}</text>` : '';
+  const yTicks = [vmin, vmax].map((v) => `<text x="2" y="${(y(v) + 3).toFixed(1)}" font-size="9" fill="#94a3b8">${Math.round(v * 100) / 100}</text>`).join('');
+  const xlabs = `<text x="${padL}" y="${H - 5}" font-size="9" fill="#94a3b8">${fmtMonth(pts[0].date, lang)}</text><text x="${W - padR}" y="${H - 5}" font-size="9" fill="#94a3b8" text-anchor="end">${fmtMonth(pts[pts.length - 1].date, lang)}</text>`;
+  return `<svg viewBox="0 0 ${W} ${H}" class="chart" role="img">${refLine}${line}${dots}${quals}${yTicks}${xlabs}</svg>`;
+}
+
+function renderTimeline(state) {
+  const lang = state.lang; const T = STR[lang]; const data = DL.getData();
+  const ms = (data.milestones || []).slice().sort((a, b) => (a.date < b.date ? -1 : 1));
+  const items = ms.map((m) => { const [icon, color] = MS_TYPE[m.type] || MS_TYPE.milestone; const hasDetail = !!tx(m.detail, lang); return `<button class="tl-item" data-ms="${m.id}"><span class="tl-dot" style="background:${color}">${icon}</span><span class="tl-body"><span class="tl-date">${fmtMonth(m.date, lang)}</span><span class="tl-label">${esc(tx(m.label, lang))}</span></span>${hasDetail ? '<span class="tl-chev">›</span>' : ''}</button>`; }).join('');
+  return add('milestones', T.addMs) + `<div class="card"><div class="tl">${items}</div></div>`;
+}
+
+function renderModal(state) {
+  if (!ui.openMs) return '';
+  const lang = state.lang; const T = STR[lang]; const data = DL.getData();
+  const m = (data.milestones || []).find((x) => x.id === ui.openMs); if (!m) return '';
+  const detail = tx(m.detail, lang);
+  return `<div class="sheet-bg" data-ms="__close"><div class="sheet" role="dialog"><div class="sheet-handle"></div><div class="muted small">${fmtDate(m.date, lang)}</div><h2>${esc(tx(m.label, lang))}</h2><p>${detail ? esc(detail) : '<span class="muted">—</span>'}</p><div class="form-actions"><button class="btn ghost" data-edit="milestones:${m.id}">✎ Edit</button><span class="spacer"></span><button class="btn" data-ms="__close">${T.close}</button></div></div></div>`;
+}
+
+function renderTimelineView(state) { return renderTimeline(state) + renderModal(state); }
+
+async function onClick(e, state, rerender) {
+  const t = e.target.closest('button, .sheet-bg');
+  if (!t) return;
+  if (t.dataset.rsub) { ui.sub = t.dataset.rsub; ui.labId = null; rerender(); return; }
+  if (t.dataset.lab) { ui.labId = t.dataset.lab === '__back' ? null : t.dataset.lab; ui.win = '1y'; rerender(); return; }
+  if (t.dataset.win) { ui.win = t.dataset.win; rerender(); return; }
+  if (t.dataset.eptype) { ui.epType = t.dataset.eptype; rerender(); return; }
+  if (t.dataset.ms !== undefined) { if (t.classList.contains('sheet-bg') && e.target !== t) return; ui.openMs = t.dataset.ms === '__close' ? null : t.dataset.ms; rerender(); return; }
+}
+
+return { ui, renderRecords, renderTimelineView, onClick };
+})();
+
+const Forms = (function(){
+
+
+
+const WD = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+const SPECS = {
+  conditions: { title: 'Condition', archive: false, fields: [
+    { key: 'name', type: 'i18n', label: 'Name' },
+    { key: 'status', type: 'select', label: 'Status', options: ['confirmed', 'under_review', 'provisionally_excluded', 'ruled_out'] },
+    { key: 'diagnosedDate', type: 'date', label: 'Diagnosed' },
+    { key: 'ruledOutDate', type: 'date', label: 'Date excluded / ruled out', showIf: (s) => s.status === 'ruled_out' || s.status === 'provisionally_excluded' },
+    { key: 'revisitNote', type: 'i18n', label: 'Re-test note (when / why to revisit)', textarea: true, showIf: (s) => s.status === 'provisionally_excluded' },
+    { key: 'specialistIds', type: 'multiselect', label: 'Specialist(s)', source: 'specialists' },
+    { key: 'notes', type: 'i18n', label: 'Notes', textarea: true },
+  ], defaults: { name: { en: '', es: '' }, status: 'under_review', diagnosedDate: null, ruledOutDate: null, revisitNote: { en: '', es: '' }, specialistIds: [], testsPending: [], notes: { en: '', es: '' } } },
+  medications: { title: 'Medication', fields: [
+    { key: 'name', type: 'i18n', label: 'Name' },
+    { key: 'dose', type: 'text', label: 'Dose' },
+    { key: 'schedule', type: 'text', label: 'Schedule (free text)' },
+    { key: 'cadence', type: 'select', label: 'Cadence', options: ['weekly', 'interval', 'prn'] },
+    { key: 'scheduledDays', type: 'weekdays', label: 'Days', showIf: (s) => s.cadence === 'weekly' },
+    { key: 'everyNDays', type: 'number', label: 'Every N days', showIf: (s) => s.cadence === 'interval' },
+    { key: 'anchorDate', type: 'date', label: 'Anchor date (a day it is due)', showIf: (s) => s.cadence === 'interval' },
+    { key: 'timeOfDay', type: 'select', label: 'Time of day', options: ['morning', 'midday', 'evening', 'prn'] },
+    { key: 'track', type: 'checkbox', label: 'Track daily (show in the Today med check-off)' },
+    { key: 'purpose', type: 'i18n', label: 'Purpose' },
+    { key: 'conditionId', type: 'select', label: 'For condition', source: 'conditions', optional: true },
+    { key: 'status', type: 'select', label: 'Status', options: ['active', 'tapering', 'stopped', 'prn'] },
+    { key: 'startDate', type: 'date', label: 'Started' },
+    { key: 'stopDate', type: 'date', label: 'Stopped' },
+    { key: 'lastDoseChange', type: 'date', label: 'Last dose change' },
+    { key: 'doseHistory', type: 'rows', label: 'Dose history', sub: [{ key: 'date', type: 'date', label: 'Date' }, { key: 'dose', type: 'text', label: 'Dose' }, { key: 'note', type: 'text', label: 'Note' }] },
+    { key: 'notes', type: 'i18n', label: 'Notes', textarea: true },
+  ], defaults: { name: { en: '', es: '' }, dose: '', schedule: '', cadence: 'weekly', scheduledDays: ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'], timeOfDay: 'morning', track: true, purpose: { en: '', es: '' }, conditionId: null, status: 'active', startDate: null, stopDate: null, lastDoseChange: null, doseHistory: [], notes: { en: '', es: '' } } },
+  episodes: { title: 'Episode', fields: [
+    { key: 'name', type: 'i18n', label: 'Name' },
+    { key: 'type', type: 'select', label: 'Type', options: ['cold_flu', 'infection', 'gi', 'flare', 'other'] },
+    { key: 'startDate', type: 'date', label: 'Start' },
+    { key: 'endDate', type: 'date', label: 'End (blank = ongoing)' },
+    { key: 'showOnTimeline', type: 'checkbox', label: 'Show on timeline' },
+    { key: 'note', type: 'i18n', label: 'Note', textarea: true },
+  ], defaults: { name: { en: '', es: '' }, type: 'cold_flu', startDate: null, endDate: null, showOnTimeline: false, note: { en: '', es: '' } } },
+  labs: { title: 'Lab marker', fields: [
+    { key: 'marker', type: 'i18n', label: 'Marker' },
+    { key: 'unit', type: 'text', label: 'Unit' },
+    { key: 'group', type: 'datalist', label: 'Group (pick existing or type a new one)', source: 'labGroups' },
+    { key: 'displayMode', type: 'select', label: 'Display', options: ['raw', 'x_uln'] },
+    { key: 'posNeg', type: 'checkbox', label: 'Show positive / negative (antibody marker)' },
+    { key: 'referenceRange.low', type: 'number', label: 'Ref range low' },
+    { key: 'referenceRange.high', type: 'number', label: 'Ref range high' },
+    { key: 'results', type: 'rows', label: 'Results', sub: [{ key: 'date', type: 'date', label: 'Date' }, { key: 'value', type: 'number', label: 'Value' }, { key: 'qualitative', type: 'text', label: 'Qual.' }] },
+  ], defaults: { marker: { en: '', es: '' }, unit: '', group: '', displayMode: 'raw', posNeg: false, referenceRange: null, results: [] } },
+  questions: { title: 'Question', fields: [
+    { key: 'text', type: 'i18n', label: 'Question' },
+    { key: 'specialistId', type: 'select', label: 'Specialist', source: 'specialists' },
+    { key: 'conditionId', type: 'select', label: 'Condition', source: 'conditions', optional: true },
+    { key: 'status', type: 'select', label: 'Status', options: ['open', 'answered'] },
+    { key: 'answerNote', type: 'i18n', label: 'Answer note', textarea: true },
+  ], defaults: { text: { en: '', es: '' }, specialistId: '', conditionId: null, status: 'open', createdDate: new Date().toISOString().slice(0, 10), answerNote: { en: '', es: '' } } },
+  milestones: { title: 'Milestone', fields: [
+    { key: 'date', type: 'date', label: 'Date' },
+    { key: 'type', type: 'select', label: 'Type', options: ['diagnosis', 'medication', 'new_symptom', 'episode', 'milestone'] },
+    { key: 'label', type: 'i18n', label: 'Short label' },
+    { key: 'detail', type: 'i18n', label: 'Detail', textarea: true },
+  ], defaults: { date: null, type: 'milestone', label: { en: '', es: '' }, detail: { en: '', es: '' }, linkedId: null } },
+  ruledOut: { title: 'Ruled-out / excluded condition', fields: [
+    { key: 'condition', type: 'i18n', label: 'Condition' },
+    { key: 'how', type: 'i18n', label: 'How ruled out' },
+    { key: 'date', type: 'date', label: 'Date ruled out' },
+    { key: 'status', type: 'select', label: 'Status', options: ['ruled_out', 'provisionally_excluded'] },
+    { key: 'revisitNote', type: 'i18n', label: 'Re-test note (when / why to revisit)', textarea: true, showIf: (s) => s.status === 'provisionally_excluded' },
+  ], defaults: { condition: { en: '', es: '' }, how: { en: '', es: '' }, date: null, status: 'ruled_out', revisitNote: { en: '', es: '' } } },
+  appointments: { title: 'Appointment', fields: [
+    { key: 'date', type: 'date', label: 'Date' },
+    { key: 'specialistId', type: 'select', label: 'Specialist', source: 'specialists' },
+    { key: 'note', type: 'i18n', label: 'Note', textarea: true },
+  ], defaults: { date: null, specialistId: '', note: { en: '', es: '' } } },
+  specialists: { title: 'Specialist', fields: [
+    { key: 'name', type: 'text', label: 'Name (English)' },
+    { key: 'es', type: 'text', label: 'Name (Spanish)' },
+    { key: 'doctor', type: 'text', label: 'Doctor name' },
+    { key: 'clinic', type: 'text', label: 'Clinic / centre' },
+  ], defaults: { name: '', es: '', doctor: '', clinic: '' } },
+  symptomTypes: { title: 'Symptom', archive: true, fields: [
+    { key: 'name', type: 'i18n', label: 'Name' },
+    { key: 'trackBy', type: 'select', label: 'Track by', options: ['single', 'locations'] },
+    { key: 'overall', type: 'select', label: 'Overall (located)', options: ['max', 'mean'], showIf: (s) => s.trackBy === 'locations' },
+    { key: 'locations', type: 'locrows', label: 'Locations', showIf: (s) => s.trackBy === 'locations' },
+    { key: 'archived', type: 'checkbox', label: 'Archived (hidden from daily log)' },
+  ], defaults: { name: { en: '', es: '' }, trackBy: 'single', archived: false, locations: [] } },
+};
+
+let fs = null, fcol = null, fmode = null, fconfirm = false;
+function isOpen() { return fcol != null; }
+function open(collection, id, prefill) {
+  fcol = collection; fconfirm = false;
+  const spec = SPECS[collection];
+  fs = id ? JSON.parse(JSON.stringify(DL.getRecord(collection, id) || {})) : JSON.parse(JSON.stringify(spec.defaults || {}));
+  fmode = id ? 'edit' : 'add';
+  if (!id && prefill) Object.assign(fs, prefill);
+  if (collection === 'medications') fs.cadence = fs.everyNDays != null ? 'interval' : (fs.scheduledDays === 'prn' ? 'prn' : 'weekly');
+}
+function close() { fcol = null; fs = null; fmode = null; fconfirm = false; }
+
+function gv(o, k) { return k.split('.').reduce((a, p) => (a == null ? a : a[p]), o); }
+function sv(o, k, v) { const ps = k.split('.'); let t = o; for (let i = 0; i < ps.length - 1; i++) { t[ps[i]] = t[ps[i]] || {}; t = t[ps[i]]; } t[ps[ps.length - 1]] = v; }
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
+
+function srcOptions(source) {
+  const data = DL.getData();
+  if (source === 'specialists') return (data.specialists || []).map((s) => ({ v: s.id, l: s.name }));
+  if (source === 'conditions') return (data.conditions || []).map((c) => ({ v: c.id, l: c.name.en }));
+  return [];
+}
+
+function field(f) {
+  if (f.showIf && !f.showIf(fs)) return '';
+  const L = `<div class="f-label">${f.label}</div>`;
+  if (f.type === 'text' || f.type === 'number') return `<div class="f">${L}<input type="${f.type === 'number' ? 'number' : 'text'}" step="any" data-fkey="${f.key}" value="${esc(gv(fs, f.key) ?? '')}"></div>`;
+  if (f.type === 'date') return `<div class="f">${L}<input type="date" data-fkey="${f.key}" value="${esc(gv(fs, f.key) ?? '')}"></div>`;
+  if (f.type === 'checkbox') return `<div class="f f-row"><label><input type="checkbox" data-fkey="${f.key}" data-bool ${gv(fs, f.key) ? 'checked' : ''}> ${f.label}</label></div>`;
+  if (f.type === 'i18n') { const v = gv(fs, f.key) || { en: '', es: '' }; const tag = f.textarea ? 't' : 'i'; const mk = (lang) => f.textarea ? `<textarea data-fkey="${f.key}" data-lang="${lang}" rows="2">${esc(v[lang])}</textarea>` : `<input type="text" data-fkey="${f.key}" data-lang="${lang}" value="${esc(v[lang])}">`; return `<div class="f">${L}<div class="f-i18n"><span>EN</span>${mk('en')}<span>ES</span>${mk('es')}</div></div>`; }
+  if (f.type === 'datalist') { const opts = (f.source === 'labGroups' ? DL.labGroups() : []).map((g) => `<option value="${esc(g)}"></option>`).join(''); const id = 'dl_' + f.key.replace(/\./g, '_'); return `<div class="f">${L}<input type="text" list="${id}" data-fkey="${f.key}" value="${esc(gv(fs, f.key) ?? '')}"><datalist id="${id}">${opts}</datalist></div>`; }
+  if (f.type === 'select') { const cur = gv(fs, f.key); const blank = f.optional ? '<option value="">—</option>' : ''; const opts = f.options ? f.options.map((o) => `<option value="${o}" ${cur === o ? 'selected' : ''}>${o}</option>`).join('') : srcOptions(f.source).map((o) => `<option value="${o.v}" ${cur === o.v ? 'selected' : ''}>${esc(o.l)}</option>`).join(''); return `<div class="f">${L}<select data-fkey="${f.key}">${blank}${opts}</select></div>`; }
+  if (f.type === 'multiselect') { const cur = gv(fs, f.key) || []; const boxes = srcOptions(f.source).map((o) => `<label class="f-chk"><input type="checkbox" data-fkey="${f.key}" data-msval="${o.v}" ${cur.includes(o.v) ? 'checked' : ''}> ${esc(o.l)}</label>`).join(''); return `<div class="f">${L}<div class="f-chks">${boxes}</div></div>`; }
+  if (f.type === 'weekdays') { const cur = Array.isArray(gv(fs, f.key)) ? gv(fs, f.key) : []; const boxes = WD.map((d) => `<label class="f-chk"><input type="checkbox" data-fkey="${f.key}" data-wd="${d}" ${cur.includes(d) ? 'checked' : ''}> ${d}</label>`).join(''); return `<div class="f">${L}<div class="f-chks">${boxes}</div></div>`; }
+  if (f.type === 'rows') { const rows = (gv(fs, f.key) || []).map((r, i) => { const subs = f.sub.map((sf) => { if (sf.type === 'i18n') { const v = r[sf.key] || { en: '', es: '' }; return `<input type="text" placeholder="${sf.label} EN" data-row="${f.key}" data-idx="${i}" data-sub="${sf.key}" data-lang="en" value="${esc(v.en)}"><input type="text" placeholder="${sf.label} ES" data-row="${f.key}" data-idx="${i}" data-sub="${sf.key}" data-lang="es" value="${esc(v.es)}">`; } return `<input type="${sf.type === 'number' ? 'number' : (sf.type === 'date' ? 'date' : 'text')}" step="any" placeholder="${sf.label}" data-row="${f.key}" data-idx="${i}" data-sub="${sf.key}" value="${esc(r[sf.key] ?? '')}">`; }).join(''); return `<div class="f-rowitem">${subs}<button class="btn-sm" data-formaction="delrow" data-row="${f.key}" data-idx="${i}">×</button></div>`; }).join(''); return `<div class="f">${L}${rows}<button class="btn ghost" data-formaction="addrow" data-row="${f.key}">+ Add</button></div>`; }
+  if (f.type === 'locrows') { const rows = (gv(fs, f.key) || []).map((r, i) => { const v = r.name || { en: '', es: '' }; return `<div class="f-rowitem"><input type="text" placeholder="EN" data-row="${f.key}" data-idx="${i}" data-sub="name" data-lang="en" value="${esc(v.en)}"><input type="text" placeholder="ES" data-row="${f.key}" data-idx="${i}" data-sub="name" data-lang="es" value="${esc(v.es)}"><label class="f-chk"><input type="checkbox" data-row="${f.key}" data-idx="${i}" data-sub="archived" data-bool ${r.archived ? 'checked' : ''}> arch.</label></div>`; }).join(''); return `<div class="f">${L}${rows}<button class="btn ghost" data-formaction="addrow" data-row="${f.key}">+ Add location</button></div>`; }
+  return '';
+}
+
+function renderForm() {
+  if (!fcol) return '';
+  const spec = SPECS[fcol];
+  const body = spec.fields.map(field).join('');
+  const delLabel = fconfirm ? 'Confirm delete' : (spec.archive ? 'Archive' : 'Delete');
+  const delBtn = fmode === 'edit' ? `<button class="btn ${fconfirm ? '' : 'ghost'}" data-formaction="delete" style="${fconfirm ? 'background:var(--err)' : 'color:var(--err)'}">${delLabel}</button>` : '';
+  return `<div class="modal-bg" data-formaction="cancelbg"><div class="modal modal-form" role="dialog">
+    <h2>${fmode === 'add' ? 'Add' : 'Edit'} ${spec.title}</h2>
+    <div class="form-body">${body}</div>
+    <div class="form-actions">${delBtn}<span class="spacer"></span><button class="btn ghost" data-formaction="cancel">Cancel</button><button class="btn" data-formaction="save">Save</button></div>
+  </div></div>`;
+}
+
+function onInput(e) {
+  if (!fcol) return;
+  const el = e.target; const k = el.dataset.fkey; const rowKey = el.dataset.row;
+  if (rowKey) {
+    const idx = Number(el.dataset.idx); const sub = el.dataset.sub; const lang = el.dataset.lang;
+    fs[rowKey] = fs[rowKey] || []; fs[rowKey][idx] = fs[rowKey][idx] || {};
+    const row = fs[rowKey][idx];
+    if (lang) { row[sub] = row[sub] || { en: '', es: '' }; row[sub][lang] = el.value; }
+    else if (el.dataset.bool !== undefined) row[sub] = el.checked;
+    else row[sub] = el.value;
+    return;
+  }
+  if (k === undefined) return;
+  if (el.dataset.wd) { const arr = Array.isArray(fs[k]) ? fs[k] : []; const d = el.dataset.wd; fs[k] = el.checked ? [...new Set([...arr, d])] : arr.filter((x) => x !== d); return; }
+  if (el.dataset.msval) { const arr = Array.isArray(fs[k]) ? fs[k] : []; const v = el.dataset.msval; fs[k] = el.checked ? [...new Set([...arr, v])] : arr.filter((x) => x !== v); return; }
+  const lang = el.dataset.lang;
+  if (lang) { const cur = gv(fs, k) || { en: '', es: '' }; cur[lang] = el.value; sv(fs, k, cur); return; }
+  if (el.dataset.bool !== undefined) { sv(fs, k, el.checked); return; }
+  if (el.type === 'number') { sv(fs, k, el.value === '' ? null : Number(el.value)); return; }
+  sv(fs, k, el.value === '' ? (el.type === 'date' ? null : el.value) : el.value);
+}
+
+function postprocess() {
+  if (fcol === 'medications') {
+    if (fs.cadence === 'prn') { fs.scheduledDays = 'prn'; fs.everyNDays = undefined; fs.anchorDate = undefined; }
+    else if (fs.cadence === 'interval') { fs.scheduledDays = null; }
+    else { fs.everyNDays = undefined; fs.anchorDate = undefined; if (!Array.isArray(fs.scheduledDays)) fs.scheduledDays = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']; }
+    delete fs.cadence;
+    Object.keys(fs).forEach((k) => fs[k] === undefined && delete fs[k]);
+    if (!Array.isArray(fs.doseHistory)) fs.doseHistory = [];
+    if (fs.lastDoseChange === undefined) fs.lastDoseChange = null;
+  }
+  if (fcol === 'labs') {
+    const rr = fs.referenceRange;
+    if (rr && rr.low == null && rr.high == null) fs.referenceRange = null;
+    (fs.results || []).forEach((r) => { if (r.value === '' || r.value === undefined) r.value = null; else if (r.value != null) r.value = Number(r.value); if (!r.qualitative) r.qualitative = null; });
+  }
+  if (fcol === 'symptomTypes') {
+    (fs.locations || []).forEach((l) => { if (!l.id) l.id = DL.genId('loc'); if (!l.name) l.name = { en: '', es: '' }; if (l.addedDate === undefined) l.addedDate = new Date().toISOString().slice(0, 10); l.archived = !!l.archived; });
+    if (fs.trackBy === 'single') fs.locations = fs.locations || [];
+  }
+}
+
+async function onClick(e, rerender) {
+  if (!fcol) return false;
+  const t = e.target.closest('[data-formaction]');
+  if (!t) return true;
+  const a = t.dataset.formaction;
+  if (a === 'cancel' || (a === 'cancelbg' && e.target === t)) { close(); rerender(); return true; }
+  if (a === 'addrow') { fs[t.dataset.row] = fs[t.dataset.row] || []; fs[t.dataset.row].push({}); rerender(); return true; }
+  if (a === 'delrow') { fs[t.dataset.row].splice(Number(t.dataset.idx), 1); rerender(); return true; }
+  if (a === 'delete') {
+    if (!fconfirm) { fconfirm = true; rerender(); return true; }
+    const spec = SPECS[fcol];
+    if (spec.archive) DL.archiveSymptomType(fs.id, true); else DL.remove(fcol, fs.id);
+    await DL.persist(); close(); rerender(); return true;
+  }
+  if (a === 'save') { postprocess(); DL.upsert(fcol, fs); await DL.persist(); close(); rerender(); return true; }
+  return true;
+}
+
+return { isOpen, open, close, renderForm, onInput, onClick };
+})();
+
+const OneDrive = (function(){
+
+// onedrive.js — Microsoft sign-in (MSAL) + OneDrive (Graph) read/write source.
+// Plugs into the data-layer source interface: { name, read(), write(data) }.
+// MSAL is loaded globally from a CDN <script> in index.html as window.msal.
+const LS_CLIENT = 'ht.od.clientId';
+const LS_PATH = 'ht.od.path';
+const DEFAULT_PATH = 'Apps/Atlast/health-data.json';
+const SCOPES = ['Files.ReadWrite', 'User.Read'];
+
+function getClientId() { try { return localStorage.getItem(LS_CLIENT) || ''; } catch { return ''; } }
+function setClientId(v) { try { localStorage.setItem(LS_CLIENT, (v || '').trim()); } catch {} _pca = null; _inited = false; _account = null; }
+function getFilePath() { try { return localStorage.getItem(LS_PATH) || DEFAULT_PATH; } catch { return DEFAULT_PATH; } }
+function setFilePath(v) { try { localStorage.setItem(LS_PATH, (v || '').trim() || DEFAULT_PATH); } catch {} }
+function isConfigured() { return !!getClientId(); }
+
+let _templateProvider = () => ({ meta: { version: 1, updatedAt: '', defaultLanguage: 'en', severityScaleMax: 4, patient: { name: '', dob: '', city: '' } } });
+function setTemplateProvider(fn) { if (typeof fn === 'function') _templateProvider = fn; }
+
+let _pca = null, _inited = false, _account = null, _etag = null;
+function msalAvailable() { return typeof window !== 'undefined' && window.msal && window.msal.PublicClientApplication; }
+
+async function pca() {
+  const clientId = getClientId();
+  if (!clientId) throw new Error('NO_CLIENT_ID');
+  if (!msalAvailable()) throw new Error('MSAL library not loaded');
+  if (!_pca) {
+    _pca = new window.msal.PublicClientApplication({
+      auth: { clientId, authority: 'https://login.microsoftonline.com/consumers', redirectUri: location.origin + location.pathname },
+      cache: { cacheLocation: 'localStorage' },
+    });
+  }
+  if (!_inited) { await _pca.initialize(); _inited = true; const accts = _pca.getAllAccounts(); if (accts && accts.length) _account = accts[0]; }
+  return _pca;
+}
+
+async function signIn() {
+  const p = await pca();
+  const res = await p.loginPopup({ scopes: SCOPES });
+  _account = res.account || (p.getAllAccounts()[0] || null);
+  return _account;
+}
+async function signOut() { if (_pca && _account) { try { await _pca.logoutPopup({ account: _account }); } catch {} } _account = null; }
+async function refreshAccount() { try { await pca(); } catch {} return _account; }
+function isSignedIn() { return !!_account; }
+function accountName() { return (_account && (_account.username || _account.name)) || ''; }
+
+async function token() {
+  const p = await pca();
+  const req = { scopes: SCOPES, account: _account };
+  try { const r = await p.acquireTokenSilent(req); return r.accessToken; }
+  catch (e) { const r = await p.acquireTokenPopup(req); _account = r.account || _account; return r.accessToken; }
+}
+
+function pathUrl(path) { return 'https://graph.microsoft.com/v1.0/me/drive/root:/' + path.replace(/^\/+/, '').split('/').map(encodeURIComponent).join('/'); }
+function dataUrl() { return pathUrl(getFilePath()); }
+function bakUrl() { return pathUrl(getFilePath().replace(/\.json$/, '') + '.bak.json'); }
+function summaryUrl() { return pathUrl(getFilePath().replace(/[^/]+$/, 'health-summary.md')); }
+
+async function gfetch(url, opts = {}) {
+  const t = await token();
+  const headers = Object.assign({}, opts.headers || {}, { Authorization: 'Bearer ' + t });
+  return fetch(url, Object.assign({}, opts, { headers }));
+}
+
+const oneDriveSource = {
+  name: 'OneDrive',
+  async read() {
+    if (!getClientId()) { return { data: _templateProvider(), etag: null }; }
+    const p = await pca();
+    if (!_account) { return { data: _templateProvider(), etag: null }; }
+    const res = await gfetch(dataUrl() + ':/content');
+    if (res.status === 404) { _etag = null; return { data: _templateProvider(), etag: null }; }
+    if (!res.ok) throw new Error('OneDrive read failed (HTTP ' + res.status + ')');
+    _etag = res.headers.get('etag');
+    const data = await res.json();
+    return { data, etag: _etag };
+  },
+  async write(data) {
+    if (!_account) throw new Error('Not signed in');
+    const body = JSON.stringify(data, null, 2);
+    const headers = { 'Content-Type': 'application/json' };
+    if (_etag) headers['If-Match'] = _etag;
+    let res = await gfetch(dataUrl() + ':/content', { method: 'PUT', headers, body });
+    if (res.status === 412) {
+      try { const cur = await gfetch(dataUrl() + ':/content'); if (cur.ok) { const txt = await cur.text(); await gfetch(bakUrl() + ':/content', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: txt }); } } catch {}
+      res = await gfetch(dataUrl() + ':/content', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body });
+    }
+    if (!res.ok) throw new Error('OneDrive write failed (HTTP ' + res.status + ')');
+    const j = await res.json().catch(() => null);
+    _etag = (j && (j.eTag || j.cTag)) || _etag;
+    try { await writeSummary(data); } catch (e) { console.warn('summary mirror failed', e); }
+    return { ok: true };
+  },
+};
+
+function tx(f, lang) { if (f == null) return ''; if (typeof f === 'string') return f; return (f[lang] || f.en || '').trim(); }
+function buildSummary(d) {
+  const L = 'en'; const lines = [];
+  lines.push('# Health summary (auto-generated — read only)'); lines.push('');
+  lines.push('_Mirror of health-data.json. Do not edit by hand; edit the app or the JSON._'); lines.push('');
+  const active = (d.conditions || []).filter((c) => c.status === 'confirmed' || c.status === 'under_review');
+  if (active.length) { lines.push('## Active conditions'); active.forEach((c) => lines.push('- ' + tx(c.name, L) + ' — ' + c.status + (c.diagnosedDate ? ' (dx ' + c.diagnosedDate + ')' : ''))); lines.push(''); }
+  const meds = (d.medications || []).filter((m) => m.status !== 'stopped');
+  if (meds.length) { lines.push('## Current medications'); meds.forEach((m) => lines.push('- ' + tx(m.name, L) + ' ' + (m.dose || '') + ' — ' + (m.schedule || ''))); lines.push(''); }
+  const excl = (d.ruledOut || []);
+  if (excl.length) { lines.push('## Ruled out / excluded'); excl.forEach((r) => lines.push('- ' + tx(r.condition, L) + ' — ' + tx(r.how, L) + (r.status === 'provisionally_excluded' ? ' (may re-test)' : ''))); lines.push(''); }
+  const ongoing = (d.episodes || []).filter((e) => e.endDate == null);
+  if (ongoing.length) { lines.push('## Ongoing episodes'); ongoing.forEach((e) => lines.push('- ' + tx(e.name, L) + ' (since ' + e.startDate + ')')); lines.push(''); }
+  if (d.meta && d.meta.updatedAt) lines.push('_Updated ' + d.meta.updatedAt + '_');
+  return lines.join('\n');
+}
+async function writeSummary(data) { await gfetch(summaryUrl() + ':/content', { method: 'PUT', headers: { 'Content-Type': 'text/markdown' }, body: buildSummary(data) }); }
+
+return { getClientId, setClientId, getFilePath, setFilePath, isConfigured, setTemplateProvider, signIn, signOut, refreshAccount, isSignedIn, accountName, oneDriveSource };
+})();
+
+(function(){
+const { loadData, getData, getLoadMeta, parseReport, subscribe, resetToSeed, specialistLabel, episodeFrequency, latestLab, tx, exportJSON, importData, setActiveSource } = DL;
+const { COLLECTIONS } = SCHEMA;
+OneDrive.setTemplateProvider(function(){ return JSON.parse(JSON.stringify(__HT_TEMPLATE__)); });
+setActiveSource(OneDrive.oneDriveSource);
+
+
+
+
+
+
+
+const state = { lang: 'en', tab: 'today', showData: false, date: Today.todayISO() };
+const screen = document.getElementById('screen');
+const titleEl = document.getElementById('screenTitle');
+const statusStrip = document.getElementById('statusStrip');
+const TAB_TITLES = { today: 'Today', appointment: 'Appointment', records: 'Records', timeline: 'Timeline' };
+const TAB_TITLES_ES = { today: 'Hoy', appointment: 'Cita', records: 'Registros', timeline: 'Cronología' };
+(async function boot() {
+  registerSW(); wireChrome();
+  if (OneDrive.isConfigured()) { setActiveSource(OneDrive.oneDriveSource); try { await OneDrive.refreshAccount(); } catch {} setStatus('Loading from OneDrive …'); }
+  else { setStatus('Loading data …'); }
+  try { const { report, meta } = await loadData(); const v = report.ok ? 'Loaded ✓ — ' + meta.source + '. ' + report.warnings.length + ' note(s).' : 'Loaded with ' + report.errors.length + ' error(s).'; setStatus(v, report.ok ? 'ok' : 'err'); setTimeout(() => setStatus(null), report.ok ? 3500 : 0); }
+  catch (err) { setStatus('Could not load data: ' + err.message, 'err'); }
+  render();
+})();
+subscribe(() => render());
+function wireChrome() {
+  document.querySelectorAll('.lang-btn').forEach((b) => b.addEventListener('click', () => setLang(b.dataset.lang)));
+  document.querySelectorAll('.tab').forEach((b) => b.addEventListener('click', () => { state.showData = false; setTab(b.dataset.tab); }));
+  document.getElementById('dataBtn').addEventListener('click', () => { state.showData = !state.showData; render(); });
+  screen.addEventListener('click', async (e) => {
+    if (e.target.id === 'resetSeedBtn') { resetToSeed().then(render); return; }
+    if (e.target.id === 'exportBtn') { downloadJSON(); return; }
+    if (e.target.id === 'odSaveCfg') { const c = document.getElementById('odClientId'); const p = document.getElementById('odPath'); OneDrive.setClientId(c ? c.value : ''); if (p) OneDrive.setFilePath(p.value); setActiveSource(OneDrive.isConfigured() ? OneDrive.oneDriveSource : null); setStatus('Saved sign-in settings ✓', 'ok'); setTimeout(() => setStatus(null), 2500); render(); return; }
+    if (e.target.id === 'odSignIn') { (async () => { try { setStatus('Opening Microsoft sign-in…'); await OneDrive.signIn(); setActiveSource(OneDrive.oneDriveSource); await loadData(); setStatus('Signed in — synced ✓', 'ok'); setTimeout(() => setStatus(null), 3000); } catch (err) { setStatus('Sign-in failed: ' + err.message, 'err'); } render(); })(); return; }
+    if (e.target.id === 'odSignOut') { (async () => { try { await OneDrive.signOut(); } catch {} setStatus('Signed out'); setTimeout(() => setStatus(null), 2000); render(); })(); return; }
+    if (e.target.id === 'odSync') { (async () => { try { setStatus('Syncing…'); await loadData(); setStatus('Synced ✓', 'ok'); setTimeout(() => setStatus(null), 2500); } catch (err) { setStatus('Sync failed: ' + err.message, 'err'); } render(); })(); return; }
+    if (Forms.isOpen()) { await Forms.onClick(e, render); return; }
+    const ed = e.target.closest('[data-add],[data-edit]');
+    if (ed) { if (ed.dataset.add) { const pf = ed.dataset.prefill ? JSON.parse(ed.dataset.prefill) : null; Forms.open(ed.dataset.add, null, pf); } else { const [c, id] = ed.dataset.edit.split(':'); Forms.open(c, id || null); } render(); return; }
+    if (state.showData) return;
+    if (state.tab === 'today') Today.onClick(e, state, render);
+    else if (state.tab === 'appointment') Appt.onClick(e, state, render);
+    else if (state.tab === 'records' || state.tab === 'timeline') Records.onClick(e, state, render);
+  });
+  const onEdit = (e) => { if (Forms.isOpen()) { Forms.onInput(e); return; } if (!state.showData && state.tab === 'today') Today.onInput(e, state, render); };
+  screen.addEventListener('input', onEdit);
+  screen.addEventListener('change', async (e) => {
+    if (e.target.id === 'importFile') { const f = e.target.files[0]; if (!f) return; try { const r = await importData(await f.text()); setStatus(r.ok ? 'Imported ✓ (' + r.warnings.length + ' notes)' : 'Imported with ' + r.errors.length + ' errors', r.ok ? 'ok' : 'err'); } catch (err) { setStatus('Import failed: ' + err.message, 'err'); } render(); return; }
+    if (Forms.isOpen()) { Forms.onInput(e); return; }
+    if (!state.showData && state.tab === 'today') Today.onChange(e, state, render);
+  });
+}
+function setLang(lang) { state.lang = lang; document.documentElement.lang = lang; document.querySelectorAll('.lang-btn').forEach((b) => b.classList.toggle('is-active', b.dataset.lang === lang)); render(); }
+function setTab(tab) { state.tab = tab; document.querySelectorAll('.tab').forEach((b) => b.classList.toggle('is-active', b.dataset.tab === tab)); render(); }
+function setStatus(msg, kind) { if (!msg) { statusStrip.hidden = true; return; } statusStrip.hidden = false; statusStrip.className = 'status-strip' + (kind ? ' ' + kind : ''); statusStrip.textContent = msg; }
+function render() {
+  const titles = state.lang === 'es' ? TAB_TITLES_ES : TAB_TITLES;
+  let content;
+  if (state.showData) { titleEl.textContent = 'Data'; content = renderDataScreen(); }
+  else { titleEl.textContent = titles[state.tab] || '';
+    if (state.tab === 'today') content = Today.renderToday(state);
+    else if (state.tab === 'appointment') content = Appt.renderAppointment(state);
+    else if (state.tab === 'records') content = Records.renderRecords(state);
+    else if (state.tab === 'timeline') content = Records.renderTimelineView(state);
+    else content = '';
+  }
+  screen.innerHTML = content + (Forms.isOpen() ? Forms.renderForm() : '');
+}
+function renderDataScreen() {
+  const data = getData(); const meta = getLoadMeta();
+  if (!data) return odPanel() + '<div class="card"><p class="muted">No data loaded.</p></div>';
+  const pr = parseReport(); const v = meta?.validation || { ok: true, errors: [], warnings: [] }; const lang = state.lang;
+  const statsHtml = COLLECTIONS.map((c) => '<div class="stat"><div class="n">' + pr.counts[c] + '</div><div class="k">' + c + '</div></div>').join('');
+  const verdict = v.ok ? '<span class="badge ok">SCHEMA OK</span>' : '<span class="badge err">' + v.errors.length + ' ERRORS</span>';
+  const errHtml = v.errors.length ? '<details class="msgs" open><summary>' + v.errors.length + ' error(s)</summary><ul class="msglist">' + v.errors.map((e) => '<li>✗ ' + escapeHtml(e) + '</li>').join('') + '</ul></details>' : '';
+  const warnHtml = v.warnings.length ? '<details class="msgs"><summary>' + v.warnings.length + ' note(s)</summary><ul class="msglist">' + v.warnings.map((w) => '<li>! ' + escapeHtml(w) + '</li>').join('') + '</ul></details>' : '';
+  return odPanel() + '<div class="card"><h2>Parse report ' + verdict + '</h2>' +
+    '<div class="kv"><span class="k">Source</span><span class="v">' + escapeHtml(pr.source || '') + '</span></div>' +
+    errHtml + warnHtml + '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;"><button id="exportBtn" class="btn">⤓ Export data</button><label class="btn ghost" style="cursor:pointer">⤒ Import data<input id="importFile" type="file" accept=".json,application/json" hidden></label><button id="resetSeedBtn" class="btn ghost">↺ Reset to seed</button></div><p class="muted small" style="margin-top:8px">Export saves everything to a <b>health-data.json</b> file you can keep or send to lock in your work. Import loads one back.</p></div>' +
+    '<div class="card"><h2>Records parsed</h2><div class="grid">' + statsHtml + '</div></div>';
+}
+function odPanel() {
+  const configured = OneDrive.isConfigured();
+  const signedIn = OneDrive.isSignedIn();
+  const status = !configured ? 'Not set up yet — paste your Client ID below, then sign in.'
+    : (signedIn ? ('Signed in as ' + escapeHtml(OneDrive.accountName()) + ' · changes sync to OneDrive automatically.')
+                : 'Set up. Tap “Sign in with Microsoft” to start syncing.');
+  const authBtn = configured ? (signedIn
+    ? '<button id="odSignOut" class="btn ghost">Sign out</button><button id="odSync" class="btn">Sync now</button>'
+    : '<button id="odSignIn" class="btn">Sign in with Microsoft</button>') : '';
+  return '<div class="card"><h2>OneDrive sync</h2>' +
+    '<p class="muted small">' + status + '</p>' +
+    '<div class="f"><div class="f-label">Microsoft Client ID</div><input id="odClientId" type="text" value="' + escapeHtml(OneDrive.getClientId()) + '" placeholder="paste the Application (client) ID"></div>' +
+    '<details class="msgs"><summary>Advanced: file location in OneDrive</summary><div class="f" style="margin-top:8px"><input id="odPath" type="text" value="' + escapeHtml(OneDrive.getFilePath()) + '"></div></details>' +
+    '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;"><button id="odSaveCfg" class="btn ghost">Save settings</button>' + authBtn + '</div></div>';
+}
+function escapeHtml(s) { return String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
+function downloadJSON() { const blob = new Blob([exportJSON()], { type: 'application/json' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'health-data.json'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(a.href); }
+function registerSW() { if ('serviceWorker' in navigator) { navigator.serviceWorker.register('sw.js').catch((e) => console.warn('SW register failed', e)); } }
+
+})();
+</script>
+</body>
+</html>
