@@ -169,6 +169,16 @@ ul.tight { margin: 4px 0 0; padding-left: 18px; } ul.tight li { padding: 1px 0; 
 .bp-med-name { font-weight:600; font-size:14px; }
 .bp-med-dose { font-size:13.5px; color:var(--ink); text-align:right; }
 .med-status { font-size:11px; background:#fef3c7; color:var(--warn); border-radius:999px; padding:1px 8px; margin-left:7px; font-weight:600; }
+.med-sec { font-size:11.5px; text-transform:uppercase; letter-spacing:.06em; color:var(--teal-d); font-weight:700; background:var(--chip); padding:6px 14px; margin:20px -14px 0; border-top:1px solid var(--line); border-bottom:1px solid var(--line); }
+.med-sec:first-of-type { margin-top:10px; }
+.med-row { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; padding:9px 0; border-top:1px solid #f4f6f7; }
+.med-row:first-of-type, .med-sec + .med-row { border-top:0; }
+.med-l { min-width:0; }
+.med-sub { font-size:12.5px; color:var(--muted); margin-top:1px; }
+.med-sub .med-dose { color:var(--ink); font-weight:600; }
+.med-sched { white-space:nowrap; text-align:right; color:var(--ink); flex-shrink:0; }
+.med-sched .sched-x { font-size:14px; font-weight:600; font-variant-numeric:tabular-nums; }
+.med-sched .freq { display:block; font-weight:400; color:var(--muted); font-size:12px; margin-top:1px; }
 .tick-btn { width:34px; height:34px; border-radius:50%; border:1px solid #bbf7d0; background:#f0fdf4; color:#15803d; font-size:16px; font-weight:700; cursor:pointer; }
 .tick-btn:hover { background:#dcfce7; }
 .q-row.answering { flex-direction:column; align-items:stretch; gap:8px; }
@@ -775,6 +785,45 @@ function onInput(e, state) {
 return { ui, todayISO, renderToday, onClick, onChange, onInput };
 })();
 
+// ---- Shared doctor-readable medication schedule (used by Prep + Records) ----
+// Returns { xxx, freq }: an X-X-X dosing string (morning-midday-evening) plus a
+// frequency label for anything that isn't a plain daily pattern.
+const MED_FREQ_STR = {
+  en: { prnLabel: 'PRN', everyOther: 'every other day', everyN: 'every {n} days',
+        wd: { mon: 'Mon', tue: 'Tue', wed: 'Wed', thu: 'Thu', fri: 'Fri', sat: 'Sat', sun: 'Sun' } },
+  es: { prnLabel: 'PRN', everyOther: 'días alternos', everyN: 'cada {n} días',
+        wd: { mon: 'Lun', tue: 'Mar', wed: 'Mié', thu: 'Jue', fri: 'Vie', sat: 'Sáb', sun: 'Dom' } },
+};
+const MED_SLOT_BY_TIME = { morning: 0, midday: 1, evening: 2, bedtime: 2, prn: null };
+function medUnitCount(dose) {
+  // Use the leading number only when it's a tablet/capsule count, not a strength (mg/mcg).
+  const mt = String(dose || '').match(/^(\d+(?:[.,]\d+)?)\s*(tabs?|tablets?|caps?|capsules?|pills?|puffs?|comp)\b/i);
+  return mt ? parseFloat(mt[1].replace(',', '.')) : null;
+}
+function medNonTablet(m) { return /drop|spray|colirio|\bml\b/i.test(String(m.dose || '') + ' ' + (DL.tx(m.name, 'en') || '')); }
+function medSchedule(m, lang) {
+  const T = MED_FREQ_STR[lang] || MED_FREQ_STR.en;
+  // Explicit override for patterns the structured model can't express.
+  if (m.freqLabel && (m.freqLabel[lang] || m.freqLabel.en)) return { xxx: '', freq: m.freqLabel[lang] || m.freqLabel.en };
+  const isPrn = m.scheduledDays === 'prn' || (m.status === 'prn' && m.everyNDays == null);
+  if (isPrn) return { xxx: '', freq: m.schedule || T.prnLabel };
+  // Stopped meds: show the free-text schedule, not an X-X-X. (Tapering meds still
+  // get an X-X-X; the "tapering off" note is added by the caller, under the X-X-X.)
+  if (m.status === 'stopped') return { xxx: '', freq: m.schedule || '' };
+  // Eye drops / sprays don't map onto an X-X-X tablet grid.
+  if (medNonTablet(m)) return { xxx: '', freq: m.schedule || '' };
+  const slot = MED_SLOT_BY_TIME[m.timeOfDay || 'morning'];
+  const n = medUnitCount(m.dose) || 1;
+  const cells = [0, 0, 0]; if (slot != null) cells[slot] = n;
+  const fmtN = (x) => Number.isInteger(x) ? String(x) : String(x).replace('.', lang === 'es' ? ',' : '.');
+  const xxx = cells.map(fmtN).join('-');
+  let freq = '';
+  if (m.everyNDays != null) { freq = m.everyNDays === 2 ? T.everyOther : T.everyN.replace('{n}', m.everyNDays); }
+  else if (Array.isArray(m.scheduledDays) && m.scheduledDays.length && m.scheduledDays.length < 7) { freq = m.scheduledDays.map((d) => (T.wd[d] || d)).join('/'); }
+  return { xxx, freq };
+}
+function medScheduleStr(m, lang) { const s = medSchedule(m, lang); return [s.xxx, s.freq].filter(Boolean).join(' · '); }
+
 const Appt = (function(){
 const { tx, specialistLabel } = DL;
 
@@ -787,12 +836,22 @@ const STR = {
         pickSpecialist: 'Pick a specialist', next: 'Next', question: 'question', questionsLc: 'questions', noOpen: 'No open questions',
         dx: 'Diagnosed', conditions: 'Active conditions', currentMeds: 'Current medications',
         ruledOut: 'Ruled out', other: 'Other', provShort: 'Provisional', none: 'None', nextAppt: 'Next appointment', forCond: 'for', revisit: 'may re-test',
-        questionsFor: 'Questions for', markAnswered: 'Mark answered', cont: 'Continue', answerNotePh: 'Add a note (optional)…', medStatus: { tapering: 'tapering off', prn: 'as needed', stopped: 'stopped' }, noQuestions: 'No open questions for this specialist.', addQ: 'Add question', appointments: 'Upcoming appointments', pastAppts: 'Past appointments', addAppt: 'Add appointment', noAppt: 'No appointments yet' },
+        questionsFor: 'Questions for', markAnswered: 'Mark answered', cont: 'Continue', answerNotePh: 'Add a note (optional)…', medStatus: { tapering: 'tapering off', prn: 'as needed', stopped: 'stopped' }, noQuestions: 'No open questions for this specialist.', noQuestionsAll: 'No open questions.', addQ: 'Add question', appointments: 'Upcoming appointments', pastAppts: 'Past appointments', addAppt: 'Add appointment', noAppt: 'No appointments yet',
+        filterBy: 'Filter by specialist', allSpecialists: 'All specialists', allQuestions: 'All open questions',
+        secRegular: 'Regular', secSupplements: 'Supplements', secPrn: 'As needed (PRN)',
+        prnLabel: 'PRN', everyOther: 'every other day', everyN: 'every {n} days',
+        wd: { mon: 'Mon', tue: 'Tue', wed: 'Wed', thu: 'Thu', fri: 'Fri', sat: 'Sat', sun: 'Sun' },
+        medLegend: 'X-X-X = morning · midday · evening (e.g. 0-0-1 = one at night).' },
   es: { appointmentWith: 'Cita con', change: 'Cambiar', bigPicture: 'Resumen', questions: 'Preguntas',
         pickSpecialist: 'Elige un especialista', next: 'Próxima', question: 'pregunta', questionsLc: 'preguntas', noOpen: 'Sin preguntas pendientes',
         dx: 'Diagnóstico', conditions: 'Condiciones activas', currentMeds: 'Medicación actual',
         ruledOut: 'Descartado', other: 'Otros', provShort: 'Provisional', none: 'Ninguno', nextAppt: 'Próxima cita', forCond: 'para', revisit: 'puede reevaluarse',
-        questionsFor: 'Preguntas para', markAnswered: 'Marcar respondida', cont: 'Continuar', answerNotePh: 'Añadir una nota (opcional)…', medStatus: { tapering: 'en reducción', prn: 'según necesidad', stopped: 'suspendido' }, noQuestions: 'Sin preguntas pendientes para este especialista.', addQ: 'Añadir pregunta', appointments: 'Próximas citas', pastAppts: 'Citas anteriores', addAppt: 'Añadir cita', noAppt: 'Sin citas todavía' },
+        questionsFor: 'Preguntas para', markAnswered: 'Marcar respondida', cont: 'Continuar', answerNotePh: 'Añadir una nota (opcional)…', medStatus: { tapering: 'en reducción', prn: 'según necesidad', stopped: 'suspendido' }, noQuestions: 'Sin preguntas pendientes para este especialista.', noQuestionsAll: 'Sin preguntas pendientes.', addQ: 'Añadir pregunta', appointments: 'Próximas citas', pastAppts: 'Citas anteriores', addAppt: 'Añadir cita', noAppt: 'Sin citas todavía',
+        filterBy: 'Filtrar por especialista', allSpecialists: 'Todos los especialistas', allQuestions: 'Todas las preguntas',
+        secRegular: 'Pauta fija', secSupplements: 'Suplementos', secPrn: 'Según necesidad (PRN)',
+        prnLabel: 'PRN', everyOther: 'días alternos', everyN: 'cada {n} días',
+        wd: { mon: 'Lun', tue: 'Mar', wed: 'Mié', thu: 'Jue', fri: 'Vie', sat: 'Sáb', sun: 'Dom' },
+        medLegend: 'X-X-X = mañana · mediodía · noche (p. ej. 0-0-1 = uno por la noche).' },
 };
 const STATUS = {
   en: { confirmed: 'Confirmed', under_review: 'Under review', provisionally_excluded: 'Provisionally excluded', ruled_out: 'Ruled out' },
@@ -807,18 +866,13 @@ function fmtDate(iso, lang) { if (!iso) return ''; return new Date(iso + 'T00:00
 function renderAppointment(state) {
   const lang = state.lang; const T = STR[lang]; const data = DL.getData();
   if (!data) return '<div class="card"><p class="muted">No data.</p></div>';
-  if (!ui.specialistId) return renderPicker(state);
-  const sp = (data.specialists || []).find((s) => s.id === ui.specialistId);
-  if (!sp) { ui.specialistId = null; return renderPicker(state); }
-  const header = `<div class="card appt-head">
-      <div><div class="muted small">${T.appointmentWith}</div><div class="appt-sp">${esc(specialistLabel(sp, lang))}</div>${docLine(sp) ? `<div class="muted small">${esc(docLine(sp))}</div>` : ''}</div>
-      <button class="btn ghost" data-appt="change">${T.change}</button>
-    </div>
-    <div class="subtabs">
+  // Big Picture is specialist-independent and always loads. The specialist
+  // picker lives inside the Questions subtab as an optional filter.
+  const header = `<div class="subtabs">
       <button class="subtab ${ui.sub === 'big' ? 'is-active' : ''}" data-sub="big">${T.bigPicture}</button>
       <button class="subtab ${ui.sub === 'questions' ? 'is-active' : ''}" data-sub="questions">${T.questions}</button>
     </div>`;
-  return header + (ui.sub === 'big' ? renderBig(state) : renderQuestions(state, sp));
+  return header + (ui.sub === 'big' ? renderBig(state) : renderQuestions(state));
 }
 
 function renderPicker(state) {
@@ -838,21 +892,40 @@ function renderPicker(state) {
   return `<div class="card"><h2>${T.pickSpecialist}</h2><div class="appt-list">${items}</div></div>`;
 }
 
+// medSchedule() is defined at top level (shared by Prep + Records).
+
 function renderBig(state) {
   const lang = state.lang; const T = STR[lang]; const data = DL.getData();
   const bp = DL.bigPicture(data, lang);
   const condById = Object.fromEntries((data.conditions || []).map((c) => [c.id, c]));
   const conds = bp.conditions.map((c) =>
     `<div class="bp-row"><div><div class="bp-name">${esc(tx(c.name, lang))}</div>${c.diagnosedDate ? `<div class="muted small">${T.dx}: ${fmtDate(c.diagnosedDate, lang)}</div>` : ''}</div><span class="badge ${STATUS_CLS[c.status]}">${STATUS[lang][c.status]}</span></div>`).join('') || `<p class="muted small">${T.none}</p>`;
-  // Group medications under the condition they treat; fall back to purpose for the rest.
-  const medGroups = []; const gmap = {}; const placed = new Set();
-  const groupFor = (key, label) => { if (!gmap[key]) { gmap[key] = { label, meds: [] }; medGroups.push(gmap[key]); } return gmap[key]; };
-  bp.conditions.forEach((c) => bp.medications.forEach((m) => { if (m.conditionId === c.id) { groupFor('c:' + c.id, tx(c.name, lang)).meds.push(m); placed.add(m); } }));
-  bp.medications.forEach((m) => { if (placed.has(m)) return; if (m.conditionId && condById[m.conditionId]) { groupFor('c:' + m.conditionId, tx(condById[m.conditionId].name, lang)).meds.push(m); } else { const p = tx(m.purpose, lang) || T.other; groupFor('p:' + p, p).meds.push(m); } });
-  const meds = medGroups.map((g) => `<div class="med-group-label">${esc(g.label)}</div>` + g.meds.map((m) => {
-    const st = (m.status && m.status !== 'active') ? `<span class="med-status">${(T.medStatus && T.medStatus[m.status]) || m.status}</span>` : '';
-    return `<div class="bp-med"><span class="bp-med-name">${esc(tx(m.name, lang))}${st}</span><span class="bp-med-dose">${esc(m.dose)}${m.schedule ? ` <span class="muted small">· ${esc(m.schedule)}</span>` : ''}</span></div>`;
-  }).join('')).join('') || `<p class="muted small">${T.none}</p>`;
+  // Doctor-style med list: a clean Regular / Supplements / PRN split with an
+  // aligned schedule column, rather than one heading per condition.
+  const isPrnMed = (m) => m.scheduledDays === 'prn' || (m.status === 'prn' && m.everyNDays == null);
+  const medRowHtml = (m) => {
+    const sch = medSchedule(m, lang);
+    const statusLbl = (m.status && m.status !== 'active' && !isPrnMed(m)) ? ((T.medStatus && T.medStatus[m.status]) || m.status) : '';
+    let right;
+    if (sch.xxx) {
+      const sub = [sch.freq, statusLbl].filter(Boolean).join(' · ');
+      right = `<div class="sched-x">${esc(sch.xxx)}</div>${sub ? `<div class="freq">${esc(sub)}</div>` : ''}`;
+    } else {
+      right = `<span class="freq">${esc(sch.freq || statusLbl)}</span>`;
+    }
+    const tag = (m.conditionId && condById[m.conditionId]) ? tx(condById[m.conditionId].name, lang) : (tx(m.purpose, lang) || '');
+    const sub = (tag ? `<span>${esc(tag)}</span>` : '') + (tag && m.dose ? ' · ' : '') + (m.dose ? `<span class="med-dose">${esc(m.dose)}</span>` : '');
+    return `<div class="med-row"><div class="med-l"><div class="bp-med-name">${esc(tx(m.name, lang))}</div>${sub ? `<div class="med-sub">${sub}</div>` : ''}</div><div class="med-sched">${right}</div></div>`;
+  };
+  // Order each section morning → midday → evening (1-0-0s first); ties keep data order.
+  const TOD_ORDER = { morning: 0, midday: 1, evening: 2, bedtime: 2, prn: 3 };
+  const byTimeOfDay = (a, b) => ((TOD_ORDER[a.timeOfDay] != null ? TOD_ORDER[a.timeOfDay] : 1) - (TOD_ORDER[b.timeOfDay] != null ? TOD_ORDER[b.timeOfDay] : 1));
+  const allMeds = bp.medications;
+  const prnMeds = allMeds.filter(isPrnMed);
+  const suppMeds = allMeds.filter((m) => !isPrnMed(m) && m.supplement).sort(byTimeOfDay);
+  const regMeds = allMeds.filter((m) => !isPrnMed(m) && !m.supplement).sort(byTimeOfDay);
+  const medSection = (label, list) => list.length ? `<div class="med-sec">${label}</div>${list.map(medRowHtml).join('')}` : '';
+  const meds = (medSection(T.secRegular, regMeds) + medSection(T.secSupplements, suppMeds) + medSection(T.secPrn, prnMeds)) || `<p class="muted small">${T.none}</p>`;
   const ro = bp.excluded.map((r) => {
     const prov = r.status === 'provisionally_excluded';
     const reTag = prov ? ` <span class="muted small">↺ ${T.revisit}</span>` : '';
@@ -867,25 +940,59 @@ function renderBig(state) {
     <div class="card"><h2>${T.ruledOut}</h2>${ro}</div>`;
 }
 
-function renderQuestions(state, sp) {
+function renderQuestions(state) {
   const lang = state.lang; const T = STR[lang]; const data = DL.getData();
-  const { open } = DL.questionsForSpecialist(sp.id, data);
   const todayStr = new Date().toLocaleDateString('en-CA');
-  const appts = (data.appointments || []).filter((a) => a.specialistId === sp.id);
-  const apptRow = (a) => `<div class="bp-row"><div><div class="bp-name">${fmtDate(a.date, lang)}</div>${tx(a.note, lang) ? `<div class="muted small">${esc(tx(a.note, lang))}</div>` : ''}</div><button class="ed-btn" data-edit="appointments:${a.id}">✎</button></div>`;
+  const specs = (data.specialists || []).slice().sort((a, b) => specialistLabel(a, lang).localeCompare(specialistLabel(b, lang)));
+  const sp = ui.specialistId ? specs.find((s) => s.id === ui.specialistId) : null;
+  if (ui.specialistId && !sp) ui.specialistId = null; // selected specialist no longer exists
+  const spName = (id) => { const s = specs.find((x) => x.id === id); return s ? specialistLabel(s, lang) : ''; };
+
+  // --- Optional specialist filter (scopes the lists below) ---
+  const filter = `<div class="card q-filter"><label class="q-filter-lbl muted small" for="qSpFilter">${T.filterBy}</label>
+    <select id="qSpFilter" class="q-filter-sel" data-spfilter>
+      <option value="">${T.allSpecialists}</option>
+      ${specs.map((s) => `<option value="${s.id}"${ui.specialistId === s.id ? ' selected' : ''}>${esc(specialistLabel(s, lang))}</option>`).join('')}
+    </select></div>`;
+
+  // --- Appointments (scoped to filter; show specialist name when unfiltered) ---
+  const apptRow = (a) => `<div class="bp-row"><div><div class="bp-name">${fmtDate(a.date, lang)}${!ui.specialistId && spName(a.specialistId) ? ` <span class="muted small">— ${esc(spName(a.specialistId))}</span>` : ''}</div>${tx(a.note, lang) ? `<div class="muted small">${esc(tx(a.note, lang))}</div>` : ''}</div><button class="ed-btn" data-edit="appointments:${a.id}">✎</button></div>`;
+  let appts = (data.appointments || []);
+  if (ui.specialistId) appts = appts.filter((a) => a.specialistId === ui.specialistId);
   const upcoming = appts.filter((a) => a.date >= todayStr).sort((a, b) => (a.date < b.date ? -1 : 1));
   const past = appts.filter((a) => a.date < todayStr).sort((a, b) => (a.date < b.date ? 1 : -1));
   const upRows = upcoming.map(apptRow).join('') || `<p class="muted small">${T.noAppt}</p>`;
   const pastRows = past.length ? `<div class="card"><h2>${T.pastAppts}</h2>${past.map(apptRow).join('')}</div>` : '';
-  const next = `<div class="card"><h2>${T.appointments}</h2>${upRows}<button class="btn ghost addbtn" data-add="appointments" data-prefill='${JSON.stringify({ specialistId: sp.id })}'>+ ${T.addAppt}</button></div>${pastRows}`;
-  const qs = open.map((q) => {
+  const apptPrefill = ui.specialistId ? ` data-prefill='${JSON.stringify({ specialistId: ui.specialistId })}'` : '';
+  const apptCard = `<div class="card"><h2>${T.appointments}</h2>${upRows}<button class="btn ghost addbtn" data-add="appointments"${apptPrefill}>+ ${T.addAppt}</button></div>${pastRows}`;
+
+  // --- Open questions: a single row renderer reused by both views ---
+  const qRow = (q) => {
     if (ui.answering === q.id) {
       const note = (q.answerNote && q.answerNote[lang]) || '';
       return `<div class="q-row answering"><div class="q-text">${esc(tx(q.text, lang))}</div><textarea class="q-note" data-qnote="${q.id}" rows="2" placeholder="${T.answerNotePh}">${esc(note)}</textarea><div class="q-actions"><button class="btn q-continue" data-continue="${q.id}">${T.cont}</button></div></div>`;
     }
     return `<div class="q-row"><div class="q-text">${esc(tx(q.text, lang))}</div><span class="row-right"><button class="tick-btn" data-answer="${q.id}" aria-label="${T.markAnswered}">✓</button><button class="ed-btn" data-edit="questions:${q.id}">✎</button></span></div>`;
-  }).join('') || `<p class="muted small">${T.noQuestions}</p>`;
-  return `${next}<div class="card"><h2>${T.questionsFor} ${esc(specialistLabel(sp, lang))}</h2>${qs}<button class="btn ghost addbtn" data-add="questions">+ ${T.addQ}</button></div>`;
+  };
+  const openAll = (data.questions || []).filter((q) => q.status === 'open');
+  let qBody;
+  if (ui.specialistId) {
+    const qs = openAll.filter((q) => q.specialistId === ui.specialistId).map(qRow).join('') || `<p class="muted small">${T.noQuestions}</p>`;
+    qBody = `<h2>${T.questionsFor} ${esc(specialistLabel(sp, lang))}</h2>${qs}`;
+  } else {
+    // Grouped by specialist; specialists with no open questions are skipped.
+    const groups = specs.map((s) => {
+      const qs = openAll.filter((q) => q.specialistId === s.id);
+      if (!qs.length) return '';
+      return `<div class="q-group-label">${esc(specialistLabel(s, lang))}</div>${qs.map(qRow).join('')}`;
+    }).join('');
+    const orphans = openAll.filter((q) => !specs.some((s) => s.id === q.specialistId));
+    const orphanRows = orphans.length ? `<div class="q-group-label">${T.other}</div>${orphans.map(qRow).join('')}` : '';
+    qBody = `<h2>${T.allQuestions}</h2>${(groups + orphanRows) || `<p class="muted small">${T.noQuestionsAll}</p>`}`;
+  }
+  const qPrefill = ui.specialistId ? ` data-prefill='${JSON.stringify({ specialistId: ui.specialistId })}'` : '';
+  const qCard = `<div class="card">${qBody}<button class="btn ghost addbtn" data-add="questions"${qPrefill}>+ ${T.addQ}</button></div>`;
+  return `${filter}${apptCard}${qCard}`;
 }
 
 async function onClick(e, state, rerender) {
@@ -898,7 +1005,12 @@ async function onClick(e, state, rerender) {
   if (t.dataset.continue) { const qid = t.dataset.continue; const ta = document.querySelector('.q-note[data-qnote="' + qid + '"]'); const rec = DL.getRecord('questions', qid); if (rec && ta) { rec.answerNote = rec.answerNote || { en: '', es: '' }; rec.answerNote[state.lang] = ta.value; } DL.markQuestionAnswered(qid); ui.answering = null; await DL.persist(); rerender(); return; }
 }
 
-return { ui, renderAppointment, onClick };
+function onChange(e, state, rerender) {
+  const t = e.target;
+  if (t && t.dataset && t.dataset.spfilter !== undefined) { ui.specialistId = t.value || null; ui.answering = null; rerender(); return; }
+}
+
+return { ui, renderAppointment, onClick, onChange };
 })();
 
 const Records = (function(){
@@ -910,7 +1022,7 @@ const ui = { sub: 'conditions', labId: null, win: '1y', epType: 'all', openMs: n
 
 const STR = {
   en: { conditions: 'Conditions', meds: 'Meds', symptoms: 'Symptoms', episodes: 'Episodes', labs: 'Labs', timeline: 'Timeline',
-        dx: 'Diagnosed', managedBy: 'Managed by', ruledOut: 'Ruled out', provShort: 'Provisional', none: 'None', revisit: 'may re-test', notTracked: 'Not tracked daily',
+        dx: 'Diagnosed', managedBy: 'Managed by', ruledOut: 'Ruled out', provShort: 'Provisional', none: 'None', revisit: 'may re-test', notTracked: 'Not tracked daily', medLegend: 'X-X-X = morning · midday · evening (e.g. 0-0-1 = one at night).',
         status: { confirmed: 'Confirmed', under_review: 'Under review', provisionally_excluded: 'Provisionally excluded', ruled_out: 'Ruled out' },
         medStatus: { active: 'Active', tapering: 'Tapering', stopped: 'Stopped', prn: 'PRN' },
         doseHistory: 'Dose history', since: 'since', latest: 'Latest', daysUnwell: 'Days unwell', ongoing: 'ongoing',
@@ -921,7 +1033,7 @@ const STR = {
         positive: 'positive', negative: 'negative',
         addC: 'Add condition', addM: 'Add medication', addS: 'Add symptom', addE: 'Add episode', addL: 'Add marker', addMs: 'Add milestone', addR: 'Add ruled-out', editMarker: 'Edit marker / results' },
   es: { conditions: 'Condiciones', meds: 'Medicación', symptoms: 'Síntomas', episodes: 'Episodios', labs: 'Analíticas', timeline: 'Cronología',
-        dx: 'Diagnóstico', managedBy: 'Seguimiento', ruledOut: 'Descartado', provShort: 'Provisional', none: 'Ninguno', revisit: 'puede reevaluarse', notTracked: 'No se registra a diario',
+        dx: 'Diagnóstico', managedBy: 'Seguimiento', ruledOut: 'Descartado', provShort: 'Provisional', none: 'Ninguno', revisit: 'puede reevaluarse', notTracked: 'No se registra a diario', medLegend: 'X-X-X = mañana · mediodía · noche (p. ej. 0-0-1 = uno por la noche).',
         status: { confirmed: 'Confirmado', under_review: 'En revisión', provisionally_excluded: 'Excluido provisionalmente', ruled_out: 'Descartado' },
         medStatus: { active: 'Activo', tapering: 'En reducción', stopped: 'Suspendido', prn: 'PRN' },
         doseHistory: 'Historial de dosis', since: 'desde', latest: 'Último', daysUnwell: 'Días enfermo', ongoing: 'en curso',
@@ -980,8 +1092,9 @@ function renderMeds(state) {
   const cards = (data.medications || []).map((m) => {
     const purpose = tx(m.purpose, lang);
     const hist = (m.doseHistory || []).slice().sort((a, b) => (a.date < b.date ? 1 : -1)).map((h) => `<li>${fmtDate(h.date, lang)} — ${esc(h.dose)}${h.note ? ' <span class="muted">(' + esc(h.note) + ')</span>' : ''}</li>`).join('');
+    const schStr = medScheduleStr(m, lang);
     return `<div class="card"><div class="bp-row"><div class="bp-name">${esc(tx(m.name, lang))}</div><span class="row-right"><span class="badge ${m.status === 'active' ? 'ok' : (m.status === 'stopped' ? 'err' : 'warn')}">${T.medStatus[m.status] || m.status}</span>${ed('medications', m.id)}</span></div>
-      <div class="muted small">${esc(m.dose)} · ${esc(m.schedule)}${m.track === false ? ` · <span class="badge cond-tag">${T.notTracked}</span>` : ''}</div>
+      <div class="muted small">${esc(m.dose)}${schStr ? ` · ${esc(schStr)}` : ''}${m.track === false ? ` · <span class="badge cond-tag">${T.notTracked}</span>` : ''}</div>
       ${purpose ? `<div class="muted small">${esc(purpose)}</div>` : ''}
       ${m.lastDoseChange ? `<div class="muted small">${T.since} ${fmtDate(m.lastDoseChange, lang)}</div>` : ''}
       ${hist ? `<details class="msgs"><summary>${T.doseHistory} (${(m.doseHistory || []).length})</summary><ul class="tight small">${hist}</ul></details>` : ''}</div>`;
@@ -1139,12 +1252,14 @@ const SPECS = {
     { key: 'name', type: 'i18n', label: 'Name' },
     { key: 'dose', type: 'text', label: 'Dose' },
     { key: 'schedule', type: 'text', label: 'Schedule (free text)' },
+    { key: 'freqLabel', type: 'i18n', label: 'Prep frequency override (e.g. "1-0-0 (Sat 1.5)") — leave blank to auto-compute' },
     { key: 'cadence', type: 'select', label: 'Cadence', options: ['weekly', 'interval', 'prn'] },
     { key: 'scheduledDays', type: 'weekdays', label: 'Days', showIf: (s) => s.cadence === 'weekly' },
     { key: 'everyNDays', type: 'number', label: 'Every N days', showIf: (s) => s.cadence === 'interval' },
     { key: 'anchorDate', type: 'date', label: 'Anchor date (a day it is due)', showIf: (s) => s.cadence === 'interval' },
     { key: 'timeOfDay', type: 'select', label: 'Time of day', options: ['morning', 'midday', 'evening', 'prn'] },
     { key: 'track', type: 'checkbox', label: 'Track daily (show in the Today med check-off)' },
+    { key: 'supplement', type: 'checkbox', label: 'Supplement / OTC (groups under "Supplements" in Prep)' },
     { key: 'purpose', type: 'i18n', label: 'Purpose' },
     { key: 'conditionId', type: 'select', label: 'For condition', source: 'conditions', optional: true },
     { key: 'status', type: 'select', label: 'Status', options: ['active', 'tapering', 'stopped', 'prn'] },
@@ -1153,7 +1268,7 @@ const SPECS = {
     { key: 'lastDoseChange', type: 'date', label: 'Last dose change' },
     { key: 'doseHistory', type: 'rows', label: 'Dose history', sub: [{ key: 'date', type: 'date', label: 'Date' }, { key: 'dose', type: 'text', label: 'Dose' }, { key: 'note', type: 'text', label: 'Note' }] },
     { key: 'notes', type: 'i18n', label: 'Notes', textarea: true },
-  ], defaults: { name: { en: '', es: '' }, dose: '', schedule: '', cadence: 'weekly', scheduledDays: ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'], timeOfDay: 'morning', track: true, purpose: { en: '', es: '' }, conditionId: null, status: 'active', startDate: null, stopDate: null, lastDoseChange: null, doseHistory: [], notes: { en: '', es: '' } } },
+  ], defaults: { name: { en: '', es: '' }, dose: '', schedule: '', freqLabel: { en: '', es: '' }, cadence: 'weekly', scheduledDays: ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'], timeOfDay: 'morning', track: true, supplement: false, purpose: { en: '', es: '' }, conditionId: null, status: 'active', startDate: null, stopDate: null, lastDoseChange: null, doseHistory: [], notes: { en: '', es: '' } } },
   episodes: { title: 'Episode', fields: [
     { key: 'name', type: 'i18n', label: 'Name' },
     { key: 'type', type: 'select', label: 'Type', options: ['cold_flu', 'infection', 'gi', 'flare', 'other'] },
@@ -1509,7 +1624,9 @@ function wireChrome() {
   screen.addEventListener('change', async (e) => {
     if (e.target.id === 'importFile') { const f = e.target.files[0]; if (!f) return; try { const r = await importData(await f.text()); setStatus(r.ok ? 'Imported ✓ (' + r.warnings.length + ' notes)' : 'Imported with ' + r.errors.length + ' errors', r.ok ? 'ok' : 'err'); } catch (err) { setStatus('Import failed: ' + err.message, 'err'); } render(); return; }
     if (Forms.isOpen()) { Forms.onInput(e); return; }
-    if (!state.showData && state.tab === 'today') Today.onChange(e, state, render);
+    if (state.showData) return;
+    if (state.tab === 'today') Today.onChange(e, state, render);
+    else if (state.tab === 'appointment') Appt.onChange(e, state, render);
   });
 }
 function setLang(lang) { state.lang = lang; document.documentElement.lang = lang; document.querySelectorAll('.lang-btn').forEach((b) => b.classList.toggle('is-active', b.dataset.lang === lang)); render(); }
