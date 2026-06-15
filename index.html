@@ -27,6 +27,11 @@ body { font:16px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helveti
 .card.investigating .sec-head h2 { color:var(--warn); }
 .card.investigating .prog-chip { color:var(--warn); background:#fbe2b3; }
 .card.investigating .bp-row { border-bottom-color:#f0dcab; }
+.ctrl { font-size:11px; font-weight:600; border-radius:999px; padding:2px 9px; white-space:nowrap; }
+.ctrl-controlled { background:#dcfce7; color:var(--ok); }
+.ctrl-stable { background:var(--chip); color:var(--muted); }
+.ctrl-adjusting { background:#fef3c7; color:var(--warn); }
+.ctrl-uncontrolled { background:#fee2e2; color:var(--err); }
 .card h2 { font-size:15px; margin:0 0 10px; }
 .muted { color:var(--muted); } .small { font-size:13px; }
 .placeholder { text-align:center; color:var(--muted); padding:36px 12px; } .placeholder .big { font-size:40px; margin-bottom:8px; }
@@ -251,6 +256,7 @@ const SEVERITY_MIN = 0;
 const SEVERITY_MAX = 4;
 const ENUMS = {
   conditionStatus: ['current', 'investigating', 'excluded', 'provisionally_excluded', 'resolved'],
+  conditionControl: ['controlled', 'stable', 'adjusting', 'uncontrolled'],
   medStatus: ['active', 'tapering', 'stopped', 'prn'],
   medCategory: ['prescription', 'supplement', 'otc'],
   trackBy: ['single', 'locations'], overall: ['max', 'mean'],
@@ -283,7 +289,7 @@ function validate(data) {
   const ids = { specialist: new Set((data.specialisms||[]).map((x)=>x.id)), condition: new Set((data.conditions||[]).map((x)=>x.id)), medication: new Set((data.medications||[]).map((x)=>x.id)), symptom: new Set((data.symptomTypes||[]).map((x)=>x.id)) };
   const locIds = new Set(); (data.symptomTypes||[]).forEach((s)=>(s.locations||[]).forEach((l)=>locIds.add(l.id)));
   (data.specialisms||[]).forEach((s,i)=>{ const at='specialisms['+i+']'; if(!isStr(s.id))E(at+'.id'); if(!isStr(s.specialism))E(at+'.specialism'); if(!isStr(s.es))W(at+'.es missing'); });
-  (data.conditions||[]).forEach((c,i)=>{ const at='conditions['+i+'] ('+c.id+')'; if(!isStr(c.id))E(at+'.id'); if(!isI18n(c.name))E(at+'.name'); if(!ENUMS.conditionStatus.includes(c.status))E(at+'.status invalid'); if(!isNullableDate(c.statusDate))E(at+'.statusDate'); if(!isArr(c.specialismIds))E(at+'.specialismIds'); (c.specialismIds||[]).forEach((sid)=>{ if(!ids.specialist.has(sid))W(at+'.specialismIds unknown: '+sid); }); });
+  (data.conditions||[]).forEach((c,i)=>{ const at='conditions['+i+'] ('+c.id+')'; if(!isStr(c.id))E(at+'.id'); if(!isI18n(c.name))E(at+'.name'); if(!ENUMS.conditionStatus.includes(c.status))E(at+'.status invalid'); if(c.control&&!ENUMS.conditionControl.includes(c.control))W(at+'.control unknown: '+c.control); if(!isNullableDate(c.statusDate))E(at+'.statusDate'); if(!isArr(c.specialismIds))E(at+'.specialismIds'); (c.specialismIds||[]).forEach((sid)=>{ if(!ids.specialist.has(sid))W(at+'.specialismIds unknown: '+sid); }); });
   (data.medications||[]).forEach((m,i)=>{
     const at='medications['+i+'] ('+m.id+')'; if(!isStr(m.id))E(at+'.id'); if(!isI18n(m.name))E(at+'.name');
     if(!ENUMS.medCategory.includes(m.category))E(at+'.category invalid'); if(!isArr(m.conditionIds))E(at+'.conditionIds'); else m.conditionIds.forEach((cid)=>{ if(!ids.condition.has(cid))W(at+'.conditionIds unknown: '+cid); });
@@ -850,12 +856,13 @@ const { tx, specialistLabel } = DL;
 
 
 
-const ui = { specialistId: null, sub: 'big', answering: null };
+const ui = { specialistId: null, answering: null };
 
 const STR = {
   en: { appointmentWith: 'Appointment with', change: 'Change', bigPicture: 'Big picture', questions: 'Questions',
         pickSpecialist: 'Pick a specialist', next: 'Next', question: 'question', questionsLc: 'questions', noOpen: 'No open questions',
-        dx: 'Diagnosed', conditions: 'Active conditions', activeManaged: 'Diagnosed', underInvestigation: 'Under investigation', since: 'since', currentMeds: 'Current medications',
+        dx: 'Diagnosed', conditions: 'Active conditions', activeManaged: 'Diagnosed', underInvestigation: 'Under investigation', since: 'Since', currentMeds: 'Current medications',
+        control: { controlled: 'Controlled', stable: 'Stable · no treatment', adjusting: 'Adjusting treatment', uncontrolled: 'Not controlled' },
         ruledOut: 'Ruled out', other: 'Other', provShort: 'Provisional', none: 'None', nextAppt: 'Next appointment', forCond: 'for', revisit: 'may re-test',
         questionsFor: 'Questions for', markAnswered: 'Mark answered', cont: 'Continue', answerNotePh: 'Add a note (optional)…', medStatus: { tapering: 'tapering off', prn: 'as needed', stopped: 'stopped' }, noQuestions: 'No open questions for this specialist.', noQuestionsAll: 'No open questions.', addQ: 'Add question', appointments: 'Upcoming appointments', pastAppts: 'Past appointments', addAppt: 'Add appointment', noAppt: 'No appointments yet',
         filterBy: 'Filter by specialist', allSpecialists: 'All specialists', allQuestions: 'All open questions',
@@ -865,7 +872,8 @@ const STR = {
         medLegend: 'X-X-X = morning · midday · evening (e.g. 0-0-1 = one at night).' },
   es: { appointmentWith: 'Cita con', change: 'Cambiar', bigPicture: 'Resumen', questions: 'Preguntas',
         pickSpecialist: 'Elige un especialista', next: 'Próxima', question: 'pregunta', questionsLc: 'preguntas', noOpen: 'Sin preguntas pendientes',
-        dx: 'Diagnóstico', conditions: 'Condiciones activas', activeManaged: 'Diagnosticadas', underInvestigation: 'En estudio', since: 'desde', currentMeds: 'Medicación actual',
+        dx: 'Diagnóstico', conditions: 'Condiciones activas', activeManaged: 'Diagnosticadas', underInvestigation: 'En estudio', since: 'Desde', currentMeds: 'Medicación actual',
+        control: { controlled: 'Controlada', stable: 'Estable · sin tratamiento', adjusting: 'Ajustando tratamiento', uncontrolled: 'No controlada' },
         ruledOut: 'Descartado', other: 'Otros', provShort: 'Provisional', none: 'Ninguno', nextAppt: 'Próxima cita', forCond: 'para', revisit: 'puede reevaluarse',
         questionsFor: 'Preguntas para', markAnswered: 'Marcar respondida', cont: 'Continuar', answerNotePh: 'Añadir una nota (opcional)…', medStatus: { tapering: 'en reducción', prn: 'según necesidad', stopped: 'suspendido' }, noQuestions: 'Sin preguntas pendientes para este especialista.', noQuestionsAll: 'Sin preguntas pendientes.', addQ: 'Añadir pregunta', appointments: 'Próximas citas', pastAppts: 'Citas anteriores', addAppt: 'Añadir cita', noAppt: 'Sin citas todavía',
         filterBy: 'Filtrar por especialista', allSpecialists: 'Todos los especialistas', allQuestions: 'Todas las preguntas',
@@ -884,61 +892,44 @@ function docLine(sp) { const bits = []; if (sp.doctor) bits.push(sp.doctor); if 
 function esc(s) { return String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
 function fmtDate(iso, lang) { if (!iso) return ''; return new Date(iso + 'T00:00:00').toLocaleDateString(lang === 'es' ? 'es-ES' : 'en-GB', { day: 'numeric', month: 'short', year: 'numeric' }); }
 
-function renderAppointment(state) {
-  const lang = state.lang; const T = STR[lang]; const data = DL.getData();
-  if (!data) return '<div class="card"><p class="muted">No data.</p></div>';
-  // Big Picture is specialist-independent and always loads. The specialist
-  // picker lives inside the Questions subtab as an optional filter.
-  const header = `<div class="subtabs">
-      <button class="subtab ${ui.sub === 'big' ? 'is-active' : ''}" data-sub="big">${T.bigPicture}</button>
-      <button class="subtab ${ui.sub === 'questions' ? 'is-active' : ''}" data-sub="questions">${T.questions}</button>
-    </div>`;
-  return header + (ui.sub === 'big' ? renderBig(state) : renderQuestions(state));
-}
-
-function renderPicker(state) {
-  const lang = state.lang; const T = STR[lang]; const data = DL.getData();
-  const items = (data.specialisms || []).slice()
-    .sort((a, b) => specialistLabel(a, lang).localeCompare(specialistLabel(b, lang)))
-    .map((sp) => {
-    const { open, nextAppointment } = DL.questionsForSpecialist(sp.id, data);
-    const meta = [];
-    if (open.length) meta.push(open.length + ' ' + (open.length === 1 ? T.question : T.questionsLc));
-    if (nextAppointment) meta.push(T.next + ': ' + fmtDate(nextAppointment.date, lang));
-    return `<button class="appt-pick" data-pick="${sp.id}">
-      <span class="appt-pick-name">${esc(specialistLabel(sp, lang))}${docLine(sp) ? ` <span class="muted small">— ${esc(docLine(sp))}</span>` : ''}</span>
-      <span class="muted small">${meta.join(' · ') || T.noOpen}</span>
-    </button>`;
-  }).join('');
-  return `<div class="card"><h2>${T.pickSpecialist}</h2><div class="appt-list">${items}</div></div>`;
-}
-
-// medSchedule() is defined at top level (shared by Prep + Records).
+// Overview (renderBig) and Next (renderQuestions) are rendered directly by the
+// router as their own tabs. medSchedule() is defined at top level (shared by
+// Overview + Records).
 
 function renderBig(state) {
   const lang = state.lang; const T = STR[lang]; const data = DL.getData();
   const bp = DL.bigPicture(data, lang);
   const condById = Object.fromEntries((data.conditions || []).map((c) => [c.id, c]));
   const spById = Object.fromEntries((data.specialisms || []).map((s) => [s.id, s]));
-  // Sub-line under each condition: managing specialist(s) + "since YYYY".
+  // Sub-line under each condition: "Since YYYY · Specialist(s)".
   const condSub = (c) => {
     const names = (c.specialismIds || []).map((id) => spById[id] ? specialistLabel(spById[id], lang) : '').filter(Boolean);
     const parts = [];
-    if (names.length) parts.push(names.join(', '));
     if (c.statusDate) parts.push(`${T.since} ${c.statusDate.slice(0, 4)}`);
+    if (names.length) parts.push(names.join(', '));
     return parts.join(' · ');
   };
-  // showBadge only for the non-default status within a group (e.g. a resolved item in the managed list).
-  const condRow = (c, showBadge) => {
+  // Treatment/control chip (clinical "is this under control?" signal).
+  const ctrlChip = (c) => c.control && T.control && T.control[c.control]
+    ? `<span class="ctrl ctrl-${c.control}">${T.control[c.control]}</span>` : '';
+  const condRow = (c) => {
     const sub = condSub(c);
-    const badge = showBadge ? `<span class="row-right"><span class="badge ${STATUS_CLS[c.status]}">${STATUS[lang][c.status]}</span></span>` : '';
-    return `<div class="bp-row"><div><div class="bp-name">${esc(tx(c.name, lang))}</div>${sub ? `<div class="muted small">${esc(sub)}</div>` : ''}</div>${badge}</div>`;
+    return `<div class="bp-row"><div><div class="bp-name">${esc(tx(c.name, lang))}</div>${sub ? `<div class="muted small">${esc(sub)}</div>` : ''}</div><span class="row-right">${ctrlChip(c)}</span></div>`;
+  };
+  // Order newest → oldest by diagnosis date (statusDate), undated last. This is
+  // language-independent, so EN and ES show the same order (alpha sort differed).
+  const byDateDesc = (a, b) => {
+    const da = a.statusDate || '', db = b.statusDate || '';
+    if (da === db) return 0;
+    if (!da) return 1;
+    if (!db) return -1;
+    return da < db ? 1 : -1;
   };
   // Split active conditions: confirmed/managed vs the open diagnostic question.
-  const managed = bp.conditions.filter((c) => c.status === 'current' || c.status === 'resolved');
-  const investigating = bp.conditions.filter((c) => c.status === 'investigating');
-  const conds = managed.map((c) => condRow(c, c.status === 'resolved')).join('') || `<p class="muted small">${T.none}</p>`;
-  const investRows = investigating.map((c) => condRow(c, false)).join('');
+  const managed = bp.conditions.filter((c) => c.status === 'current' || c.status === 'resolved').sort(byDateDesc);
+  const investigating = bp.conditions.filter((c) => c.status === 'investigating').sort(byDateDesc);
+  const conds = managed.map((c) => condRow(c)).join('') || `<p class="muted small">${T.none}</p>`;
+  const investRows = investigating.map((c) => condRow(c)).join('');
   const investCard = investigating.length
     ? `<div class="card investigating"><div class="sec-head"><h2>${T.underInvestigation}</h2><span class="prog-chip">${investigating.length}</span></div>${investRows}</div>`
     : '';
@@ -1047,9 +1038,6 @@ function renderQuestions(state) {
 async function onClick(e, state, rerender) {
   const t = e.target.closest('button');
   if (!t) return;
-  if (t.dataset.pick) { ui.specialistId = t.dataset.pick; ui.sub = 'big'; rerender(); return; }
-  if (t.dataset.appt === 'change') { ui.specialistId = null; rerender(); return; }
-  if (t.dataset.sub) { ui.sub = t.dataset.sub; rerender(); return; }
   if (t.dataset.answer) { ui.answering = (ui.answering === t.dataset.answer) ? null : t.dataset.answer; rerender(); return; }
   if (t.dataset.continue) { const qid = t.dataset.continue; const ta = document.querySelector('.q-note[data-qnote="' + qid + '"]'); const rec = DL.getRecord('questions', qid); if (rec && ta) { rec.answerNote = rec.answerNote || { en: '', es: '' }; rec.answerNote[state.lang] = ta.value; } DL.markQuestionAnswered(qid); ui.answering = null; await DL.persist(); rerender(); return; }
 }
@@ -1059,7 +1047,7 @@ function onChange(e, state, rerender) {
   if (t && t.dataset && t.dataset.spfilter !== undefined) { ui.specialistId = t.value || null; ui.answering = null; rerender(); return; }
 }
 
-return { ui, renderAppointment, renderBig, renderQuestions, onClick, onChange };
+return { ui, renderBig, renderQuestions, onClick, onChange };
 })();
 
 const Records = (function(){
@@ -1266,8 +1254,6 @@ function renderModal(state) {
   return `<div class="sheet-bg" data-ms="__close"><div class="sheet" role="dialog"><div class="sheet-handle"></div><div class="muted small">${fmtDate(m.date, lang)}</div><h2>${esc(tx(m.label, lang))}</h2><p>${detail ? esc(detail) : '<span class="muted">—</span>'}</p><div class="form-actions"><button class="btn ghost" data-edit="milestones:${m.id}">✎ Edit</button><span class="spacer"></span><button class="btn" data-ms="__close">${T.close}</button></div></div></div>`;
 }
 
-function renderTimelineView(state) { return renderTimeline(state) + renderModal(state); }
-
 async function onClick(e, state, rerender) {
   const t = e.target.closest('button, .sheet-bg');
   if (!t) return;
@@ -1279,7 +1265,7 @@ async function onClick(e, state, rerender) {
   if (t.dataset.ms !== undefined) { if (t.classList.contains('sheet-bg') && e.target !== t) return; ui.openMs = t.dataset.ms === '__close' ? null : t.dataset.ms; rerender(); return; }
 }
 
-return { ui, renderRecords, renderTimelineView, onClick };
+return { ui, renderRecords, onClick };
 })();
 
 const Forms = (function(){
@@ -1291,11 +1277,12 @@ const SPECS = {
   conditions: { title: 'Condition', archive: false, fields: [
     { key: 'name', type: 'i18n', label: 'Name' },
     { key: 'status', type: 'select', label: 'Status', options: ['current', 'investigating', 'excluded', 'provisionally_excluded', 'resolved'] },
+    { key: 'control', type: 'select', label: 'Control (shown to doctor on Overview)', options: ['', 'controlled', 'stable', 'adjusting', 'uncontrolled'] },
     { key: 'statusDate', type: 'date', label: 'Status date (diagnosed / investigating since / excluded / resolved)' },
     { key: 'revisitNote', type: 'i18n', label: 'Re-test note (when / why to revisit)', textarea: true, showIf: (s) => s.status === 'provisionally_excluded' },
     { key: 'specialismIds', type: 'multiselect', label: 'Specialism(s)', source: 'specialisms' },
     { key: 'notes', type: 'i18n', label: 'Notes / evidence', textarea: true },
-  ], defaults: { name: { en: '', es: '' }, status: 'investigating', statusDate: null, revisitNote: { en: '', es: '' }, specialismIds: [], notes: { en: '', es: '' } } },
+  ], defaults: { name: { en: '', es: '' }, status: 'investigating', control: '', statusDate: null, revisitNote: { en: '', es: '' }, specialismIds: [], notes: { en: '', es: '' } } },
   medications: { title: 'Medication', fields: [
     { key: 'name', type: 'i18n', label: 'Name' },
     { key: 'dose', type: 'text', label: 'Dose' },
