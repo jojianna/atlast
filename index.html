@@ -247,6 +247,37 @@ ul.tight { margin: 4px 0 0; padding-left: 18px; } ul.tight li { padding: 1px 0; 
 .ds .bars .b .bl{font-size:9px;color:var(--muted);font-weight:600;} .ds .bars .b .bv{font-size:10px;font-weight:700;}
 .ds .mini{width:100%;height:54px;display:block;}
 .ds .linkbtn{background:none;border:0;color:var(--teal);font:inherit;font-size:13px;cursor:pointer;text-decoration:underline;}
+.ds .pfilters{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;}
+.ds .pchip{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--line);background:#fff;border-radius:999px;padding:4px 10px;font-size:11px;cursor:pointer;color:var(--ink);}
+.ds .pchip.off{opacity:.4;text-decoration:line-through;}
+.ds .pdot{width:9px;height:9px;border-radius:50%;display:inline-block;}
+.ds .pyear{font-weight:800;font-size:13px;color:var(--teal-d);margin:10px 0 4px;padding-left:26px;}
+.ds .prail{position:relative;padding-left:26px;}
+.ds .prail::before{content:'';position:absolute;left:8px;top:6px;bottom:6px;width:2px;background:var(--line);}
+.ds .pitem{position:relative;display:flex;gap:8px;width:100%;border:0;background:transparent;cursor:pointer;text-align:left;padding:8px 0;font:inherit;align-items:flex-start;}
+.ds .pidot{position:absolute;left:-22px;top:11px;width:12px;height:12px;border-radius:50%;border:2px solid var(--card);}
+.ds .pibody{display:flex;flex-direction:column;flex:1;}
+.ds .pidate{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;}
+.ds .pilabel{font-weight:500;font-size:13.5px;line-height:1.3;}
+.ds .pichev{margin-left:auto;color:#cbd5dc;font-size:18px;align-self:center;}
+.ds .vhero{background:linear-gradient(135deg,var(--teal),var(--teal-d));color:#fff;border-radius:16px;padding:16px;margin-bottom:12px;box-shadow:0 2px 8px rgba(15,118,110,.25);}
+.ds .vhero .vlbl{font-size:11px;text-transform:uppercase;letter-spacing:.08em;opacity:.85;font-weight:700;}
+.ds .vhero .vwhen{font-size:22px;font-weight:800;margin:3px 0 1px;}
+.ds .vhero .vwho{font-size:14px;opacity:.95;}
+.ds .vhero .vcd{display:inline-block;margin-top:9px;background:rgba(255,255,255,.2);border-radius:999px;padding:3px 11px;font-size:11px;font-weight:700;}
+.ds .qgroup{font-size:13px;font-weight:800;color:var(--teal-d);margin:14px 0 2px;}
+.ds .qgroup:first-child{margin-top:0;}
+.ds .qrow{display:flex;gap:11px;align-items:flex-start;padding:11px 0;border-top:1px solid var(--line);}
+.ds .qrow:first-of-type{border-top:0;}
+.ds .qtick{flex:none;width:24px;height:24px;border-radius:50%;border:2px solid var(--line);background:#fff;cursor:pointer;margin-top:1px;}
+.ds .qtext{flex:1;font-size:14px;line-height:1.45;}
+.ds .qrow.answering{flex-direction:column;}
+.ds .qrow .q-note{width:100%;border:1px solid var(--line);border-radius:9px;padding:9px;font:inherit;font-size:14px;resize:vertical;}
+.ds .qrow .q-continue{background:var(--ok);align-self:flex-end;}
+.ds .daynav.slim{padding:0 0 10px;border:0;background:transparent;box-shadow:none;border-radius:0;}
+.ds .daynav.slim .navbtn{width:30px;height:30px;font-size:18px;}
+.ds .daynav.slim .dayname input[type=date]{font-size:15px;}
+.ds .daynav.slim.past{background:#fff8e1;border-radius:10px;padding:6px 10px;}
 </style>
   <title>Atlast</title>
 </head>
@@ -738,18 +769,11 @@ function renderToday(state) {
   if (!data) return `<div class="card"><p class="muted">${T.noData}</p></div>`;
   const isToday = date === todayISO();
   const sub = isToday ? T.today : agoLabel(daysBetween(date, todayISO()), lang);
-  const head = `<div class="card daynav${isToday ? '' : ' past'}">
+  const head = `<div class="daynav slim${isToday ? '' : ' past'}">
     <button class="navbtn" data-nav="-1" aria-label="${T.prevDay}">‹</button>
-    <div class="dayname"><input type="date" id="dateInput" value="${date}" max="${todayISO()}" /><div class="muted small daysub">${esc(fmtDate(date, lang))} · ${sub}</div></div>
+    <div class="dayname"><input type="date" id="dateInput" value="${date}" max="${todayISO()}" /><div class="muted small daysub">${sub}</div></div>
     <button class="navbtn" data-nav="1" aria-label="${T.nextDay}" ${isToday ? 'disabled' : ''}>›</button>
   </div>`;
-
-  const overallVal = DL.getOverallPain(date, data);
-  const dialCls = overallVal != null ? 'sev-' + overallVal : 'empty';
-  const overallSub = overallVal != null ? T.painLevels[overallVal] : T.overallTap;
-  const overallCard = `<div class="card overall-card">
-    <div class="overall-hero"><div class="overall-dial ${dialCls}">${overallVal != null ? overallVal : '–'}</div><div class="overall-meta"><div class="overall-label">${T.overallPain}</div><div class="muted small">${overallSub}</div></div></div>
-    ${overallSelector(overallVal)}</div>`;
 
   const types = DL.activeSymptomTypes(data);
   const dayLog = DL.getDailyLog(date, data);
@@ -793,13 +817,13 @@ function renderToday(state) {
   const typeOpts = Object.entries(EP_TYPES[lang]).map(([k, v]) => `<option value="${k}">${v}</option>`).join('');
   const epForm = ui.epFormOpen ? `<div class="ep-form"><input id="epName" placeholder="${T.name}" /><div class="ep-form-row"><select id="epType">${typeOpts}</select><input type="date" id="epStart" value="${date}" /></div><div class="ep-form-actions"><button class="btn" id="epSave">${T.start2}</button><button class="btn ghost" id="epCancel">${T.cancel}</button></div></div>` : `<button class="btn ghost wide" id="epStartBtn">${T.startEp}</button>`;
   const savedNote = ui.savedAt ? `<div class="muted small saved-tag">✓ ${T.saved} · ${ui.savedAt}</div>` : '';
-  return `${head}${overallCard}
-    <div class="card"><h2>${T.episodes}</h2>${ongoing.length ? `<div class="subhead">${T.ongoing}</div>${ongoingHtml}` : ''}${endedHtml}${epForm}</div>
-    <div class="card"><h2>${T.note}</h2><textarea id="noteBox" rows="2" placeholder="${T.notePlaceholder}">${noteVal}</textarea></div>
+  return `<div class="ds">${head}
     ${symptomsCard}
     <div class="card"><h2>${T.meds}</h2>${medsHtml}${prnHtml}</div>
+    <div class="card"><h2>${T.episodes}</h2>${ongoing.length ? `<div class="subhead">${T.ongoing}</div>${ongoingHtml}` : ''}${endedHtml}${epForm}</div>
+    <div class="card"><h2>${T.note}</h2><textarea id="noteBox" rows="2" placeholder="${T.notePlaceholder}">${noteVal}</textarea></div>
     ${savedNote}
-    <div class="clearday-row"><button class="linkbtn ${ui.confirmClear?'danger':''}" data-clearday>${ui.confirmClear?T.confirmClear:T.clearDay}</button></div>`;
+    <div class="clearday-row"><button class="linkbtn ${ui.confirmClear?'danger':''}" data-clearday>${ui.confirmClear?T.confirmClear:T.clearDay}</button></div></div>`;
 }
 
 // Optimistic save: write the local cache synchronously (instant, crash-safe) and
@@ -996,56 +1020,47 @@ function renderBig(state) {
 function renderQuestions(state) {
   const lang = state.lang; const T = STR[lang]; const data = DL.getData();
   const todayStr = new Date().toLocaleDateString('en-CA');
-  const specs = (data.specialisms || []).slice().sort((a, b) => specialistLabel(a, lang).localeCompare(specialistLabel(b, lang)));
-  const sp = ui.specialistId ? specs.find((s) => s.id === ui.specialistId) : null;
-  if (ui.specialistId && !sp) ui.specialistId = null; // selected specialist no longer exists
+  const specs = (data.specialisms || []);
   const spName = (id) => { const s = specs.find((x) => x.id === id); return s ? specialistLabel(s, lang) : ''; };
-
-  // --- Optional specialist filter (scopes the lists below) ---
-  const filter = `<div class="card q-filter"><label class="q-filter-lbl muted small" for="qSpFilter">${T.filterBy}</label>
-    <select id="qSpFilter" class="q-filter-sel" data-spfilter>
-      <option value="">${T.allSpecialists}</option>
-      ${specs.map((s) => `<option value="${s.id}"${ui.specialistId === s.id ? ' selected' : ''}>${esc(specialistLabel(s, lang))}</option>`).join('')}
-    </select></div>`;
-
-  // --- Appointments (scoped to filter; show specialist name when unfiltered) ---
-  const apptRow = (a) => `<div class="bp-row"><div><div class="bp-name">${fmtDate(a.date, lang)}${a.time ? ` ${esc(a.time)}` : ''}${!ui.specialistId && spName(a.specialismId) ? ` <span class="muted small">— ${esc(spName(a.specialismId))}</span>` : ''}</div>${tx(a.note, lang) ? `<div class="muted small">${esc(tx(a.note, lang))}</div>` : ''}</div><button class="ed-btn" data-edit="appointments:${a.id}">✎</button></div>`;
-  let appts = (data.appointments || []);
-  if (ui.specialistId) appts = appts.filter((a) => a.specialismId === ui.specialistId);
+  const spDr = (id) => { const s = specs.find((x) => x.id === id); return (s && s.doctor) ? s.doctor : ''; };
+  const appts = (data.appointments || []);
   const upcoming = appts.filter((a) => a.date >= todayStr).sort((a, b) => (a.date < b.date ? -1 : 1));
   const past = appts.filter((a) => a.date < todayStr).sort((a, b) => (a.date < b.date ? 1 : -1));
-  const upRows = upcoming.map(apptRow).join('') || `<p class="muted small">${T.noAppt}</p>`;
-  const pastRows = past.length ? `<div class="card"><h2>${T.pastAppts}</h2>${past.map(apptRow).join('')}</div>` : '';
-  const apptPrefill = ui.specialistId ? ` data-prefill='${JSON.stringify({ specialismId: ui.specialistId })}'` : '';
-  const apptCard = `<div class="card"><h2>${T.appointments}</h2>${upRows}<button class="btn ghost addbtn" data-add="appointments"${apptPrefill}>+ ${T.addAppt}</button></div>${pastRows}`;
-
-  // --- Open questions: a single row renderer reused by both views ---
+  const next = upcoming[0] || null;
+  const L = (en, es) => lang === 'en' ? en : es;
+  // --- Next-appointment hero ---
+  let hero = '';
+  if (next) {
+    const days = Math.round((new Date(next.date + 'T00:00:00') - new Date(todayStr + 'T00:00:00')) / 86400000);
+    const cd = days <= 0 ? L('today', 'hoy') : days === 1 ? L('tomorrow', 'mañana') : L(`in ${days} days`, `en ${days} días`);
+    hero = `<div class="vhero"><div class="vlbl">${L('Next appointment', 'Próxima cita')}</div><div class="vwhen">${fmtDate(next.date, lang)}${next.time ? ` · ${esc(next.time)}` : ''}</div><div class="vwho">${esc(spName(next.specialismId))}${spDr(next.specialismId) ? ` · ${esc(spDr(next.specialismId))}` : ''}</div><span class="vcd">${cd}</span></div>`;
+  }
+  // --- Upcoming (rest after next) ---
+  const apptRow = (a) => `<div class="drow"><div><div class="dname">${fmtDate(a.date, lang)}${a.time ? ` · ${esc(a.time)}` : ''}</div><div class="dmeta">${esc(spName(a.specialismId))}${tx(a.note, lang) ? ` — ${esc(tx(a.note, lang))}` : ''}</div></div><button class="ed-btn2" data-edit="appointments:${a.id}" aria-label="Edit">✎</button></div>`;
+  const restUp = upcoming.slice(1);
+  const upList = restUp.length ? restUp.map(apptRow).join('') : `<p class="muted small">${L('Nothing else scheduled', 'Nada más programado')}</p>`;
+  const apptCard = `<div class="card"><div class="card-h"><h2>${L('Upcoming', 'Próximas')}</h2><button class="addmini" data-add="appointments" aria-label="Add appointment">＋</button></div>${upList}</div>`;
+  // --- Questions: grouped by specialist, next-visit specialist first ---
+  const openAll = (data.questions || []).filter((q) => q.status === 'open');
   const qRow = (q) => {
     if (ui.answering === q.id) {
       const note = (q.answerNote && q.answerNote[lang]) || '';
-      return `<div class="q-row answering"><div class="q-text">${esc(tx(q.text, lang))}</div><textarea class="q-note" data-qnote="${q.id}" rows="2" placeholder="${T.answerNotePh}">${esc(note)}</textarea><div class="q-actions"><button class="btn q-continue" data-continue="${q.id}">${T.cont}</button></div></div>`;
+      return `<div class="qrow answering"><div class="qtext">${esc(tx(q.text, lang))}</div><textarea class="q-note" data-qnote="${q.id}" rows="2" placeholder="${T.answerNotePh}">${esc(note)}</textarea><button class="btn q-continue" data-continue="${q.id}">${T.cont}</button></div>`;
     }
-    return `<div class="q-row"><div class="q-text">${esc(tx(q.text, lang))}</div><span class="row-right"><button class="tick-btn" data-answer="${q.id}" aria-label="${T.markAnswered}">✓</button><button class="ed-btn" data-edit="questions:${q.id}">✎</button></span></div>`;
+    return `<div class="qrow"><button class="qtick" data-answer="${q.id}" aria-label="${T.markAnswered}"></button><div class="qtext">${esc(tx(q.text, lang))}</div><button class="ed-btn2" data-edit="questions:${q.id}" aria-label="Edit">✎</button></div>`;
   };
-  const openAll = (data.questions || []).filter((q) => q.status === 'open');
-  let qBody;
-  if (ui.specialistId) {
-    const qs = openAll.filter((q) => q.specialismId === ui.specialistId).map(qRow).join('') || `<p class="muted small">${T.noQuestions}</p>`;
-    qBody = `<h2>${T.questionsFor} ${esc(specialistLabel(sp, lang))}</h2>${qs}`;
-  } else {
-    // Grouped by specialist; specialists with no open questions are skipped.
-    const groups = specs.map((s) => {
-      const qs = openAll.filter((q) => q.specialismId === s.id);
-      if (!qs.length) return '';
-      return `<div class="q-group-label">${esc(specialistLabel(s, lang))}</div>${qs.map(qRow).join('')}`;
-    }).join('');
-    const orphans = openAll.filter((q) => !specs.some((s) => s.id === q.specialismId));
-    const orphanRows = orphans.length ? `<div class="q-group-label">${T.other}</div>${orphans.map(qRow).join('')}` : '';
-    qBody = `<h2>${T.allQuestions}</h2>${(groups + orphanRows) || `<p class="muted small">${T.noQuestionsAll}</p>`}`;
-  }
-  const qPrefill = ui.specialistId ? ` data-prefill='${JSON.stringify({ specialismId: ui.specialistId })}'` : '';
-  const qCard = `<div class="card">${qBody}<button class="btn ghost addbtn" data-add="questions"${qPrefill}>+ ${T.addQ}</button></div>`;
-  return `${filter}${apptCard}${qCard}`;
+  const order = next ? [next.specialismId, ...specs.map((s) => s.id).filter((id) => id !== next.specialismId)] : specs.map((s) => s.id);
+  let groups = '';
+  order.forEach((id) => { const qs = openAll.filter((q) => q.specialismId === id); if (!qs.length) return; const isNext = next && id === next.specialismId; groups += `<div class="qgroup">${esc(spName(id))}${isNext ? ` · ${L('next visit', 'próxima visita')}` : ''}</div>${qs.map(qRow).join('')}`; });
+  const orphans = openAll.filter((q) => !specs.some((s) => s.id === q.specialismId));
+  if (orphans.length) groups += `<div class="qgroup">${T.other}</div>${orphans.map(qRow).join('')}`;
+  const qCard = `<div class="card"><div class="card-h"><div class="hgrp"><h2>${L('Questions to ask', 'Preguntas para preguntar')}</h2><span class="count">${openAll.length}</span></div><button class="addmini" data-add="questions" aria-label="Add question">＋</button></div>${groups || `<p class="muted small">${T.noQuestionsAll}</p>`}</div>`;
+  // --- Past appointments (collapsed) ---
+  const pastCard = past.length ? `<div class="card"><details class="ro-fold"><summary><h2>${T.pastAppts}</h2><span class="hint">${L('tap to view', 'toca para ver')}</span><span class="ro-caret">▶</span></summary><div class="ro-body" style="margin-top:8px">${past.map(apptRow).join('')}</div></details></div>` : '';
+  // --- Care team (collapsed; editing folded in here) ---
+  const ct = specs.map((s) => `<div class="drow"><div><div class="dname">${esc(specialistLabel(s, lang))}</div>${s.doctor ? `<div class="dmeta">${esc(s.doctor)}</div>` : ''}</div><button class="ed-btn2" data-edit="specialisms:${s.id}" aria-label="Edit">✎</button></div>`).join('');
+  const careCard = `<div class="card"><details class="ro-fold"><summary><h2>${L('Care team', 'Equipo médico')}</h2><span class="hint">${L('tap to view', 'toca para ver')}</span><span class="ro-caret">▶</span></summary><div class="ro-body" style="margin-top:8px">${ct}<button class="addmini" data-add="specialisms" aria-label="Add specialist" style="margin-top:8px">＋</button></div></details></div>`;
+  return `<div class="ds">${hero}${apptCard}${qCard}${pastCard}${careCard}</div>`;
 }
 
 async function onClick(e, state, rerender) {
@@ -1118,6 +1133,7 @@ const TSS = {
         illness: 'Con qué frecuencia enfermo', epPerMonth: 'episodios / mes', progression: 'Progresión', manage: '⚙ Gestionar registros', back: '‹ Evolución',
         better: 'mejor', worse: 'peor', steady: 'estable', overPeriod: 'en este periodo', notEnough: 'Historial insuficiente.' },
 };
+function dayLogged(log) { return !!log && (log.symptoms || []).some((r) => typeof r.severity === 'number'); }
 function dayScoreVal(log, types) {
   if (!log) return null; let sum = 0, n = 0;
   for (const s of types) { let v = 0;
@@ -1135,7 +1151,7 @@ function bucketMeans(points, n) {
 }
 function scoreWindow(data, types, days) {
   const now = Date.now(); const cut = now - days * 86400000; const prevCut = now - 2 * days * 86400000;
-  const logs = (data.dailyLogs || []).filter((l) => l.date).map((l) => ({ t: new Date(l.date + 'T00:00:00Z').getTime(), v: dayScoreVal(l, types) })).filter((x) => x.v != null);
+  const logs = (data.dailyLogs || []).filter((l) => l.date && dayLogged(l)).map((l) => ({ t: new Date(l.date + 'T00:00:00Z').getTime(), v: dayScoreVal(l, types) })).filter((x) => x.v != null);
   const inWin = logs.filter((x) => x.t >= cut); const inPrev = logs.filter((x) => x.t >= prevCut && x.t < cut);
   const mean = (a) => a.length ? a.reduce((s, c) => s + c.v, 0) / a.length : null;
   const cur = mean(inWin), prev = mean(inPrev);
@@ -1145,7 +1161,7 @@ function scoreWindow(data, types, days) {
 function symptomAvg(data, s, days) {
   const now = Date.now(); const cut = now - days * 86400000; const prevCut = now - 2 * days * 86400000;
   const val = (log) => { if (s.trackBy === 'locations') { const d = DL.derivedOverall(s, log.symptoms || []); return d == null ? 0 : d; } const r = (log.symptoms || []).find((x) => x.symptomId === s.id && x.locationId == null); return (r && typeof r.severity === 'number') ? r.severity : 0; };
-  const logs = (data.dailyLogs || []).filter((l) => l.date).map((l) => ({ t: new Date(l.date + 'T00:00:00Z').getTime(), v: val(l) }));
+  const logs = (data.dailyLogs || []).filter((l) => l.date && dayLogged(l)).map((l) => ({ t: new Date(l.date + 'T00:00:00Z').getTime(), v: val(l) }));
   const inWin = logs.filter((x) => x.t >= cut); const inPrev = logs.filter((x) => x.t >= prevCut && x.t < cut);
   const mean = (a) => a.length ? a.reduce((s, c) => s + c.v, 0) / a.length : 0;
   const cur = mean(inWin), prev = mean(inPrev);
@@ -1172,9 +1188,9 @@ function renderTrends(state) {
   if (!data) return '<div class="card"><p class="muted">No data.</p></div>';
   if (ui.labId) { const lab = (data.labs || []).find((l) => l.id === ui.labId); if (lab) return '<div class="ds">' + renderLabDetail(state, lab) + '</div>'; ui.labId = null; }
   const types = DL.activeSymptomTypes(data);
-  const win = ui.scoreWin || '3m'; const days = ({ '4w': 28, '3m': 90, '1y': 365 })[win] || 90;
+  const win = ui.scoreWin || '3m'; const days = ({ '30d': 30, '3m': 90, '1y': 365 })[win] || 90;
   const sc = scoreWindow(data, types, days);
-  const winseg = `<div class="winseg">${['4w', '3m', '1y'].map((k) => `<button class="${win === k ? 'on' : ''}" data-scorewin="${k}">${k}</button>`).join('')}</div>`;
+  const winseg = `<div class="winseg">${['30d', '3m', '1y'].map((k) => `<button class="${win === k ? 'on' : ''}" data-scorewin="${k}">${k}</button>`).join('')}</div>`;
   let chg;
   if (sc.pct == null) chg = `<span class="muted small">${TT.notEnough}</span>`;
   else { const cls = sc.pct === 0 ? 'flat' : (sc.pct < 0 ? 'down' : 'up'); const word = sc.pct < 0 ? TT.better : sc.pct > 0 ? TT.worse : TT.steady; chg = `<span class="tr ${cls}">${sc.pct > 0 ? '↑' : sc.pct < 0 ? '↓' : '→'} ${Math.abs(sc.pct)}%</span> <span class="muted small">${sc.cur != null ? sc.cur.toFixed(1) : '–'} · ${TT.overPeriod} ${word}</span>`; }
@@ -1185,9 +1201,28 @@ function renderTrends(state) {
   const labRows = keyLabs.map(({ l, r }) => { const st = DL.labStatus(l, r.value); const trn = DL.labTrend(l); const trh = (trn && trn !== 'flat') ? ` <span class="lab-trend">${TREND_ARROW[trn]}</span>` : ''; return `<button class="lab-row" data-lab="${l.id}"><span class="bp-name">${statusDot(st)}${esc(tx(l.marker, lang))}</span><span class="lab-val">${r.value}${trh} <span class="muted small">${esc(l.unit)} · ${fmtMonth(r.date, lang)}</span> ›</span></button>`; }).join('') || `<p class="muted small">${TT.allInRange}</p>`;
   const labsCard = `<div class="card"><div class="card-h"><div><h2>${TT.keyLabs}</h2><div class="muted small">${TT.keyLabsSub}</div></div><button class="addmini" data-add="labs" aria-label="Add marker">＋</button></div>${labRows}</div>`;
   const illCard = `<div class="card"><div class="card-h"><h2>${TT.illness}</h2></div>${illnessBars(data, lang)}<div class="muted small" style="text-align:center">${TT.epPerMonth}</div></div>`;
-  const prog = `<h2 style="margin:20px 4px 4px;font-size:15px;font-weight:700">${TT.progression}</h2>${renderTimeline(state)}`;
+  const prog = renderProg(state);
   const manage = `<div style="text-align:center;margin:6px 0 2px"><button class="linkbtn" data-manage="1">${TT.manage}</button></div>`;
   return `<div class="ds">${scoreCard}${avgCard}${labsCard}${illCard}${prog}${manage}</div>` + renderModal(state);
+}
+// Progression timeline in the new design-system style (keeps filters + tap-for-detail).
+function renderProg(state) {
+  const lang = state.lang; const TT = TSS[lang]; const data = DL.getData();
+  const RM = STR[lang].msTypes;
+  const hidden = ui.tlHidden || (ui.tlHidden = new Set());
+  const types = ['diagnosis', 'medication', 'new_symptom', 'episode', 'milestone'];
+  const chips = types.map((ty) => { const [, color] = MS_TYPE[ty]; return `<button class="pchip ${hidden.has(ty) ? 'off' : ''}" data-tlt="${ty}"><span class="pdot" style="background:${color}"></span>${RM[ty]}</button>`; }).join('');
+  const ms = (data.milestones || []).slice().filter((m) => !hidden.has(m.type)).sort((a, b) => (a.date < b.date ? 1 : -1));
+  let body = ''; let curYear = null;
+  ms.forEach((m) => {
+    const y = m.date.slice(0, 4);
+    if (y !== curYear) { if (curYear !== null) body += '</div>'; body += `<div class="pyear">${y}</div><div class="prail">`; curYear = y; }
+    const [, color] = MS_TYPE[m.type] || MS_TYPE.milestone; const hasDetail = !!tx(m.detail, lang);
+    body += `<button class="pitem" data-ms="${m.id}"><span class="pidot" style="background:${color}"></span><span class="pibody"><span class="pidate">${fmtMonth(m.date, lang)}</span><span class="pilabel">${esc(tx(m.label, lang))}</span></span>${hasDetail ? '<span class="pichev">›</span>' : ''}</button>`;
+  });
+  if (curYear !== null) body += '</div>';
+  if (!ms.length) body = `<p class="muted small" style="padding:10px 4px">${STR[lang].noData}</p>`;
+  return `<div class="card"><div class="card-h"><h2>${TT.progression}</h2><button class="addmini" data-add="milestones" aria-label="Add milestone">＋</button></div><div class="pfilters">${chips}</div>${body}</div>`;
 }
 function renderRecords(state) { return ui.manage ? renderManage(state) : renderTrends(state); }
 function renderManage(state) {
