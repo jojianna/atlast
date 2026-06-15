@@ -89,20 +89,12 @@ details.msgs { margin-top:8px; } details.msgs summary { cursor:pointer; font-siz
 .subtabs { display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:12px; }
 .subtab { border:1px solid var(--line); background:#fff; color:var(--muted); border-radius:10px; padding:9px; font-weight:600; cursor:pointer; }
 .subtab.is-active { background:var(--teal); color:#fff; border-color:transparent; }
-.appt-list { display:flex; flex-direction:column; gap:8px; }
-.appt-pick { text-align:left; border:1px solid var(--line); background:#fff; border-radius:12px; padding:12px; cursor:pointer; display:flex; flex-direction:column; gap:3px; }
-.appt-pick-name { font-weight:600; font-size:16px; }
 .bp-row { display:flex; align-items:flex-start; justify-content:space-between; gap:10px; padding:8px 0; border-bottom:1px solid var(--line); }
 .bp-row:last-child { border-bottom:0; }
 .bp-name { font-weight:600; }
-.appt-next { display:flex; align-items:center; justify-content:space-between; }
-.appt-next-date { font-weight:700; color:var(--teal-d); }
 .q-row { display:flex; align-items:flex-start; justify-content:space-between; gap:10px; padding:10px 0; border-bottom:1px solid var(--line); }
 .q-row:last-child { border-bottom:0; }
 .q-text { flex:1; }
-.q-done { color:var(--ok); white-space:nowrap; }
-.subtabs-5 { grid-template-columns: repeat(5, 1fr); gap: 4px; }
-.subtabs-5 .subtab { padding: 8px 2px; font-size: 12px; }
 ul.tight { margin: 4px 0 0; padding-left: 18px; } ul.tight li { padding: 1px 0; }
 .pill-on { background: var(--teal); color: #fff; }
 .lab-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; border: 0; background: transparent; border-bottom: 1px solid var(--line); padding: 10px 0; cursor: pointer; text-align: left; font: inherit; }
@@ -859,22 +851,18 @@ const { tx, specialistLabel } = DL;
 const ui = { specialistId: null, answering: null };
 
 const STR = {
-  en: { appointmentWith: 'Appointment with', change: 'Change', bigPicture: 'Big picture', questions: 'Questions',
-        pickSpecialist: 'Pick a specialist', next: 'Next', question: 'question', questionsLc: 'questions', noOpen: 'No open questions',
-        dx: 'Diagnosed', conditions: 'Active conditions', activeManaged: 'Diagnosed', underInvestigation: 'Under investigation', since: 'Since', currentMeds: 'Current medications',
+  en: { dx: 'Diagnosed', conditions: 'Active conditions', activeManaged: 'Diagnosed', underInvestigation: 'Under investigation', since: 'Since', currentMeds: 'Current medications',
         control: { controlled: 'Controlled', stable: 'Stable · no treatment', adjusting: 'Adjusting treatment', uncontrolled: 'Not controlled' },
-        ruledOut: 'Ruled out', other: 'Other', provShort: 'Provisional', none: 'None', nextAppt: 'Next appointment', forCond: 'for', revisit: 'may re-test',
+        ruledOut: 'Ruled out', other: 'Other', provShort: 'Provisional', none: 'None', revisit: 'may re-test',
         questionsFor: 'Questions for', markAnswered: 'Mark answered', cont: 'Continue', answerNotePh: 'Add a note (optional)…', medStatus: { tapering: 'tapering off', prn: 'as needed', stopped: 'stopped' }, noQuestions: 'No open questions for this specialist.', noQuestionsAll: 'No open questions.', addQ: 'Add question', appointments: 'Upcoming appointments', pastAppts: 'Past appointments', addAppt: 'Add appointment', noAppt: 'No appointments yet',
         filterBy: 'Filter by specialist', allSpecialists: 'All specialists', allQuestions: 'All open questions',
         secRegular: 'Regular', secSupplements: 'Supplements', secPrn: 'As needed (PRN)',
         prnLabel: 'PRN', everyOther: 'every other day', everyN: 'every {n} days',
         wd: { mon: 'Mon', tue: 'Tue', wed: 'Wed', thu: 'Thu', fri: 'Fri', sat: 'Sat', sun: 'Sun' },
         medLegend: 'X-X-X = morning · midday · evening (e.g. 0-0-1 = one at night).' },
-  es: { appointmentWith: 'Cita con', change: 'Cambiar', bigPicture: 'Resumen', questions: 'Preguntas',
-        pickSpecialist: 'Elige un especialista', next: 'Próxima', question: 'pregunta', questionsLc: 'preguntas', noOpen: 'Sin preguntas pendientes',
-        dx: 'Diagnóstico', conditions: 'Condiciones activas', activeManaged: 'Diagnosticadas', underInvestigation: 'En estudio', since: 'Desde', currentMeds: 'Medicación actual',
+  es: { dx: 'Diagnóstico', conditions: 'Condiciones activas', activeManaged: 'Diagnosticadas', underInvestigation: 'En estudio', since: 'Desde', currentMeds: 'Medicación actual',
         control: { controlled: 'Controlada', stable: 'Estable · sin tratamiento', adjusting: 'Ajustando tratamiento', uncontrolled: 'No controlada' },
-        ruledOut: 'Descartado', other: 'Otros', provShort: 'Provisional', none: 'Ninguno', nextAppt: 'Próxima cita', forCond: 'para', revisit: 'puede reevaluarse',
+        ruledOut: 'Descartado', other: 'Otros', provShort: 'Provisional', none: 'Ninguno', revisit: 'puede reevaluarse',
         questionsFor: 'Preguntas para', markAnswered: 'Marcar respondida', cont: 'Continuar', answerNotePh: 'Añadir una nota (opcional)…', medStatus: { tapering: 'en reducción', prn: 'según necesidad', stopped: 'suspendido' }, noQuestions: 'Sin preguntas pendientes para este especialista.', noQuestionsAll: 'Sin preguntas pendientes.', addQ: 'Añadir pregunta', appointments: 'Próximas citas', pastAppts: 'Citas anteriores', addAppt: 'Añadir cita', noAppt: 'Sin citas todavía',
         filterBy: 'Filtrar por especialista', allSpecialists: 'Todos los especialistas', allQuestions: 'Todas las preguntas',
         secRegular: 'Pauta fija', secSupplements: 'Suplementos', secPrn: 'Según necesidad (PRN)',
