@@ -201,6 +201,36 @@ ul.tight { margin: 4px 0 0; padding-left: 18px; } ul.tight li { padding: 1px 0; 
 .tl-date2 { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.03em; }
 .tl-label2 { font-weight:500; font-size:13.5px; line-height:1.3; }
 .tl-chev2 { margin-left:auto; color:#cbd5dc; font-size:18px; align-self:center; }
+
+/* ===== redesign design-system (scoped to .ds during incremental rollout) ===== */
+.ds .card{box-shadow:0 1px 2px rgba(30,40,50,.04),0 2px 8px rgba(30,40,50,.05);border-radius:16px;border:1px solid var(--line);}
+.ds .card-h{display:flex;align-items:center;justify-content:space-between;margin:0 0 12px;}
+.ds .card-h h2{font-size:15px;font-weight:700;margin:0;}
+.ds .hgrp{display:flex;align-items:center;gap:8px;}
+.ds .count{font-size:11px;font-weight:700;color:var(--teal-d);background:#e1f5ee;border-radius:999px;padding:2px 9px;}
+.ds .drow{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;padding:11px 0;border-top:1px solid var(--line);}
+.ds .drow:first-of-type{border-top:0;}
+.ds .dname{font-weight:600;}
+.ds .dmeta{font-size:13px;color:var(--muted);margin-top:1px;}
+.ds .dright{flex:none;display:flex;align-items:center;gap:8px;}
+.ds .chip{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;border-radius:999px;padding:3px 9px;white-space:nowrap;border:0;}
+.ds .chip.good{background:#dcfce7;color:#15803d;} .ds .chip.watch{background:#fef3c7;color:#b45309;}
+.ds .chip.alert{background:#fee2e2;color:#b91c1c;} .ds .chip.info{background:#dbeafe;color:#1d4ed8;} .ds .chip.neutral{background:var(--chip);color:var(--muted);}
+.ds .subsec{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--teal-d);font-weight:800;margin:16px 0 8px;padding-bottom:4px;border-bottom:1.5px solid #e1f5ee;}
+.ds .subsec:first-child{margin-top:0;}
+.ds .sched{font-variant-numeric:tabular-nums;font-weight:700;white-space:nowrap;text-align:right;}
+.ds .sched .f{display:block;font-weight:500;color:var(--muted);font-size:11px;}
+.ds .addmini{border:0;width:28px;height:28px;border-radius:50%;background:#e1f5ee;color:var(--teal-d);font-size:18px;font-weight:700;line-height:1;cursor:pointer;}
+.ds .ed-btn2{border:1px solid var(--line);background:#fff;border-radius:8px;padding:4px 8px;font-size:13px;color:var(--muted);cursor:pointer;}
+.ds details.ro{border-top:1px solid var(--line);} .ds details.ro:first-of-type{border-top:0;}
+.ds details.ro>summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 0;}
+.ds details.ro>summary::-webkit-details-marker{display:none;}
+.ds .ro-why{padding:0 0 11px;font-size:12.5px;color:var(--muted);}
+.ds .ro-fold>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:8px;}
+.ds .ro-fold>summary::-webkit-details-marker{display:none;}
+.ds .ro-fold>summary h2{margin:0;font-size:15px;}
+.ds .ro-fold .hint{font-size:11px;color:var(--muted);font-weight:600;}
+.ds .ro-caret{margin-left:auto;color:var(--muted);transition:transform .15s;} .ds .ro-fold[open] .ro-caret{transform:rotate(90deg);}
 </style>
   <title>Atlast</title>
 </head>
@@ -880,12 +910,13 @@ function fmtDate(iso, lang) { if (!iso) return ''; return new Date(iso + 'T00:00
 // router as their own tabs. medSchedule() is defined at top level (shared by
 // Overview + Records).
 
+// CONTROL enum → harmonised chip class (single status palette)
+const CTRL_CLS = { treated: 'good', no_treatment: 'neutral', adjusting: 'watch', confirming: 'info' };
 function renderBig(state) {
   const lang = state.lang; const T = STR[lang]; const data = DL.getData();
   const bp = DL.bigPicture(data, lang);
   const condById = Object.fromEntries((data.conditions || []).map((c) => [c.id, c]));
   const spById = Object.fromEntries((data.specialisms || []).map((s) => [s.id, s]));
-  // Sub-line under each condition: "Since YYYY · Specialist(s)".
   const condSub = (c) => {
     const names = (c.specialismIds || []).map((id) => spById[id] ? specialistLabel(spById[id], lang) : '').filter(Boolean);
     const parts = [];
@@ -893,27 +924,18 @@ function renderBig(state) {
     if (names.length) parts.push(names.join(', '));
     return parts.join(' · ');
   };
-  // Treatment/control chip (clinical "is this under control?" signal).
-  const ctrlChip = (c) => c.control && T.control && T.control[c.control]
-    ? `<span class="ctrl ctrl-${c.control}">${T.control[c.control]}</span>` : '';
+  // ONE chip per condition: investigating → "Investigating"; otherwise the control state.
+  const condChip = (c) => c.status === 'investigating'
+    ? `<span class="chip info">${STATUS[lang].investigating}</span>`
+    : (c.control && T.control && T.control[c.control] ? `<span class="chip ${CTRL_CLS[c.control] || 'neutral'}">${T.control[c.control]}</span>` : '');
   const condRow = (c) => {
     const sub = condSub(c);
-    return `<div class="bp-row"><div><div class="bp-name">${esc(tx(c.name, lang))}</div>${sub ? `<div class="muted small">${esc(sub)}</div>` : ''}</div><span class="row-right">${ctrlChip(c)}</span></div>`;
+    return `<div class="drow"><div><div class="dname">${esc(tx(c.name, lang))}</div>${sub ? `<div class="dmeta">${esc(sub)}</div>` : ''}</div><div class="dright">${condChip(c)}<button class="ed-btn2" data-edit="conditions:${c.id}" aria-label="Edit">✎</button></div></div>`;
   };
-  // Order newest → oldest by diagnosis date (statusDate), undated last. This is
-  // language-independent, so EN and ES show the same order (alpha sort differed).
-  const byDateDesc = (a, b) => {
-    const da = a.statusDate || '', db = b.statusDate || '';
-    if (da === db) return 0;
-    if (!da) return 1;
-    if (!db) return -1;
-    return da < db ? 1 : -1;
-  };
-  // One unified Conditions list (diagnosed + under-investigation together), newest → oldest.
+  const byDateDesc = (a, b) => { const da = a.statusDate || '', db = b.statusDate || ''; if (da === db) return 0; if (!da) return 1; if (!db) return -1; return da < db ? 1 : -1; };
   const allConds = bp.conditions.slice().sort(byDateDesc);
-  const conds = allConds.map((c) => condRow(c)).join('') || `<p class="muted small">${T.none}</p>`;
-  // Doctor-style med list: a clean Regular / Supplements / PRN split with an
-  // aligned schedule column, rather than one heading per condition.
+  const conds = allConds.map(condRow).join('') || `<p class="muted small">${T.none}</p>`;
+  // Doctor-style med list: Regular / Supplements / PRN with an aligned schedule column.
   const isPrnMed = (m) => m.scheduledDays === 'prn' || (m.status === 'prn' && m.everyNDays == null);
   const medRowHtml = (m) => {
     const sch = medSchedule(m, lang);
@@ -924,38 +946,35 @@ function renderBig(state) {
       if (note) statusLbl += ' ' + note;
     }
     let right;
-    if (sch.xxx) {
-      const sub = [sch.freq, statusLbl].filter(Boolean).join(' · ');
-      right = `<div class="sched-x">${esc(sch.xxx)}</div>${sub ? `<div class="freq">${esc(sub)}</div>` : ''}`;
-    } else {
-      right = `<span class="freq">${esc(sch.freq || statusLbl)}</span>`;
-    }
+    if (sch.xxx) { const sub = [sch.freq, statusLbl].filter(Boolean).join(' · '); right = `${esc(sch.xxx)}${sub ? `<span class="f">${esc(sub)}</span>` : ''}`; }
+    else { right = `<span class="f">${esc(sch.freq || statusLbl)}</span>`; }
     const firstCond = (m.conditionIds || [])[0];
     const tag = (firstCond && condById[firstCond]) ? tx(condById[firstCond].name, lang) : (tx(m.purpose, lang) || '');
-    const sub = (tag ? `<span>${esc(tag)}</span>` : '') + (tag && m.dose ? ' · ' : '') + (m.dose ? `<span class="med-dose">${esc(m.dose)}</span>` : '');
-    return `<div class="med-row"><div class="med-l"><div class="bp-med-name">${esc(tx(m.name, lang))}</div>${sub ? `<div class="med-sub">${sub}</div>` : ''}</div><div class="med-sched">${right}</div></div>`;
+    const sub = (tag ? esc(tag) : '') + (tag && m.dose ? ' · ' : '') + (m.dose ? `<b>${esc(m.dose)}</b>` : '');
+    return `<div class="drow"><div><div class="dname">${esc(tx(m.name, lang))}</div>${sub ? `<div class="dmeta">${sub}</div>` : ''}</div><div class="dright"><div class="sched">${right}</div><button class="ed-btn2" data-edit="medications:${m.id}" aria-label="Edit">✎</button></div></div>`;
   };
-  // Order each section morning → midday → evening (1-0-0s first); ties keep data order.
   const TOD_ORDER = { morning: 0, midday: 1, evening: 2, bedtime: 2, prn: 3 };
   const byTimeOfDay = (a, b) => ((TOD_ORDER[a.timeOfDay] != null ? TOD_ORDER[a.timeOfDay] : 1) - (TOD_ORDER[b.timeOfDay] != null ? TOD_ORDER[b.timeOfDay] : 1));
   const allMeds = bp.medications;
   const prnMeds = allMeds.filter(isPrnMed);
   const suppMeds = allMeds.filter((m) => !isPrnMed(m) && m.category === 'supplement').sort(byTimeOfDay);
   const regMeds = allMeds.filter((m) => !isPrnMed(m) && m.category !== 'supplement').sort(byTimeOfDay);
-  const medSection = (label, list) => list.length ? `<div class="med-sec">${label}</div>${list.map(medRowHtml).join('')}` : '';
+  const medSection = (label, list) => list.length ? `<div class="subsec">${label}</div>${list.map(medRowHtml).join('')}` : '';
   const meds = (medSection(T.secRegular, regMeds) + medSection(T.secSupplements, suppMeds) + medSection(T.secPrn, prnMeds)) || `<p class="muted small">${T.none}</p>`;
-  const ro = bp.excluded.map((r) => {
+  // Ruled out — one collapsed line; each item taps for why/when.
+  const roItem = (r) => {
     const prov = r.status === 'provisionally_excluded';
-    const reTag = prov ? ` <span class="muted small">↺ ${T.revisit}</span>` : '';
     const reason = tx(r.reason, lang);
     const revisit = r.revisitNote ? tx(r.revisitNote, lang) : '';
-    const meta = [reason, r.date ? fmtDate(r.date, lang) : ''].filter(Boolean).join(' · ');
-    const badge = `<span class="badge ${prov ? 'prov' : 'err'}">${prov ? T.provShort : STATUS[lang].excluded}</span>`;
-    return `<div class="bp-row"><div><div class="bp-name">${esc(tx(r.name, lang))}${reTag}</div>${meta ? `<div class="muted small">${esc(meta)}</div>` : ''}${revisit ? `<div class="muted small">↺ ${esc(revisit)}</div>` : ''}</div><span class="row-right">${badge}</span></div>`;
-  }).join('') || `<p class="muted small">${T.none}</p>`;
-  return `<div class="card"><div class="sec-head"><h2>${T.activeManaged}</h2><span class="prog-chip">${allConds.length}</span></div>${conds}</div>
-    <div class="card"><h2>${T.currentMeds}</h2>${meds}</div>
-    <div class="card"><details class="ro-fold"><summary><h2>${T.ruledOut}</h2><span class="ro-caret">▶</span></summary><div class="ro-body">${ro}</div></details></div>`;
+    const why = [reason, revisit ? ('↺ ' + revisit) : ''].filter(Boolean).join(' — ');
+    return `<details class="ro"><summary><span class="chip ${prov ? 'info' : 'neutral'}">${esc(tx(r.name, lang))}${prov ? ' ↺' : ''}</span><span class="muted small">${r.date ? fmtDate(r.date, lang) : ''} ›</span></summary><div class="ro-why">${esc(why || '—')}</div></details>`;
+  };
+  const ro = bp.excluded.map(roItem).join('') || `<p class="muted small">${T.none}</p>`;
+  return `<div class="ds">
+    <div class="card"><div class="card-h"><h2>${T.activeManaged}</h2><div class="hgrp"><span class="count">${allConds.length}</span><button class="addmini" data-add="conditions" aria-label="Add condition">＋</button></div></div>${conds}</div>
+    <div class="card"><div class="card-h"><h2>${T.currentMeds}</h2><button class="addmini" data-add="medications" aria-label="Add medication">＋</button></div>${meds}</div>
+    <div class="card"><details class="ro-fold"><summary><h2>${T.ruledOut}</h2><span class="hint">${lang === 'en' ? 'tap to view' : 'toca para ver'}</span><span class="ro-caret">▶</span></summary><div class="ro-body" style="margin-top:8px">${ro}</div></details></div>
+  </div>`;
 }
 
 function renderQuestions(state) {
