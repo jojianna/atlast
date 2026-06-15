@@ -146,11 +146,6 @@ ul.tight { margin: 4px 0 0; padding-left: 18px; } ul.tight li { padding: 1px 0; 
 .daynav.past { background:#fff8e1; border-color:#f3e2b3; }
 .daynav.past .dayname input[type="date"], .daynav.past .daysub { color:#92400e; }
 .daynav.past .navbtn { background:#fff; border:1px solid #f3e2b3; color:#b45309; }
-.overall-card .overall-hero { display:flex; align-items:center; gap:11px; margin-bottom:10px; }
-.overall-dial { width:42px; height:42px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:19px; font-weight:700; color:#fff; flex:none; }
-.overall-dial.empty { background:#fff; border:2px dashed #cbd5dc; color:#94a3b8; }
-.overall-dial.sev-0 { background:#94a3b8; } .overall-dial.sev-1 { background:#65a30d; } .overall-dial.sev-2 { background:#ca8a04; } .overall-dial.sev-3 { background:#ea580c; } .overall-dial.sev-4 { background:#dc2626; }
-.overall-label { font-weight:600; }
 .sec-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; }
 .sec-head h2 { margin:0; }
 .prog-chip { font-size:12px; color:var(--teal-d); background:#e1f5ee; border-radius:999px; padding:2px 9px; font-weight:600; }
@@ -296,8 +291,8 @@ ul.tight { margin: 4px 0 0; padding-left: 18px; } ul.tight li { padding: 1px 0; 
   <main id="screen" class="screen" aria-live="polite"></main>
   <nav class="tabbar" aria-label="Main">
     <button class="tab is-active" data-tab="today"><span class="tab-ico" aria-hidden="true">✓</span><span class="tab-label">Log</span></button>
-    <button class="tab" data-tab="overview"><span class="tab-ico" aria-hidden="true">📋</span><span class="tab-label">Overview</span></button>
-    <button class="tab" data-tab="next"><span class="tab-ico" aria-hidden="true">🗓</span><span class="tab-label">Next</span></button>
+    <button class="tab" data-tab="overview"><span class="tab-ico" aria-hidden="true">📋</span><span class="tab-label">Summary</span></button>
+    <button class="tab" data-tab="next"><span class="tab-ico" aria-hidden="true">🗓</span><span class="tab-label">Visits</span></button>
     <button class="tab" data-tab="records"><span class="tab-ico" aria-hidden="true">📈</span><span class="tab-label">Trends</span></button>
   </nav>
   <script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@3/lib/msal-browser.min.js"></script>
@@ -382,7 +377,7 @@ function validate(data) {
     if(!isArr(d.medsTaken))E(at+'.medsTaken'); else d.medsTaken.forEach((mt,j)=>{ if(!ids.medication.has(mt.medId))W(at+'.medsTaken['+j+'].medId unknown'); if(!isBool(mt.taken))E(at+'.medsTaken['+j+'].taken'); });
   });
   (data.episodes||[]).forEach((e,i)=>{ const at='episodes['+i+'] ('+e.id+')'; if(!isStr(e.id))E(at+'.id'); if(!isI18n(e.name))E(at+'.name'); if(!ENUMS.episodeType.includes(e.type))E(at+'.type invalid'); if(!isStr(e.startDate)||!ISO_DATE.test(e.startDate))E(at+'.startDate'); if(!isNullableDate(e.endDate))E(at+'.endDate'); if(!isBool(e.showOnTimeline))E(at+'.showOnTimeline'); });
-  (data.labs||[]).forEach((l,i)=>{ const at='labs['+i+'] ('+l.id+')'; if(!isStr(l.id))E(at+'.id'); if(!isI18n(l.marker))E(at+'.marker'); if(!ENUMS.labDisplayMode.includes(l.displayMode))E(at+'.displayMode'); if(l.referenceRange!==null&&!(isObj(l.referenceRange)&&('low' in l.referenceRange)&&('high' in l.referenceRange)))E(at+'.referenceRange'); if(l.referenceRange===null)W(at+'.referenceRange null'); if(l.posNeg!==undefined&&!isBool(l.posNeg))E(at+'.posNeg'); if(!isArr(l.results))E(at+'.results'); else l.results.forEach((r,j)=>{ const rat=at+'.results['+j+']'; if(!isStr(r.date)||!ISO_DATE.test(r.date))E(rat+'.date'); if(!isNum(r.value)&&!isStr(r.qualitative))E(rat+' needs value or qualitative'); }); });
+  (data.labs||[]).forEach((l,i)=>{ const at='labs['+i+'] ('+l.id+')'; if(!isStr(l.id))E(at+'.id'); if(!isI18n(l.marker))E(at+'.marker'); if(!ENUMS.labDisplayMode.includes(l.displayMode))E(at+'.displayMode'); if(l.referenceRange!==null&&!(isObj(l.referenceRange)&&('low' in l.referenceRange)&&('high' in l.referenceRange)))E(at+'.referenceRange'); if(l.referenceRange===null)W(at+'.referenceRange null'); if(l.posNeg!==undefined&&!isBool(l.posNeg))E(at+'.posNeg'); if(l.pinned!==undefined&&!isBool(l.pinned))E(at+'.pinned'); if(!isArr(l.results))E(at+'.results'); else l.results.forEach((r,j)=>{ const rat=at+'.results['+j+']'; if(!isStr(r.date)||!ISO_DATE.test(r.date))E(rat+'.date'); if(!isNum(r.value)&&!isStr(r.qualitative))E(rat+' needs value or qualitative'); }); });
   (data.questions||[]).forEach((q,i)=>{ const at='questions['+i+'] ('+q.id+')'; if(!isStr(q.id))E(at+'.id'); if(!isI18n(q.text))E(at+'.text'); if(!isStr(q.specialismId))E(at+'.specialismId required'); else if(!ids.specialist.has(q.specialismId))W(at+'.specialismId unknown'); if(q.conditionIds!==undefined&&!isArr(q.conditionIds))E(at+'.conditionIds'); if(!ENUMS.questionStatus.includes(q.status))E(at+'.status invalid'); });
   (data.milestones||[]).forEach((m,i)=>{ const at='milestones['+i+'] ('+m.id+')'; if(!isStr(m.id))E(at+'.id'); if(!isStr(m.date)||!ISO_DATE.test(m.date))E(at+'.date'); if(!ENUMS.milestoneType.includes(m.type))E(at+'.type invalid'); if(!isI18n(m.label))E(at+'.label'); });
   (data.appointments||[]).forEach((a,i)=>{ const at='appointments['+i+'] ('+a.id+')'; if(!isStr(a.id))E(at+'.id'); if(!isStr(a.date)||!ISO_DATE.test(a.date))E(at+'.date'); if(a.time!=null&&a.time!==''&&!(isStr(a.time)&&/^\d{2}:\d{2}$/.test(a.time)))E(at+'.time'); if(!ids.specialist.has(a.specialismId))W(at+'.specialismId unknown'); });
@@ -742,10 +737,6 @@ function sevSelector(symptomId, locationId, value) {
   const btns = [0, 1, 2, 3, 4].map((n) => `<button class="sev ${value === n ? 'is-on sev-' + n : ''}" data-sev="${n}" ${ctx}>${n}</button>`).join('');
   return `<div class="sev-row" ${ctx}>${btns}</div>`;
 }
-function overallSelector(value) {
-  const btns = [0, 1, 2, 3, 4].map((n) => `<button class="sev ${value === n ? 'is-on sev-' + n : ''}" data-ovsev="${n}">${n}</button>`).join('');
-  return `<div class="sev-row">${btns}</div>`;
-}
 const rowKey = (sym, loc) => sym + '|' + (loc || '');
 function symRow(state, symId, locId, label) {
   const { date, lang } = state; const data = DL.getData();
@@ -791,7 +782,9 @@ function renderToday(state) {
   }).join('');
   const allLogged = doneCount === types.length;
   const zeroLink = allLogged ? `<div class="submit-block"><div class="muted small submit-hint">✓ ${T.allZeroed}</div></div>` : `<div class="submit-block"><button class="linkbtn" id="markZero">${T.markZero}</button></div>`;
-  const symptomsCard = `<div class="card"><div class="sec-head"><h2>${T.symptoms}</h2><span class="prog-chip">${doneCount} / ${types.length}</span></div>${symptomCards}${zeroLink}<div class="scale-foot muted">${T.scaleHint}</div></div>`;
+  const editSyms = (data.symptomTypes || []).map((s) => `<div class="drow"><div><div class="dname">${esc(tx(s.name, lang))}${s.archived ? ` <span class="muted small">(${lang === 'en' ? 'archived' : 'archivado'})</span>` : ''}</div></div><button class="ed-btn2" data-edit="symptomTypes:${s.id}" aria-label="Edit">✎</button></div>`).join('');
+  const editSymsBlock = `<details class="ro-fold" style="margin-top:10px"><summary><span class="muted small" style="font-weight:700">${lang === 'en' ? 'Edit symptoms & sites' : 'Editar síntomas y zonas'}</span><span class="ro-caret">▶</span></summary><div style="margin-top:6px">${editSyms}<button class="addmini" data-add="symptomTypes" aria-label="Add symptom" style="margin-top:8px">＋</button></div></details>`;
+  const symptomsCard = `<div class="card"><div class="sec-head"><h2>${T.symptoms}</h2><span class="prog-chip">${doneCount} / ${types.length}</span></div>${symptomCards}${zeroLink}<div class="scale-foot muted">${T.scaleHint}</div>${editSymsBlock}</div>`;
 
   const { scheduled, prn } = DL.medsForDate(date, data);
   const medRow = (m) => { const taken = DL.getMedTaken(date, m.id, data); return `<div class="med"><div class="med-name">${esc(tx(m.name, lang))} <span class="muted small">${esc(m.dose)}</span></div><div class="med-toggle"><button class="tgl ${taken === true ? 'is-yes' : ''}" data-med="${m.id}" data-taken="yes">✓</button><button class="tgl ${taken === false ? 'is-no' : ''}" data-med="${m.id}" data-taken="no">✗</button></div></div>`; };
@@ -816,11 +809,13 @@ function renderToday(state) {
   const endedHtml = endedToday.map((e) => `<div class="ep-ongoing"><span class="muted">${esc(tx(e.name, lang) || EP_TYPES[lang][e.type])} <span class="pill">${EP_TYPES[lang][e.type] || e.type}</span> <span class="small">${T.endedToday} ${e.endDate}</span></span><button class="btn-sm" data-reopen-ep="${e.id}">↺ ${T.reopen}</button></div>`).join('');
   const typeOpts = Object.entries(EP_TYPES[lang]).map(([k, v]) => `<option value="${k}">${v}</option>`).join('');
   const epForm = ui.epFormOpen ? `<div class="ep-form"><input id="epName" placeholder="${T.name}" /><div class="ep-form-row"><select id="epType">${typeOpts}</select><input type="date" id="epStart" value="${date}" /></div><div class="ep-form-actions"><button class="btn" id="epSave">${T.start2}</button><button class="btn ghost" id="epCancel">${T.cancel}</button></div></div>` : `<button class="btn ghost wide" id="epStartBtn">${T.startEp}</button>`;
+  const allEps = (data.episodes || []).slice().sort((a, b) => (a.startDate < b.startDate ? 1 : -1));
+  const allEpsBlock = `<details class="ro-fold" style="margin-top:10px"><summary><span class="muted small" style="font-weight:700">${lang === 'en' ? 'All episodes (edit)' : 'Todos los episodios'}</span><span class="ro-caret">▶</span></summary><div style="margin-top:6px">${allEps.map((e) => `<div class="drow"><div><div class="dname">${esc(tx(e.name, lang) || EP_TYPES[lang][e.type])}</div><div class="dmeta">${EP_TYPES[lang][e.type]} · ${esc(e.startDate)}${e.endDate ? ' → ' + esc(e.endDate) : ' → ' + (lang === 'en' ? 'ongoing' : 'en curso')}</div></div><button class="ed-btn2" data-edit="episodes:${e.id}" aria-label="Edit">✎</button></div>`).join('') || `<p class="muted small">${T.none}</p>`}</div></details>`;
   const savedNote = ui.savedAt ? `<div class="muted small saved-tag">✓ ${T.saved} · ${ui.savedAt}</div>` : '';
   return `<div class="ds">${head}
     ${symptomsCard}
     <div class="card"><h2>${T.meds}</h2>${medsHtml}${prnHtml}</div>
-    <div class="card"><h2>${T.episodes}</h2>${ongoing.length ? `<div class="subhead">${T.ongoing}</div>${ongoingHtml}` : ''}${endedHtml}${epForm}</div>
+    <div class="card"><h2>${T.episodes}</h2>${ongoing.length ? `<div class="subhead">${T.ongoing}</div>${ongoingHtml}` : ''}${endedHtml}${epForm}${allEpsBlock}</div>
     <div class="card"><h2>${T.note}</h2><textarea id="noteBox" rows="2" placeholder="${T.notePlaceholder}">${noteVal}</textarea></div>
     ${savedNote}
     <div class="clearday-row"><button class="linkbtn ${ui.confirmClear?'danger':''}" data-clearday>${ui.confirmClear?T.confirmClear:T.clearDay}</button></div></div>`;
@@ -845,7 +840,6 @@ async function onClick(e, state, rerender) {
   document.querySelectorAll('.epnote').forEach((el) => DL.setEpisodeNote(el.dataset.epnote, state.lang, el.value));
   if (t.dataset.nav) { state.date = shiftDate(state.date, Number(t.dataset.nav)); ui.savedAt = null; ui.confirmClear = false; rerender(); return; }
   if (t.dataset.note) { const k = t.dataset.note; ui.noteOpen.has(k) ? ui.noteOpen.delete(k) : ui.noteOpen.add(k); rerender(); return; }
-  if (t.dataset.ovsev !== undefined) { const val = Number(t.dataset.ovsev); const cur = DL.getOverallPain(state.date, DL.getData()); DL.setOverallPain(state.date, cur === val ? null : val); save(); rerender(); return; }
   if (t.dataset.expand) { const id = t.dataset.expand; ui.expanded.has(id) ? ui.expanded.delete(id) : ui.expanded.add(id); rerender(); return; }
   if (t.classList.contains('sev')) { const sym = t.dataset.sym, loc = t.dataset.loc || null, sev = Number(t.dataset.sev); const cur = DL.getSeverity(state.date, sym, loc, DL.getData()); DL.setSeverity(state.date, sym, loc, cur === sev ? null : sev); save(); rerender(); return; }
   if (t.dataset.med) { const want = t.dataset.taken === 'yes'; const cur = DL.getMedTaken(state.date, t.dataset.med, DL.getData()); DL.setMedTaken(state.date, t.dataset.med, cur === want ? null : want); save(); rerender(); return; }
@@ -1125,11 +1119,11 @@ const TABS = ['conditions', 'meds', 'symptoms', 'episodes', 'labs', 'timeline'];
 // ===== TRENDS (the repurposed 4th tab). Reuses renderTimeline / lab charts / modal. =====
 const TSS = {
   en: { symScore: 'Symptom score', symScoreSub: 'daily average of all symptoms (unlogged = 0) · 0–4', scale04: 'Scale 0 (none) – 4 (prevents activity)',
-        avgSymptoms: 'Average symptoms', avgSub: 'mean over the window · tap one for its trend', keyLabs: 'Key labs', keyLabsSub: 'out-of-range markers (pin/unpin coming)', allInRange: 'All tracked markers are in range.',
+        avgSymptoms: 'Average symptoms', avgSub: 'mean over the window · tap one for its trend', keyLabs: 'Key labs', keyLabsSub: 'out-of-range markers · open one to pin it', keyLabsSubPinned: 'your pinned markers', allInRange: 'All tracked markers are in range.',
         illness: "How often I'm ill", epPerMonth: 'episodes / month', progression: 'Progression', manage: '⚙ Manage all records', back: '‹ Trends',
         better: 'better', worse: 'worse', steady: 'steady', overPeriod: 'over this period', notEnough: 'Not enough history yet.' },
   es: { symScore: 'Puntuación de síntomas', symScoreSub: 'media diaria de todos los síntomas (sin registrar = 0) · 0–4', scale04: 'Escala 0 (nada) – 4 (impide actividad)',
-        avgSymptoms: 'Síntomas promedio', avgSub: 'media del periodo · toca uno para ver su evolución', keyLabs: 'Análisis clave', keyLabsSub: 'marcadores fuera de rango (fijar próximamente)', allInRange: 'Todos los marcadores en rango.',
+        avgSymptoms: 'Síntomas promedio', avgSub: 'media del periodo · toca uno para ver su evolución', keyLabs: 'Análisis clave', keyLabsSub: 'marcadores fuera de rango · abre uno para fijarlo', keyLabsSubPinned: 'tus marcadores fijados', allInRange: 'Todos los marcadores en rango.',
         illness: 'Con qué frecuencia enfermo', epPerMonth: 'episodios / mes', progression: 'Progresión', manage: '⚙ Gestionar registros', back: '‹ Evolución',
         better: 'mejor', worse: 'peor', steady: 'estable', overPeriod: 'en este periodo', notEnough: 'Historial insuficiente.' },
 };
@@ -1197,13 +1191,16 @@ function renderTrends(state) {
   const scoreCard = `<div class="card"><div class="card-h"><div><h2>${TT.symScore}</h2><div class="muted small">${TT.symScoreSub}</div></div>${winseg}</div><div style="margin:2px 0 8px">${chg}</div>${miniLine(sc.series, 4)}<div class="muted small" style="text-align:center;margin-top:4px">${TT.scale04}</div></div>`;
   const avgRows = types.map((s) => { const a = symptomAvg(data, s, days); const open = ui.symTrend === s.id; return `<div class="drow symclick" data-symtrend="${s.id}"><div><div class="dname">${open ? '▾' : '▸'} ${esc(tx(s.name, lang))}</div></div><div class="dright">${sevBarHtml(a.avg, a.trend)}</div></div>` + (open ? `<div style="padding:2px 0 8px">${miniLine(a.series, 4)}</div>` : ''); }).join('');
   const avgCard = `<div class="card"><div class="card-h"><div><h2>${TT.avgSymptoms}</h2><div class="muted small">${TT.avgSub}</div></div></div>${avgRows}</div>`;
-  const keyLabs = (data.labs || []).map((l) => ({ l, r: DL.latestLab(l) })).filter((x) => x.r && typeof x.r.value === 'number' && ['warn', 'err'].includes(DL.labStatus(x.l, x.r.value)));
-  const labRows = keyLabs.map(({ l, r }) => { const st = DL.labStatus(l, r.value); const trn = DL.labTrend(l); const trh = (trn && trn !== 'flat') ? ` <span class="lab-trend">${TREND_ARROW[trn]}</span>` : ''; return `<button class="lab-row" data-lab="${l.id}"><span class="bp-name">${statusDot(st)}${esc(tx(l.marker, lang))}</span><span class="lab-val">${r.value}${trh} <span class="muted small">${esc(l.unit)} · ${fmtMonth(r.date, lang)}</span> ›</span></button>`; }).join('') || `<p class="muted small">${TT.allInRange}</p>`;
-  const labsCard = `<div class="card"><div class="card-h"><div><h2>${TT.keyLabs}</h2><div class="muted small">${TT.keyLabsSub}</div></div><button class="addmini" data-add="labs" aria-label="Add marker">＋</button></div>${labRows}</div>`;
+  const pinnedLabs = (data.labs || []).filter((l) => l.pinned);
+  const usingPinned = pinnedLabs.length > 0;
+  const baseLabs = usingPinned ? pinnedLabs : (data.labs || []).filter((l) => { const r = DL.latestLab(l); return r && typeof r.value === 'number' && ['warn', 'err'].includes(DL.labStatus(l, r.value)); });
+  const keyLabs = baseLabs.map((l) => ({ l, r: DL.latestLab(l) }));
+  const labRows = keyLabs.map(({ l, r }) => { const st = r ? DL.labStatus(l, r.value) : null; const trn = DL.labTrend(l); const trh = (trn && trn !== 'flat') ? ` <span class="lab-trend">${TREND_ARROW[trn]}</span>` : ''; const val = r ? (r.value != null ? r.value : esc(r.qualitative)) : '—'; return `<button class="lab-row" data-lab="${l.id}"><span class="bp-name">${statusDot(st)}${esc(tx(l.marker, lang))}</span><span class="lab-val">${val}${trh} <span class="muted small">${esc(l.unit)}${r ? ' · ' + fmtMonth(r.date, lang) : ''}</span> ›</span></button>`; }).join('') || `<p class="muted small">${TT.allInRange}</p>`;
+  const labsSub = usingPinned ? TT.keyLabsSubPinned : TT.keyLabsSub;
+  const labsCard = `<div class="card"><div class="card-h"><div><h2>${TT.keyLabs}</h2><div class="muted small">${labsSub}</div></div><button class="addmini" data-add="labs" aria-label="Add marker">＋</button></div>${labRows}</div>`;
   const illCard = `<div class="card"><div class="card-h"><h2>${TT.illness}</h2></div>${illnessBars(data, lang)}<div class="muted small" style="text-align:center">${TT.epPerMonth}</div></div>`;
   const prog = renderProg(state);
-  const manage = `<div style="text-align:center;margin:6px 0 2px"><button class="linkbtn" data-manage="1">${TT.manage}</button></div>`;
-  return `<div class="ds">${scoreCard}${avgCard}${labsCard}${illCard}${prog}${manage}</div>` + renderModal(state);
+  return `<div class="ds">${scoreCard}${avgCard}${labsCard}${illCard}${prog}</div>` + renderModal(state);
 }
 // Progression timeline in the new design-system style (keeps filters + tap-for-detail).
 function renderProg(state) {
@@ -1224,7 +1221,7 @@ function renderProg(state) {
   if (!ms.length) body = `<p class="muted small" style="padding:10px 4px">${STR[lang].noData}</p>`;
   return `<div class="card"><div class="card-h"><h2>${TT.progression}</h2><button class="addmini" data-add="milestones" aria-label="Add milestone">＋</button></div><div class="pfilters">${chips}</div>${body}</div>`;
 }
-function renderRecords(state) { return ui.manage ? renderManage(state) : renderTrends(state); }
+function renderRecords(state) { return renderTrends(state); }
 function renderManage(state) {
   const lang = state.lang; const T = STR[lang]; const data = DL.getData();
   if (!data) return '<div class="card"><p class="muted">No data.</p></div>';
@@ -1332,7 +1329,8 @@ function renderLabDetail(state, lab) {
   const rows = pts.map((p) => { const st = DL.labStatus(lab, p.value); const pn = DL.labPosNeg(lab, p); return `<div class="kv"><span class="k">${fmtDate(p.date, lang)}</span><span class="v">${statusDot(st)}${p.value != null ? p.value : esc(p.qualitative)}${pn ? ` <span class="posneg posneg-${pn}">${T[pn]}</span>` : ''}</span></div>`; }).join('') || `<p class="muted small">${T.noData}</p>`;
   const rr = lab.referenceRange; const rangeStr = rr ? (rr.low != null && rr.high != null ? `${rr.low}–${rr.high}` : (rr.high != null ? `< ${rr.high}` : (rr.low != null ? `≥ ${rr.low}` : ''))) : '';
   const mode = lab.displayMode === 'x_uln' ? ' ×ULN' : '';
-  return `<div class="bp-row"><button class="btn ghost" data-lab="__back">${T.back}</button><button class="btn ghost" data-edit="labs:${lab.id}">${T.editMarker}</button></div>
+  const pinLbl = lab.pinned ? (lang === 'en' ? '📌 Pinned' : '📌 Fijado') : (lang === 'en' ? '📌 Pin to Trends' : '📌 Fijar en Evolución');
+  return `<div class="bp-row"><button class="btn ghost" data-lab="__back">${T.back}</button><span class="row-right"><button class="btn ghost" data-pin="${lab.id}">${pinLbl}</button><button class="btn ghost" data-edit="labs:${lab.id}">${T.editMarker}</button></span></div>
     <div class="card"><h2>${esc(tx(lab.marker, lang))} <span class="muted small">${esc(lab.unit)}${mode}${rangeStr ? ' · ' + T.refRange + ' ' + rangeStr : ''}</span></h2>${toggle}${lineChart(lab, ui.win, lang)}</div>
     <div class="card"><h2>${T.latest} → ${T.window[ui.win]}</h2>${rows}</div>`;
 }
@@ -1393,6 +1391,7 @@ async function onClick(e, state, rerender) {
   if (t.dataset.manage !== undefined) { ui.manage = t.dataset.manage === '1'; ui.labId = null; rerender(); return; }
   if (t.dataset.scorewin) { ui.scoreWin = t.dataset.scorewin; rerender(); return; }
   if (t.dataset.symtrend) { ui.symTrend = (ui.symTrend === t.dataset.symtrend) ? null : t.dataset.symtrend; rerender(); return; }
+  if (t.dataset.pin) { const lab = (DL.getData().labs || []).find((l) => l.id === t.dataset.pin); if (lab) { lab.pinned = !lab.pinned; await DL.persist(); } rerender(); return; }
   if (t.dataset.rsub) { ui.sub = t.dataset.rsub; ui.labId = null; rerender(); return; }
   if (t.dataset.lab) { ui.labId = t.dataset.lab === '__back' ? null : t.dataset.lab; ui.win = '1y'; rerender(); return; }
   if (t.dataset.win) { ui.win = t.dataset.win; rerender(); return; }
@@ -1771,7 +1770,7 @@ const state = { lang: 'en', tab: 'today', showData: false, date: Today.todayISO(
 const screen = document.getElementById('screen');
 const titleEl = document.getElementById('screenTitle');
 const statusStrip = document.getElementById('statusStrip');
-const TAB_TITLES = { today: 'Log', overview: 'Overview', next: 'Next', records: 'Trends' };
+const TAB_TITLES = { today: 'Log', overview: 'Summary', next: 'Visits', records: 'Trends' };
 (async function boot() {
   registerSW(); wireChrome();
   if (OneDrive.isConfigured()) { setActiveSource(OneDrive.oneDriveSource); try { await OneDrive.refreshAccount(); } catch {} setStatus('Loading from OneDrive …'); }
