@@ -23,6 +23,10 @@ body { font:16px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helveti
 .status-strip.err { background:#fef2f2; color:var(--err); }
 .screen { padding:14px; max-width:720px; margin:0 auto; }
 .card { background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:14px; margin-bottom:12px; }
+.card.investigating { background:#fff8e1; border-color:#f3d58a; }
+.card.investigating .sec-head h2 { color:var(--warn); }
+.card.investigating .prog-chip { color:var(--warn); background:#fbe2b3; }
+.card.investigating .bp-row { border-bottom-color:#f0dcab; }
 .card h2 { font-size:15px; margin:0 0 10px; }
 .muted { color:var(--muted); } .small { font-size:13px; }
 .placeholder { text-align:center; color:var(--muted); padding:36px 12px; } .placeholder .big { font-size:40px; margin-bottom:8px; }
@@ -222,9 +226,9 @@ ul.tight { margin: 4px 0 0; padding-left: 18px; } ul.tight li { padding: 1px 0; 
   <main id="screen" class="screen" aria-live="polite"></main>
   <nav class="tabbar" aria-label="Main">
     <button class="tab is-active" data-tab="today"><span class="tab-ico" aria-hidden="true">✓</span><span class="tab-label">Log</span></button>
-    <button class="tab" data-tab="appointment"><span class="tab-ico" aria-hidden="true">🗓</span><span class="tab-label">Prep</span></button>
+    <button class="tab" data-tab="overview"><span class="tab-ico" aria-hidden="true">📋</span><span class="tab-label">Overview</span></button>
+    <button class="tab" data-tab="next"><span class="tab-ico" aria-hidden="true">🗓</span><span class="tab-label">Next</span></button>
     <button class="tab" data-tab="records"><span class="tab-ico" aria-hidden="true">▤</span><span class="tab-label">Records</span></button>
-    <button class="tab" data-tab="timeline"><span class="tab-ico" aria-hidden="true">🗺</span><span class="tab-label">Map</span></button>
   </nav>
   <script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@3/lib/msal-browser.min.js"></script>
   <script>
@@ -233,7 +237,7 @@ ul.tight { margin: 4px 0 0; padding-left: 18px; } ul.tight li { padding: 1px 0; 
 "use strict";
 
 const __HT_TEMPLATE__ = {
-  "meta": { "version": 1, "updatedAt": "", "defaultLanguage": "en", "severityScaleMax": 4, "patient": { "name": "", "dob": "", "city": "" }, "_note": "BLANK TEMPLATE — no personal data. Ships inside the hosted app; real records live only in OneDrive after sign-in." },
+  "meta": { "version": 1, "updatedAt": "", "defaultLanguage": "en", "severityScaleMax": 4, "patient": { "name": "" }, "_note": "BLANK TEMPLATE — no personal data. Ships inside the hosted app; real records live only in OneDrive after sign-in." },
   "specialisms": [],
   "conditions": [],
   "medications": [],
@@ -851,7 +855,7 @@ const ui = { specialistId: null, sub: 'big', answering: null };
 const STR = {
   en: { appointmentWith: 'Appointment with', change: 'Change', bigPicture: 'Big picture', questions: 'Questions',
         pickSpecialist: 'Pick a specialist', next: 'Next', question: 'question', questionsLc: 'questions', noOpen: 'No open questions',
-        dx: 'Diagnosed', conditions: 'Active conditions', currentMeds: 'Current medications',
+        dx: 'Diagnosed', conditions: 'Active conditions', activeManaged: 'Diagnosed', underInvestigation: 'Under investigation', since: 'since', currentMeds: 'Current medications',
         ruledOut: 'Ruled out', other: 'Other', provShort: 'Provisional', none: 'None', nextAppt: 'Next appointment', forCond: 'for', revisit: 'may re-test',
         questionsFor: 'Questions for', markAnswered: 'Mark answered', cont: 'Continue', answerNotePh: 'Add a note (optional)…', medStatus: { tapering: 'tapering off', prn: 'as needed', stopped: 'stopped' }, noQuestions: 'No open questions for this specialist.', noQuestionsAll: 'No open questions.', addQ: 'Add question', appointments: 'Upcoming appointments', pastAppts: 'Past appointments', addAppt: 'Add appointment', noAppt: 'No appointments yet',
         filterBy: 'Filter by specialist', allSpecialists: 'All specialists', allQuestions: 'All open questions',
@@ -861,7 +865,7 @@ const STR = {
         medLegend: 'X-X-X = morning · midday · evening (e.g. 0-0-1 = one at night).' },
   es: { appointmentWith: 'Cita con', change: 'Cambiar', bigPicture: 'Resumen', questions: 'Preguntas',
         pickSpecialist: 'Elige un especialista', next: 'Próxima', question: 'pregunta', questionsLc: 'preguntas', noOpen: 'Sin preguntas pendientes',
-        dx: 'Diagnóstico', conditions: 'Condiciones activas', currentMeds: 'Medicación actual',
+        dx: 'Diagnóstico', conditions: 'Condiciones activas', activeManaged: 'Diagnosticadas', underInvestigation: 'En estudio', since: 'desde', currentMeds: 'Medicación actual',
         ruledOut: 'Descartado', other: 'Otros', provShort: 'Provisional', none: 'Ninguno', nextAppt: 'Próxima cita', forCond: 'para', revisit: 'puede reevaluarse',
         questionsFor: 'Preguntas para', markAnswered: 'Marcar respondida', cont: 'Continuar', answerNotePh: 'Añadir una nota (opcional)…', medStatus: { tapering: 'en reducción', prn: 'según necesidad', stopped: 'suspendido' }, noQuestions: 'Sin preguntas pendientes para este especialista.', noQuestionsAll: 'Sin preguntas pendientes.', addQ: 'Añadir pregunta', appointments: 'Próximas citas', pastAppts: 'Citas anteriores', addAppt: 'Añadir cita', noAppt: 'Sin citas todavía',
         filterBy: 'Filtrar por especialista', allSpecialists: 'Todos los especialistas', allQuestions: 'Todas las preguntas',
@@ -915,8 +919,29 @@ function renderBig(state) {
   const lang = state.lang; const T = STR[lang]; const data = DL.getData();
   const bp = DL.bigPicture(data, lang);
   const condById = Object.fromEntries((data.conditions || []).map((c) => [c.id, c]));
-  const conds = bp.conditions.map((c) =>
-    `<div class="bp-row"><div><div class="bp-name">${esc(tx(c.name, lang))}</div>${c.statusDate ? `<div class="muted small">${T.dx}: ${fmtDate(c.statusDate, lang)}</div>` : ''}</div><span class="badge ${STATUS_CLS[c.status]}">${STATUS[lang][c.status]}</span></div>`).join('') || `<p class="muted small">${T.none}</p>`;
+  const spById = Object.fromEntries((data.specialisms || []).map((s) => [s.id, s]));
+  // Sub-line under each condition: managing specialist(s) + "since YYYY".
+  const condSub = (c) => {
+    const names = (c.specialismIds || []).map((id) => spById[id] ? specialistLabel(spById[id], lang) : '').filter(Boolean);
+    const parts = [];
+    if (names.length) parts.push(names.join(', '));
+    if (c.statusDate) parts.push(`${T.since} ${c.statusDate.slice(0, 4)}`);
+    return parts.join(' · ');
+  };
+  // showBadge only for the non-default status within a group (e.g. a resolved item in the managed list).
+  const condRow = (c, showBadge) => {
+    const sub = condSub(c);
+    const badge = showBadge ? `<span class="row-right"><span class="badge ${STATUS_CLS[c.status]}">${STATUS[lang][c.status]}</span></span>` : '';
+    return `<div class="bp-row"><div><div class="bp-name">${esc(tx(c.name, lang))}</div>${sub ? `<div class="muted small">${esc(sub)}</div>` : ''}</div>${badge}</div>`;
+  };
+  // Split active conditions: confirmed/managed vs the open diagnostic question.
+  const managed = bp.conditions.filter((c) => c.status === 'current' || c.status === 'resolved');
+  const investigating = bp.conditions.filter((c) => c.status === 'investigating');
+  const conds = managed.map((c) => condRow(c, c.status === 'resolved')).join('') || `<p class="muted small">${T.none}</p>`;
+  const investRows = investigating.map((c) => condRow(c, false)).join('');
+  const investCard = investigating.length
+    ? `<div class="card investigating"><div class="sec-head"><h2>${T.underInvestigation}</h2><span class="prog-chip">${investigating.length}</span></div>${investRows}</div>`
+    : '';
   // Doctor-style med list: a clean Regular / Supplements / PRN split with an
   // aligned schedule column, rather than one heading per condition.
   const isPrnMed = (m) => m.scheduledDays === 'prn' || (m.status === 'prn' && m.everyNDays == null);
@@ -958,7 +983,8 @@ function renderBig(state) {
     const badge = `<span class="badge ${prov ? 'prov' : 'err'}">${prov ? T.provShort : STATUS[lang].excluded}</span>`;
     return `<div class="bp-row"><div><div class="bp-name">${esc(tx(r.name, lang))}${reTag}</div>${meta ? `<div class="muted small">${esc(meta)}</div>` : ''}${revisit ? `<div class="muted small">↺ ${esc(revisit)}</div>` : ''}</div><span class="row-right">${badge}</span></div>`;
   }).join('') || `<p class="muted small">${T.none}</p>`;
-  return `<div class="card"><div class="sec-head"><h2>${T.conditions}</h2><span class="prog-chip">${bp.conditions.length}</span></div>${conds}</div>
+  return `<div class="card"><div class="sec-head"><h2>${T.activeManaged}</h2><span class="prog-chip">${managed.length}</span></div>${conds}</div>
+    ${investCard}
     <div class="card"><h2>${T.currentMeds}</h2>${meds}</div>
     <div class="card"><details class="ro-fold"><summary><h2>${T.ruledOut}</h2><span class="prog-chip">${bp.excluded.length}</span><span class="ro-caret">▶</span></summary><div class="ro-body">${ro}</div></details></div>`;
 }
@@ -1033,7 +1059,7 @@ function onChange(e, state, rerender) {
   if (t && t.dataset && t.dataset.spfilter !== undefined) { ui.specialistId = t.value || null; ui.answering = null; rerender(); return; }
 }
 
-return { ui, renderAppointment, onClick, onChange };
+return { ui, renderAppointment, renderBig, renderQuestions, onClick, onChange };
 })();
 
 const Records = (function(){
@@ -1044,7 +1070,7 @@ const { tx, specialistLabel } = DL;
 const ui = { sub: 'conditions', labId: null, win: '1y', epType: 'all', openMs: null, tlHidden: new Set() };
 
 const STR = {
-  en: { conditions: 'Conditions', meds: 'Meds', symptoms: 'Symptoms', episodes: 'Episodes', labs: 'Labs', timeline: 'Timeline',
+  en: { conditions: 'Conditions', meds: 'Meds', symptoms: 'Symptoms', episodes: 'Episodes', labs: 'Labs', timeline: 'Map',
         dx: 'Diagnosed', managedBy: 'Managed by', ruledOut: 'Ruled out', provShort: 'Provisional', none: 'None', revisit: 'may re-test', notTracked: 'Not tracked daily', medLegend: 'X-X-X = morning · midday · evening (e.g. 0-0-1 = one at night).',
         status: { current: 'Diagnosed', investigating: 'Investigating', excluded: 'Ruled out', provisionally_excluded: 'Provisionally excluded', resolved: 'Resolved' },
         medStatus: { active: 'Active', tapering: 'Tapering', stopped: 'Stopped', prn: 'PRN' },
@@ -1055,7 +1081,7 @@ const STR = {
         thisYear: 'This year', refRange: 'Ref', ulnLine: 'ULN (×1)', archived: 'Archived', locations: 'locations', single: 'single',
         positive: 'positive', negative: 'negative',
         addC: 'Add condition', addM: 'Add medication', addS: 'Add symptom', addE: 'Add episode', addL: 'Add marker', addMs: 'Add milestone', addR: 'Add ruled-out', editMarker: 'Edit marker / results' },
-  es: { conditions: 'Condiciones', meds: 'Medicación', symptoms: 'Síntomas', episodes: 'Episodios', labs: 'Analíticas', timeline: 'Cronología',
+  es: { conditions: 'Condiciones', meds: 'Medicación', symptoms: 'Síntomas', episodes: 'Episodios', labs: 'Analíticas', timeline: 'Mapa',
         dx: 'Diagnóstico', managedBy: 'Seguimiento', ruledOut: 'Descartado', provShort: 'Provisional', none: 'Ninguno', revisit: 'puede reevaluarse', notTracked: 'No se registra a diario', medLegend: 'X-X-X = mañana · mediodía · noche (p. ej. 0-0-1 = uno por la noche).',
         status: { current: 'Diagnosticado', investigating: 'En estudio', excluded: 'Descartado', provisionally_excluded: 'Excluido provisionalmente', resolved: 'Resuelto' },
         medStatus: { active: 'Activo', tapering: 'En reducción', stopped: 'Suspendido', prn: 'PRN' },
@@ -1078,12 +1104,12 @@ const statusDot = (st) => st ? `<span class="lab-dot lab-${st}"></span>` : '';
 const ed = (coll, id) => `<button class="ed-btn" data-edit="${coll}:${id}" aria-label="Edit">✎</button>`;
 const add = (coll, label) => `<button class="btn ghost addbtn" data-add="${coll}">+ ${label}</button>`;
 
-const TABS = ['conditions', 'meds', 'symptoms', 'episodes', 'labs'];
+const TABS = ['conditions', 'meds', 'symptoms', 'episodes', 'labs', 'timeline'];
 function renderRecords(state) {
   const lang = state.lang; const T = STR[lang]; const data = DL.getData();
   if (!data) return '<div class="card"><p class="muted">No data.</p></div>';
   const tabs = '<div class="subtabs subtabs-multi">' + TABS.map((t) => `<button class="subtab ${ui.sub === t ? 'is-active' : ''}" data-rsub="${t}">${T[t]}</button>`).join('') + '</div>';
-  const body = ({ conditions: renderConditions, meds: renderMeds, symptoms: renderSymptoms, episodes: renderEpisodes, labs: renderLabs })[ui.sub] ? ({ conditions: renderConditions, meds: renderMeds, symptoms: renderSymptoms, episodes: renderEpisodes, labs: renderLabs })[ui.sub](state) : renderConditions(state);
+  const body = ({ conditions: renderConditions, meds: renderMeds, symptoms: renderSymptoms, episodes: renderEpisodes, labs: renderLabs, timeline: renderTimeline })[ui.sub] ? ({ conditions: renderConditions, meds: renderMeds, symptoms: renderSymptoms, episodes: renderEpisodes, labs: renderLabs, timeline: renderTimeline })[ui.sub](state) : renderConditions(state);
   return tabs + body + renderModal(state);
 }
 
@@ -1472,7 +1498,7 @@ function getFilePath() { try { return localStorage.getItem(LS_PATH) || DEFAULT_P
 function setFilePath(v) { try { localStorage.setItem(LS_PATH, (v || '').trim() || DEFAULT_PATH); } catch {} }
 function isConfigured() { return !!getClientId(); }
 
-let _templateProvider = () => ({ meta: { version: 1, updatedAt: '', defaultLanguage: 'en', severityScaleMax: 4, patient: { name: '', dob: '', city: '' } } });
+let _templateProvider = () => ({ meta: { version: 1, updatedAt: '', defaultLanguage: 'en', severityScaleMax: 4, patient: { name: '' } } });
 function setTemplateProvider(fn) { if (typeof fn === 'function') _templateProvider = fn; }
 
 let _pca = null, _inited = false, _account = null, _etag = null;
@@ -1622,7 +1648,7 @@ const state = { lang: 'en', tab: 'today', showData: false, date: Today.todayISO(
 const screen = document.getElementById('screen');
 const titleEl = document.getElementById('screenTitle');
 const statusStrip = document.getElementById('statusStrip');
-const TAB_TITLES = { today: 'Log', appointment: 'Prep', records: 'Records', timeline: 'Map' };
+const TAB_TITLES = { today: 'Log', overview: 'Overview', next: 'Next', records: 'Records' };
 (async function boot() {
   registerSW(); wireChrome();
   if (OneDrive.isConfigured()) { setActiveSource(OneDrive.oneDriveSource); try { await OneDrive.refreshAccount(); } catch {} setStatus('Loading from OneDrive …'); }
@@ -1648,8 +1674,8 @@ function wireChrome() {
     if (ed) { if (ed.dataset.add) { const pf = ed.dataset.prefill ? JSON.parse(ed.dataset.prefill) : null; Forms.open(ed.dataset.add, null, pf); } else { const [c, id] = ed.dataset.edit.split(':'); Forms.open(c, id || null); } render(); return; }
     if (state.showData) return;
     if (state.tab === 'today') Today.onClick(e, state, render);
-    else if (state.tab === 'appointment') Appt.onClick(e, state, render);
-    else if (state.tab === 'records' || state.tab === 'timeline') Records.onClick(e, state, render);
+    else if (state.tab === 'overview' || state.tab === 'next') Appt.onClick(e, state, render);
+    else if (state.tab === 'records') Records.onClick(e, state, render);
   });
   const onEdit = (e) => { if (Forms.isOpen()) { Forms.onInput(e); return; } if (!state.showData && state.tab === 'today') Today.onInput(e, state, render); };
   screen.addEventListener('input', onEdit);
@@ -1658,7 +1684,7 @@ function wireChrome() {
     if (Forms.isOpen()) { Forms.onInput(e); return; }
     if (state.showData) return;
     if (state.tab === 'today') Today.onChange(e, state, render);
-    else if (state.tab === 'appointment') Appt.onChange(e, state, render);
+    else if (state.tab === 'overview' || state.tab === 'next') Appt.onChange(e, state, render);
   });
 }
 function setLang(lang) { state.lang = lang; document.documentElement.lang = lang; document.querySelectorAll('.lang-btn').forEach((b) => b.classList.toggle('is-active', b.dataset.lang === lang)); render(); }
@@ -1671,9 +1697,9 @@ function render() {
   if (state.showData) { titleEl.textContent = 'Data'; content = renderDataScreen(); }
   else { titleEl.textContent = titles[state.tab] || '';
     if (state.tab === 'today') content = Today.renderToday(state);
-    else if (state.tab === 'appointment') content = Appt.renderAppointment(state);
+    else if (state.tab === 'overview') content = Appt.renderBig(state);
+    else if (state.tab === 'next') content = Appt.renderQuestions(state);
     else if (state.tab === 'records') content = Records.renderRecords(state);
-    else if (state.tab === 'timeline') content = Records.renderTimelineView(state);
     else content = '';
   }
   screen.innerHTML = content + (Forms.isOpen() ? Forms.renderForm() : '');
