@@ -23,15 +23,11 @@ body { font:16px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helveti
 .status-strip.err { background:#fef2f2; color:var(--err); }
 .screen { padding:14px; max-width:720px; margin:0 auto; }
 .card { background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:14px; margin-bottom:12px; }
-.card.investigating { background:#fff8e1; border-color:#f3d58a; }
-.card.investigating .sec-head h2 { color:var(--warn); }
-.card.investigating .prog-chip { color:var(--warn); background:#fbe2b3; }
-.card.investigating .bp-row { border-bottom-color:#f0dcab; }
 .ctrl { font-size:11px; font-weight:600; border-radius:999px; padding:2px 9px; white-space:nowrap; }
-.ctrl-controlled { background:#dcfce7; color:var(--ok); }
-.ctrl-stable { background:var(--chip); color:var(--muted); }
+.ctrl-treated { background:#dcfce7; color:var(--ok); }
+.ctrl-no_treatment { background:var(--chip); color:var(--muted); }
 .ctrl-adjusting { background:#fef3c7; color:var(--warn); }
-.ctrl-uncontrolled { background:#fee2e2; color:var(--err); }
+.ctrl-confirming { background:#dbeafe; color:#1e40af; }
 .card h2 { font-size:15px; margin:0 0 10px; }
 .muted { color:var(--muted); } .small { font-size:13px; }
 .placeholder { text-align:center; color:var(--muted); padding:36px 12px; } .placeholder .big { font-size:40px; margin-bottom:8px; }
@@ -248,7 +244,7 @@ const SEVERITY_MIN = 0;
 const SEVERITY_MAX = 4;
 const ENUMS = {
   conditionStatus: ['current', 'investigating', 'excluded', 'provisionally_excluded', 'resolved'],
-  conditionControl: ['controlled', 'stable', 'adjusting', 'uncontrolled'],
+  conditionControl: ['treated', 'no_treatment', 'adjusting', 'confirming'],
   medStatus: ['active', 'tapering', 'stopped', 'prn'],
   medCategory: ['prescription', 'supplement', 'otc'],
   trackBy: ['single', 'locations'], overall: ['max', 'mean'],
@@ -851,8 +847,8 @@ const { tx, specialistLabel } = DL;
 const ui = { specialistId: null, answering: null };
 
 const STR = {
-  en: { dx: 'Diagnosed', conditions: 'Active conditions', activeManaged: 'Diagnosed', underInvestigation: 'Under investigation', since: 'Since', currentMeds: 'Current medications',
-        control: { controlled: 'Controlled', stable: 'Stable · no treatment', adjusting: 'Adjusting treatment', uncontrolled: 'Not controlled' },
+  en: { dx: 'Diagnosed', conditions: 'Active conditions', activeManaged: 'Conditions', since: 'Since', currentMeds: 'Current medications',
+        control: { treated: 'Treating', no_treatment: 'No treatment', adjusting: 'Adjusting', confirming: 'Confirming' },
         ruledOut: 'Ruled out', other: 'Other', provShort: 'Provisional', none: 'None', revisit: 'may re-test',
         questionsFor: 'Questions for', markAnswered: 'Mark answered', cont: 'Continue', answerNotePh: 'Add a note (optional)…', medStatus: { tapering: 'tapering off', prn: 'as needed', stopped: 'stopped' }, noQuestions: 'No open questions for this specialist.', noQuestionsAll: 'No open questions.', addQ: 'Add question', appointments: 'Upcoming appointments', pastAppts: 'Past appointments', addAppt: 'Add appointment', noAppt: 'No appointments yet',
         filterBy: 'Filter by specialist', allSpecialists: 'All specialists', allQuestions: 'All open questions',
@@ -860,8 +856,8 @@ const STR = {
         prnLabel: 'PRN', everyOther: 'every other day', everyN: 'every {n} days',
         wd: { mon: 'Mon', tue: 'Tue', wed: 'Wed', thu: 'Thu', fri: 'Fri', sat: 'Sat', sun: 'Sun' },
         medLegend: 'X-X-X = morning · midday · evening (e.g. 0-0-1 = one at night).' },
-  es: { dx: 'Diagnóstico', conditions: 'Condiciones activas', activeManaged: 'Diagnosticadas', underInvestigation: 'En estudio', since: 'Desde', currentMeds: 'Medicación actual',
-        control: { controlled: 'Controlada', stable: 'Estable · sin tratamiento', adjusting: 'Ajustando tratamiento', uncontrolled: 'No controlada' },
+  es: { dx: 'Diagnóstico', conditions: 'Condiciones activas', activeManaged: 'Condiciones', since: 'Desde', currentMeds: 'Medicación actual',
+        control: { treated: 'En tratamiento', no_treatment: 'Sin tratamiento', adjusting: 'Ajustando', confirming: 'Confirmando' },
         ruledOut: 'Descartado', other: 'Otros', provShort: 'Provisional', none: 'Ninguno', revisit: 'puede reevaluarse',
         questionsFor: 'Preguntas para', markAnswered: 'Marcar respondida', cont: 'Continuar', answerNotePh: 'Añadir una nota (opcional)…', medStatus: { tapering: 'en reducción', prn: 'según necesidad', stopped: 'suspendido' }, noQuestions: 'Sin preguntas pendientes para este especialista.', noQuestionsAll: 'Sin preguntas pendientes.', addQ: 'Añadir pregunta', appointments: 'Próximas citas', pastAppts: 'Citas anteriores', addAppt: 'Añadir cita', noAppt: 'Sin citas todavía',
         filterBy: 'Filtrar por especialista', allSpecialists: 'Todos los especialistas', allQuestions: 'Todas las preguntas',
@@ -913,14 +909,9 @@ function renderBig(state) {
     if (!db) return -1;
     return da < db ? 1 : -1;
   };
-  // Split active conditions: confirmed/managed vs the open diagnostic question.
-  const managed = bp.conditions.filter((c) => c.status === 'current' || c.status === 'resolved').sort(byDateDesc);
-  const investigating = bp.conditions.filter((c) => c.status === 'investigating').sort(byDateDesc);
-  const conds = managed.map((c) => condRow(c)).join('') || `<p class="muted small">${T.none}</p>`;
-  const investRows = investigating.map((c) => condRow(c)).join('');
-  const investCard = investigating.length
-    ? `<div class="card investigating"><div class="sec-head"><h2>${T.underInvestigation}</h2><span class="prog-chip">${investigating.length}</span></div>${investRows}</div>`
-    : '';
+  // One unified Conditions list (diagnosed + under-investigation together), newest → oldest.
+  const allConds = bp.conditions.slice().sort(byDateDesc);
+  const conds = allConds.map((c) => condRow(c)).join('') || `<p class="muted small">${T.none}</p>`;
   // Doctor-style med list: a clean Regular / Supplements / PRN split with an
   // aligned schedule column, rather than one heading per condition.
   const isPrnMed = (m) => m.scheduledDays === 'prn' || (m.status === 'prn' && m.everyNDays == null);
@@ -962,10 +953,9 @@ function renderBig(state) {
     const badge = `<span class="badge ${prov ? 'prov' : 'err'}">${prov ? T.provShort : STATUS[lang].excluded}</span>`;
     return `<div class="bp-row"><div><div class="bp-name">${esc(tx(r.name, lang))}${reTag}</div>${meta ? `<div class="muted small">${esc(meta)}</div>` : ''}${revisit ? `<div class="muted small">↺ ${esc(revisit)}</div>` : ''}</div><span class="row-right">${badge}</span></div>`;
   }).join('') || `<p class="muted small">${T.none}</p>`;
-  return `<div class="card"><div class="sec-head"><h2>${T.activeManaged}</h2><span class="prog-chip">${managed.length}</span></div>${conds}</div>
-    ${investCard}
+  return `<div class="card"><div class="sec-head"><h2>${T.activeManaged}</h2><span class="prog-chip">${allConds.length}</span></div>${conds}</div>
     <div class="card"><h2>${T.currentMeds}</h2>${meds}</div>
-    <div class="card"><details class="ro-fold"><summary><h2>${T.ruledOut}</h2><span class="prog-chip">${bp.excluded.length}</span><span class="ro-caret">▶</span></summary><div class="ro-body">${ro}</div></details></div>`;
+    <div class="card"><details class="ro-fold"><summary><h2>${T.ruledOut}</h2><span class="ro-caret">▶</span></summary><div class="ro-body">${ro}</div></details></div>`;
 }
 
 function renderQuestions(state) {
@@ -1265,7 +1255,7 @@ const SPECS = {
   conditions: { title: 'Condition', archive: false, fields: [
     { key: 'name', type: 'i18n', label: 'Name' },
     { key: 'status', type: 'select', label: 'Status', options: ['current', 'investigating', 'excluded', 'provisionally_excluded', 'resolved'] },
-    { key: 'control', type: 'select', label: 'Control (shown to doctor on Overview)', options: ['', 'controlled', 'stable', 'adjusting', 'uncontrolled'] },
+    { key: 'control', type: 'select', label: 'Control (shown to doctor on Overview)', options: ['', 'treated', 'no_treatment', 'adjusting', 'confirming'] },
     { key: 'statusDate', type: 'date', label: 'Status date (diagnosed / investigating since / excluded / resolved)' },
     { key: 'revisitNote', type: 'i18n', label: 'Re-test note (when / why to revisit)', textarea: true, showIf: (s) => s.status === 'provisionally_excluded' },
     { key: 'specialismIds', type: 'multiselect', label: 'Specialism(s)', source: 'specialisms' },
