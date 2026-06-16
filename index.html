@@ -58,8 +58,8 @@ details.msgs { margin-top:8px; } details.msgs summary { cursor:pointer; font-siz
 .sev-row { display:grid; grid-template-columns:repeat(5,1fr); gap:6px; }
 .sev { border:1px solid var(--line); background:#fff; color:var(--muted); border-radius:9px; padding:9px 0; font-size:15px; font-weight:700; cursor:pointer; touch-action:manipulation; -webkit-tap-highlight-color:transparent; user-select:none; }
 .sev.is-on { color:#fff; border-color:transparent; }
-.sev-0.is-on,.sev-chip.sev-0 { background:#94a3b8; color:#fff; } .sev-1.is-on,.sev-chip.sev-1 { background:#65a30d; }
-.sev-2.is-on,.sev-chip.sev-2 { background:#f59e0b; } .sev-3.is-on,.sev-chip.sev-3 { background:#ea580c; } .sev-4.is-on,.sev-chip.sev-4 { background:#dc2626; }
+.sev-0.is-on,.sev-chip.sev-0 { background:#94a3b8; color:#fff; } .sev-1.is-on,.sev-chip.sev-1 { background:#fde047; color:#422006; }
+.sev-2.is-on,.sev-chip.sev-2 { background:#f59e0b; } .sev-3.is-on,.sev-chip.sev-3 { background:#f97316; } .sev-4.is-on,.sev-chip.sev-4 { background:#b91c1c; }
 .sev-chip { display:inline-block; min-width:22px; text-align:center; color:#fff; border-radius:999px; padding:2px 9px; font-weight:700; font-size:13px; } .sev-chip .small { color:rgba(255,255,255,.85); }
 .med { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:8px 0; border-bottom:1px solid var(--line); } .med:last-child { border-bottom:0; }
 .med-name { font-weight:600; } .med-toggle { display:flex; gap:6px; }
@@ -207,7 +207,7 @@ ul.tight { margin: 4px 0 0; padding-left: 18px; } ul.tight li { padding: 1px 0; 
 .ds .sevbar .track{width:72px;height:8px;border-radius:999px;background:var(--chip);overflow:hidden;}
 .ds .sevbar .fill{height:100%;border-radius:999px;}
 .ds .sevbar .sevval{font-weight:700;font-size:13px;min-width:22px;text-align:right;font-variant-numeric:tabular-nums;}
-.ds .fill0{background:#94a3b8;}.ds .fill1{background:#65a30d;}.ds .fill2{background:#f59e0b;}.ds .fill3{background:#ea580c;}.ds .fill4{background:#dc2626;}
+.ds .fill0{background:#94a3b8;}.ds .fill1{background:#fde047;}.ds .fill2{background:#f59e0b;}.ds .fill3{background:#f97316;}.ds .fill4{background:#b91c1c;}
 .ds .wkstrip{display:flex;align-items:center;gap:6px;margin-bottom:6px;}
 .ds .wknav{width:28px;height:34px;border:0;background:transparent;color:var(--muted);font-size:20px;cursor:pointer;flex:0 0 auto;touch-action:manipulation;}
 .ds .wknav:disabled{opacity:.3;}
@@ -1173,7 +1173,7 @@ const TSS = {
 };
 function dayLogged(log) { return !!log && (log.symptoms || []).some((r) => typeof r.severity === 'number'); }
 const WIN_DAYS = { '30d': 30, '3m': 90, '1y': 365 };
-const SEVHEX = ['#94a3b8', '#65a30d', '#f59e0b', '#ea580c', '#dc2626'];
+const SEVHEX = ['#94a3b8', '#fde047', '#f59e0b', '#f97316', '#b91c1c'];
 function symValue(s, log) { if (s.trackBy === 'locations') { const d = DL.derivedOverall(s, log.symptoms || []); return d == null ? 0 : d; } const r = (log.symptoms || []).find((x) => x.symptomId === s.id && x.locationId == null); return (r && typeof r.severity === 'number') ? r.severity : 0; }
 function dayVals(log, types) { return types.map((s) => symValue(s, log)); }
 function daySum(log, types) { return dayVals(log, types).reduce((a, b) => a + b, 0); }
