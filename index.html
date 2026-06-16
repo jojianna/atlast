@@ -85,7 +85,7 @@ details.msgs { margin-top:8px; } details.msgs summary { cursor:pointer; font-siz
 .subtabs { display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:12px; }
 .subtab { border:1px solid var(--line); background:#fff; color:var(--muted); border-radius:10px; padding:9px; font-weight:600; cursor:pointer; }
 .subtab.is-active { background:var(--teal); color:#fff; border-color:transparent; }
-.bp-row { display:flex; align-items:flex-start; justify-content:space-between; gap:10px; padding:8px 0; border-bottom:1px solid var(--line); }
+.bp-row { display:flex; align-items:flex-start; justify-content:space-between; gap:10px; padding:10px 0; border-bottom:1px solid var(--line); }
 .bp-row:last-child { border-bottom:0; }
 .bp-name { font-weight:600; }
 .q-row { display:flex; align-items:flex-start; justify-content:space-between; gap:10px; padding:10px 0; border-bottom:1px solid var(--line); }
@@ -148,7 +148,7 @@ ul.tight { margin: 4px 0 0; padding-left: 18px; } ul.tight li { padding: 1px 0; 
 .notedot { width:6px; height:6px; border-radius:50%; background:var(--teal); display:inline-block; }
 .loc-list { border-left:2px solid var(--chip); padding-left:10px; margin:2px 0 2px 4px; }
 .scale-foot { text-align:center; border-top:1px solid var(--line); padding-top:8px; margin-top:6px; font-size:11px; }
-.med { padding:6px 0; }
+.med { padding:10px 0; }
 .linkbtn { background:none; border:0; color:var(--teal); font:inherit; font-size:13px; cursor:pointer; text-decoration:underline; }
 .linkbtn.danger { color:var(--err); }
 .med-group-label { font-size:11px; text-transform:uppercase; letter-spacing:.04em; color:var(--teal-d); font-weight:600; margin:9px 0 1px; }
@@ -176,7 +176,7 @@ ul.tight { margin: 4px 0 0; padding-left: 18px; } ul.tight li { padding: 1px 0; 
 .ds .card-h h2{font-size:15px;font-weight:700;margin:0;}
 .ds .hgrp{display:flex;align-items:center;gap:8px;}
 .ds .count{font-size:11px;font-weight:700;color:var(--teal-d);background:#e1f5ee;border-radius:999px;padding:2px 9px;}
-.ds .drow{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;padding:11px 0;border-top:1px solid var(--line);}
+.ds .drow{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;padding:10px 0;border-top:1px solid var(--line);}
 .ds .drow:first-of-type{border-top:0;}
 .ds .dname{font-weight:600;}
 .ds .dmeta{font-size:13px;color:var(--muted);margin-top:1px;}
@@ -232,7 +232,7 @@ ul.tight { margin: 4px 0 0; padding-left: 18px; } ul.tight li { padding: 1px 0; 
 .ds .bignum{display:flex;align-items:baseline;gap:8px;font-size:32px;font-weight:600;line-height:1;}
 .ds .bn-sub{margin:4px 0 10px;}
 .ds .trend{width:100%;height:auto;display:block;}
-.ds .promrow{display:flex;align-items:center;gap:9px;padding:8px 0;border-top:1px solid #f4f6f7;cursor:pointer;}
+.ds .promrow{display:flex;align-items:center;gap:9px;padding:10px 0;border-top:1px solid #f4f6f7;cursor:pointer;}
 .ds .promrow:first-child{border-top:0;}
 .ds .promname{flex:0 0 84px;font-size:13px;}
 .ds .prombar{flex:1;height:7px;border-radius:999px;background:var(--chip);overflow:hidden;}
@@ -249,7 +249,7 @@ ul.tight { margin: 4px 0 0; padding-left: 18px; } ul.tight li { padding: 1px 0; 
 .ds .labchg{margin-left:2px;}
 .ds .promrow .tr{font-size:13px;font-weight:600;flex:0 0 auto;min-width:46px;text-align:right;}
 .ds .labgrp-h .gcaret{color:var(--muted);font-size:12px;flex:0 0 auto;width:14px;}
-.ds .labgrp .lab-row{padding:9px 0;}
+.ds .labgrp .lab-row{padding:10px 0;}
 .ds .labgrp .lab-row .bp-name{font-size:14px;font-weight:500;}
 .ds .labgrp .lab-row .lab-val{font-size:14px;font-weight:600;}
 .ds .labgrp .lab-row .lab-val .small{font-weight:400;}
@@ -1151,14 +1151,14 @@ const add = (coll, label) => `<button class="btn ghost addbtn" data-add="${coll}
 // ===== TRENDS (the repurposed 4th tab). Reuses lab charts / modal. =====
 const TSS = {
   en: { worse: 'worse', better: 'better', steady: 'steady', notEnough: 'Not enough history yet.', noData: 'No data yet.',
-        period: { '30d': '30 days', '3m': '3 months', '1y': 'year' }, was: 'was',
-        burdenSub: 'average burden vs previous', sevSub: 'average severity vs previous',
+        period: { '30d': '30 days', '3m': '3 months', '1y': 'year' }, was: 'was', vsPrev: 'vs previous', allTime: 'all time',
+        burdenSub: 'average burden', sevSub: 'average severity',
         mostProm: 'Most prominent', daily: 'Daily score by severity', sevWords: ['', 'mild', 'distracting', 'adapt', 'halt'],
         labs: 'Labs', labsHint: '% = change since previous result', episodes: 'Episodes/Month',
         pos: 'Positive', neg: 'Negative', progression: 'Progression' },
   es: { worse: 'peor', better: 'mejor', steady: 'estable', notEnough: 'Historial insuficiente.', noData: 'Sin datos aún.',
-        period: { '30d': '30 días', '3m': '3 meses', '1y': 'año' }, was: 'antes',
-        burdenSub: 'carga media vs anterior', sevSub: 'gravedad media vs anterior',
+        period: { '30d': '30 días', '3m': '3 meses', '1y': 'año' }, was: 'antes', vsPrev: 'vs', allTime: 'todo el tiempo',
+        burdenSub: 'carga media', sevSub: 'gravedad media',
         mostProm: 'Más prominente', daily: 'Puntuación diaria por gravedad', sevWords: ['', 'leve', 'molesto', 'adaptar', 'frenar'],
         labs: 'Analíticas', labsHint: '% = cambio desde el resultado anterior', episodes: 'Episodios/Mes',
         pos: 'Positivo', neg: 'Negativo', progression: 'Progresión' },
@@ -1173,13 +1173,25 @@ function dayPresentMean(log, types) { const v = dayVals(log, types).filter((x) =
 function logsByDate(data) { const m = {}; (data.dailyLogs || []).forEach((l) => { if (l.date) m[l.date] = l; }); return m; }
 function isoBack(n) { const d = new Date(); d.setUTCHours(0, 0, 0, 0); d.setUTCDate(d.getUTCDate() - n); return d.toISOString().slice(0, 10); }
 function windowSeries(data, types, days, fn) {
-  const by = logsByDate(data); const series = [];
-  for (let i = days - 1; i >= 0; i--) { const iso = isoBack(i); const log = by[iso]; series.push({ iso, v: (log && dayLogged(log)) ? fn(log, types) : null }); }
-  const cur = series.filter((x) => x.v != null).map((x) => x.v);
+  const by = logsByDate(data);
+  const daily = [];
+  for (let i = days - 1; i >= 0; i--) { const iso = isoBack(i); const log = by[iso]; daily.push({ iso, v: (log && dayLogged(log)) ? fn(log, types) : null }); }
+  const cur = daily.filter((x) => x.v != null).map((x) => x.v);
   const prev = []; for (let i = 2 * days - 1; i >= days; i--) { const log = by[isoBack(i)]; if (log && dayLogged(log)) { const v = fn(log, types); if (v != null) prev.push(v); } }
   const mean = (a) => a.length ? a.reduce((s, c) => s + c, 0) / a.length : null;
   const c = mean(cur), p = mean(prev);
   const pct = (c != null && p != null && p > 0) ? Math.round((c - p) / p * 100) : null;
+  // Bucket long windows so the line stays readable (~45 plotted points max)
+  const MAXP = 45;
+  let series = daily;
+  if (daily.length > MAXP) {
+    series = []; const size = daily.length / MAXP;
+    for (let b = 0; b < MAXP; b++) {
+      const s = Math.floor(b * size), e = Math.floor((b + 1) * size);
+      const vals = daily.slice(s, e).filter((x) => x.v != null).map((x) => x.v);
+      series.push({ iso: daily[Math.min(daily.length - 1, Math.floor((s + e) / 2))].iso, v: vals.length ? vals.reduce((a, z) => a + z, 0) / vals.length : null });
+    }
+  }
   return { cur: c, prev: p, pct, series };
 }
 function symStats(data, types, days) {
@@ -1229,16 +1241,19 @@ function renderTrends(state) {
   if (!data) return '<div class="card"><p class="muted">No data.</p></div>';
   if (ui.labId) { const lab = (data.labs || []).find((l) => l.id === ui.labId); if (lab) return '<div class="ds">' + renderLabDetail(state, lab) + '</div>'; ui.labId = null; }
   const types = DL.activeSymptomTypes(data);
-  const win = ui.scoreWin || '30d'; const days = WIN_DAYS[win] || 30;
-  const winseg = `<div class="winseg">${['30d', '3m', '1y'].map((k) => `<button class="${win === k ? 'on' : ''}" data-scorewin="${k}">${k}</button>`).join('')}</div>`;
+  const win = ui.scoreWin || '30d';
+  const allDays = (() => { const ds = (data.dailyLogs || []).map((l) => l.date).filter(Boolean).sort(); if (!ds.length) return 365; return Math.round((Date.now() - new Date(ds[0] + 'T00:00:00Z').getTime()) / 86400000) + 1; })();
+  const days = win === 'all' ? allDays : (WIN_DAYS[win] || 30);
+  const winseg = `<div class="winseg">${[['30d', '30d'], ['3m', '3m'], ['1y', '1y'], ['all', 'All']].map(([k, lbl]) => `<button class="${win === k ? 'on' : ''}" data-scorewin="${k}">${lbl}</button>`).join('')}</div>`;
+  const subFor = (label, prev) => win === 'all' ? `${label} · ${TT.allTime}` : `${label} ${TT.vsPrev} ${TT.period[win]} (${TT.was} ${prev != null ? prev.toFixed(1) : '–'})`;
   const arrow = (pct) => { if (pct == null) return `<span class="muted small">${TT.notEnough}</span>`; const cls = pct === 0 ? 'flat' : (pct < 0 ? 'down' : 'up'); const word = pct < 0 ? TT.better : pct > 0 ? TT.worse : TT.steady; const a = pct > 0 ? '↑' : pct < 0 ? '↓' : '→'; return `<span class="chgpill ${cls}">${a} ${Math.abs(pct)}% ${word}</span>`; };
   // Burden = total severity across symptoms (severity × breadth)
   const b = windowSeries(data, types, days, daySum);
   const bMax = Math.max(4, ...b.series.map((x) => x.v || 0));
-  const burdenCard = `<div class="card"><div class="bignum">${b.cur != null ? b.cur.toFixed(1) : '–'} ${arrow(b.pct)}</div><div class="muted small bn-sub">${TT.burdenSub} ${TT.period[win]} (${TT.was} ${b.prev != null ? b.prev.toFixed(1) : '–'})</div>${trendSVG(b.series, bMax, b.cur)}</div>`;
+  const burdenCard = `<div class="card"><div class="bignum">${b.cur != null ? b.cur.toFixed(1) : '–'} ${win === 'all' ? '' : arrow(b.pct)}</div><div class="muted small bn-sub">${subFor(TT.burdenSub, b.prev)}</div>${trendSVG(b.series, bMax, b.cur)}</div>`;
   // Average severity = mean of symptoms that are present (0–4)
   const sv = windowSeries(data, types, days, dayPresentMean);
-  const sevCard = `<div class="card"><div class="bignum">${sv.cur != null ? sv.cur.toFixed(1) : '–'} <span class="muted small">/ 4</span> ${arrow(sv.pct)}</div><div class="muted small bn-sub">${TT.sevSub} ${TT.period[win]} (${TT.was} ${sv.prev != null ? sv.prev.toFixed(1) : '–'})</div>${trendSVG(sv.series, 4, sv.cur)}</div>`;
+  const sevCard = `<div class="card"><div class="bignum">${sv.cur != null ? sv.cur.toFixed(1) : '–'} <span class="muted small">/ 4</span> ${win === 'all' ? '' : arrow(sv.pct)}</div><div class="muted small bn-sub">${subFor(TT.sevSub, sv.prev)}</div>${trendSVG(sv.series, 4, sv.cur)}</div>`;
   // Most prominent = current level + change, tap to drill in
   const stats = symStats(data, types, days).filter((x) => x.cur > 0.05);
   const promRows = stats.map((x) => {
