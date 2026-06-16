@@ -249,6 +249,13 @@ ul.tight { margin: 4px 0 0; padding-left: 18px; } ul.tight li { padding: 1px 0; 
 .ds .labchg{margin-left:2px;}
 .ds .promrow .tr{font-size:13px;font-weight:600;flex:0 0 auto;min-width:46px;text-align:right;}
 .ds .labgrp-h .gcaret{color:var(--muted);font-size:12px;flex:0 0 auto;width:14px;}
+.ds .labgrp .lab-row{padding:9px 0;}
+.ds .labgrp .lab-row .bp-name{font-size:14px;font-weight:500;}
+.ds .labgrp .lab-row .lab-val{font-size:14px;font-weight:600;}
+.ds .labgrp .lab-row .lab-val .small{font-weight:400;}
+.ds .btn-mark{border:1px solid var(--teal);background:var(--teal);color:#fff;border-radius:999px;padding:5px 14px;font-size:13px;font-weight:600;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;}
+.ds .prog-chip.done{background:#dcfce7;color:#15803d;}
+.ds .loc-count{margin-left:2px;white-space:nowrap;}
 .ds .symclick{cursor:pointer;}
 .ds .bars{display:flex;align-items:flex-end;gap:6px;height:80px;padding-top:6px;}
 .ds .bars .b{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;height:100%;justify-content:flex-end;}
@@ -779,12 +786,13 @@ function renderToday(state) {
   const isToday = date === todayISO();
   const sub = isToday ? T.today : agoLabel(daysBetween(date, todayISO()), lang);
   const tISO = todayISO();
-  const dayHasLog = (iso) => { const l = DL.getDailyLog(iso, data); return !!l && (l.symptoms || []).some((r) => typeof r.severity === 'number'); };
+  const types = DL.activeSymptomTypes(data);
+  const isComplete = (iso) => { const l = DL.getDailyLog(iso, data); if (!l) return false; if (l.symptomsSubmittedAt) return true; return types.every((s) => s.trackBy === 'single' ? (DL.getSeverity(iso, s.id, null, data) != null) : (DL.derivedOverall(s, l.symptoms || []) != null)); };
   const dt = new Date(date + 'T00:00:00Z'); const dow = (dt.getUTCDay() + 6) % 7; const monday = shiftDate(date, -dow);
   const dows = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
   const tiles = dows.map((dl, i) => {
-    const iso = shiftDate(monday, i); const fut = iso > tISO; const logged = dayHasLog(iso); const isTod = iso === tISO; const sel = iso === date;
-    const mark = logged ? '✓' : (fut ? '' : '·');
+    const iso = shiftDate(monday, i); const fut = iso > tISO; const done = isComplete(iso); const isTod = iso === tISO; const sel = iso === date;
+    const mark = done ? '✓' : (fut ? '' : '·');
     return `<button class="wkday${sel ? ' sel' : ''}${isTod ? ' tod' : ''}${fut ? ' fut' : ''}" data-day="${iso}" ${fut ? 'disabled' : ''}><span class="wkdow">${dl}</span><span class="wkdate">${iso.slice(8, 10)}</span><span class="wktick">${mark}</span></button>`;
   }).join('');
   const weekHasToday = (tISO >= monday && tISO <= shiftDate(monday, 6));
@@ -795,7 +803,6 @@ function renderToday(state) {
   </div>
   <div class="wksub muted small">${isToday ? T.today : fmtDate(date, lang) + ' · ' + agoLabel(daysBetween(date, tISO), lang)}</div>`;
 
-  const types = DL.activeSymptomTypes(data);
   const dayLog = DL.getDailyLog(date, data);
   const isLogged = (s) => s.trackBy === 'single' ? DL.getSeverity(date, s.id, null, data) != null : DL.derivedOverall(s, (dayLog?.symptoms) || []) != null;
   const doneCount = types.filter(isLogged).length;
@@ -806,25 +813,18 @@ function renderToday(state) {
     const chip = overall != null ? `<span class="sev-chip sev-${overall}">${overall}</span>` : '<span class="muted small">—</span>';
     const locsArr = DL.activeLocations(s);
     const locs = locsArr.map((l) => symRow(state, s.id, l.id, tx(l.name, lang))).join('');
-    return `<div class="symrow located-head sym-head expandable" data-expand="${s.id}"><span class="symrow-name as-text">${open ? '▾' : '▸'} ${esc(tx(s.name, lang))} <span class="muted small">${locsArr.length} ${T.sites}</span></span>${chip}</div>
+    return `<div class="symrow located-head sym-head expandable" data-expand="${s.id}"><span class="symrow-name as-text">${esc(tx(s.name, lang))} <span class="muted small loc-count">${locsArr.length} ${T.sites} ${open ? '▾' : '▸'}</span></span>${chip}</div>
     <div class="loc-list" ${open ? '' : 'hidden'}>${locs}</div>`;
   }).join('');
-  const allLogged = doneCount === types.length;
-  const zeroLink = allLogged ? `<div class="submit-block"><div class="muted small submit-hint">✓ ${T.allZeroed}</div></div>` : `<div class="submit-block"><button class="linkbtn" id="markZero">${T.markZero}</button></div>`;
+  const complete = isComplete(date);
+  const completeBtn = complete ? `<span class="prog-chip done">✓ ${lang === 'en' ? 'Complete' : 'Completado'}</span>` : `<button class="btn-mark" id="markZero">${lang === 'en' ? 'Mark complete' : 'Marcar completo'}</button>`;
   const editSyms = (data.symptomTypes || []).map((s) => `<div class="drow"><div><div class="dname">${esc(tx(s.name, lang))}${s.archived ? ` <span class="muted small">(${lang === 'en' ? 'archived' : 'archivado'})</span>` : ''}</div></div><button class="ed-btn2" data-edit="symptomTypes:${s.id}" aria-label="Edit">✎</button></div>`).join('');
   const editSymsBlock = `<details class="ro-fold" style="margin-top:10px"><summary><span class="muted small" style="font-weight:700">${lang === 'en' ? 'Edit symptoms & sites' : 'Editar síntomas y zonas'}</span><span class="ro-caret">▶</span></summary><div style="margin-top:6px">${editSyms}<button class="addmini" data-add="symptomTypes" aria-label="Add symptom" style="margin-top:8px">＋</button></div></details>`;
-  const symptomsCard = `<div class="card"><div class="sec-head"><h2>${T.symptoms}</h2><span class="prog-chip">${doneCount} / ${types.length}</span></div>${symptomCards}${zeroLink}<div class="scale-foot muted">${T.scaleHint}</div>${editSymsBlock}</div>`;
+  const symptomsCard = `<div class="card"><div class="sec-head"><h2>${T.symptoms}</h2>${completeBtn}</div>${symptomCards}<div class="scale-foot muted">${T.scaleHint}</div>${editSymsBlock}</div>`;
 
   const { scheduled, prn } = DL.medsForDate(date, data);
   const medRow = (m) => { const taken = DL.getMedTaken(date, m.id, data); return `<div class="med"><div class="med-name">${esc(tx(m.name, lang))} <span class="muted small">${esc(m.dose)}</span></div><div class="med-toggle"><button class="tgl ${taken === true ? 'is-yes' : ''}" data-med="${m.id}" data-taken="yes">✓</button><button class="tgl ${taken === false ? 'is-no' : ''}" data-med="${m.id}" data-taken="no">✗</button></div></div>`; };
-  const TL = TIME_LABEL(T);
-  let medsHtml = '';
-  if (scheduled.length) {
-    for (const slot of ['morning', 'midday', 'evening']) {
-      const ms = scheduled.filter((m) => DL.medTimeOfDay(m) === slot || (slot === 'evening' && DL.medTimeOfDay(m) === 'bedtime'));
-      if (ms.length) medsHtml += `<div class="subhead">${TL[slot]}</div>${ms.map(medRow).join('')}`;
-    }
-  } else { medsHtml = `<p class="muted small">${T.noMeds}</p>`; }
+  let medsHtml = scheduled.length ? scheduled.map(medRow).join('') : `<p class="muted small">${T.noMeds}</p>`;
   const prnHtml = prn.length ? `<div class="subhead">${T.asNeeded}</div>${prn.map(medRow).join('')}` : '';
 
   const noteVal = esc(dayLog?.note?.[lang] || '');
@@ -845,7 +845,6 @@ function renderToday(state) {
     ${symptomsCard}
     <div class="card"><h2>${T.meds}</h2>${medsHtml}${prnHtml}</div>
     <div class="card"><h2>${T.episodes}</h2>${ongoing.length ? `<div class="subhead">${T.ongoing}</div>${ongoingHtml}` : ''}${endedHtml}${epForm}${allEpsBlock}</div>
-    <div class="card"><details class="ro-fold"><summary><span class="muted small" style="font-weight:700">${T.note}</span><span class="ro-caret">▶</span></summary><div style="margin-top:6px"><textarea id="noteBox" rows="2" placeholder="${T.notePlaceholder}">${noteVal}</textarea></div></details></div>
     ${savedNote}
     <div class="clearday-row"><button class="linkbtn ${ui.confirmClear?'danger':''}" data-clearday>${ui.confirmClear?T.confirmClear:T.clearDay}</button></div></div>`;
 }
