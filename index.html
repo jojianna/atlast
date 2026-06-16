@@ -220,9 +220,9 @@ ul.tight { margin: 4px 0 0; padding-left: 18px; } ul.tight li { padding: 1px 0; 
 .ds .wkday.sel .wkdow,.ds .wkday.sel .wktick{color:rgba(255,255,255,.85);}
 .ds .wkday.tod:not(.sel){border-color:var(--teal);border-width:1.5px;}
 .ds .wkday.fut{opacity:.4;}
-.ds .caltoggle{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;margin-bottom:12px;}
-.ds .caltoggle button{border:0;background:#fff;color:var(--ink);font:inherit;font-size:12px;padding:5px 16px;cursor:pointer;}
-.ds .caltoggle button.on{background:var(--teal);color:#fff;}
+.ds .wkcal{flex:0 0 auto;width:34px;height:34px;border:1px solid var(--line);background:#fff;border-radius:9px;display:flex;align-items:center;justify-content:center;color:var(--teal);cursor:pointer;padding:0;touch-action:manipulation;-webkit-tap-highlight-color:transparent;}
+.ds .wkcal svg{width:18px;height:18px;}
+.ds .wkcal.on{background:var(--teal);color:#fff;border-color:var(--teal);}
 .ds .calhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
 .ds .calhead .mlabel{font-size:15px;font-weight:700;color:var(--ink);}
 .ds .calgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;}
@@ -817,6 +817,7 @@ function dayBurden(iso, types, data) {
   return sum;
 }
 function burdenBandIdx(b) { if (b == null) return -1; if (b === 0) return 0; if (b <= 5) return 1; if (b <= 10) return 2; if (b <= 15) return 3; return 4; }
+const CAL_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z"/><path d="M16 3v4"/><path d="M8 3v4"/><path d="M4 11h16"/></svg>';
 function monthCal(state, data, types) {
   const lang = state.lang; const date = state.date; const tISO = todayISO();
   const monthIso = ui.calMonth || date.slice(0, 7);
@@ -839,7 +840,7 @@ function monthCal(state, data, types) {
   const lg = (cls, txt) => `<span><span class="lgsw ${cls}"></span>${txt}</span>`;
   const legend = `<div class="callegend"><span style="color:var(--muted)">${lang === 'es' ? 'Carga:' : 'Burden:'}</span>${lg('calb1', lang === 'es' ? 'leve 1–5' : 'light 1–5')}${lg('calb2', lang === 'es' ? 'típico 6–10' : 'typical 6–10')}${lg('calb3', lang === 'es' ? 'fuerte 11–15' : 'heavy 11–15')}${lg('calb4', lang === 'es' ? 'muy fuerte 16+' : 'very heavy 16+')}${lg('calb0', lang === 'es' ? 'sin síntomas' : 'clear (0)')}</div>`;
   const note = `<div class="calnote">${lang === 'es' ? "Color = carga del día (suma de severidades). Toca un día para abrirlo." : "Colour = that day's burden (sum of severities). Tap a day to open it."}</div>`;
-  return `<div class="card"><div class="calhead"><span class="mlabel">${mlabel}</span><span class="hgrp"><button class="wknav" data-calnav="-1" aria-label="Previous month">‹</button><button class="wknav" data-calnav="1" aria-label="Next month" ${canNext ? '' : 'disabled'}>›</button></span></div><div class="calgrid">${cells}</div>${legend}${note}</div>`;
+  return `<div class="card"><div class="calhead"><span class="mlabel">${mlabel}</span><span class="hgrp"><button class="wknav" data-calnav="-1" aria-label="Previous month">‹</button><button class="wknav" data-calnav="1" aria-label="Next month" ${canNext ? '' : 'disabled'}>›</button><button class="wkcal on" data-calview="week" aria-label="${lang === 'es' ? 'Volver a la semana' : 'Back to week'}">${CAL_SVG}</button></span></div><div class="calgrid">${cells}</div>${legend}${note}</div>`;
 }
 
 function renderToday(state) {
@@ -849,8 +850,7 @@ function renderToday(state) {
   const sub = isToday ? T.today : agoLabel(daysBetween(date, todayISO()), lang);
   const tISO = todayISO();
   const types = DL.activeSymptomTypes(data);
-  const toggle = `<div class="caltoggle"><button data-calview="week" class="${ui.calView === 'week' ? 'on' : ''}">${lang === 'es' ? 'Semana' : 'Week'}</button><button data-calview="month" class="${ui.calView === 'month' ? 'on' : ''}">${lang === 'es' ? 'Mes' : 'Month'}</button></div>`;
-  if (ui.calView === 'month') return `<div class="ds">${toggle}${monthCal(state, data, types)}</div>`;
+  if (ui.calView === 'month') return `<div class="ds">${monthCal(state, data, types)}</div>`;
   const isComplete = (iso) => { const l = DL.getDailyLog(iso, data); if (!l) return false; if (l.symptomsSubmittedAt) return true; return types.every((s) => s.trackBy === 'single' ? (DL.getSeverity(iso, s.id, null, data) != null) : (DL.derivedOverall(s, l.symptoms || []) != null)); };
   const dt = new Date(date + 'T00:00:00Z'); const dow = (dt.getUTCDay() + 6) % 7; const monday = shiftDate(date, -dow);
   const dows = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
@@ -864,6 +864,7 @@ function renderToday(state) {
     <button class="wknav" data-nav="-7" aria-label="${T.prevDay}">‹</button>
     <div class="wkdays">${tiles}</div>
     <button class="wknav" data-nav="7" aria-label="${T.nextDay}" ${weekHasToday ? 'disabled' : ''}>›</button>
+    <button class="wkcal" data-calview="month" aria-label="${lang === 'es' ? 'Vista de mes' : 'Month view'}">${CAL_SVG}</button>
   </div>
   <div class="wksub muted small">${isToday ? T.today : fmtDate(date, lang) + ' · ' + agoLabel(daysBetween(date, tISO), lang)}</div>`;
 
@@ -905,7 +906,7 @@ function renderToday(state) {
   const allEps = (data.episodes || []).slice().sort((a, b) => (a.startDate < b.startDate ? 1 : -1));
   const allEpsBlock = `<details class="ro-fold" style="margin-top:10px"><summary><span class="muted small" style="font-weight:700">${lang === 'en' ? 'All episodes (edit)' : 'Todos los episodios'}</span><span class="ro-caret">▶</span></summary><div style="margin-top:6px">${allEps.map((e) => `<div class="drow"><div><div class="dname">${esc(tx(e.name, lang) || EP_TYPES[lang][e.type])}</div><div class="dmeta">${EP_TYPES[lang][e.type]} · ${esc(e.startDate)}${e.endDate ? ' → ' + esc(e.endDate) : ' → ' + (lang === 'en' ? 'ongoing' : 'en curso')}</div></div><button class="ed-btn2" data-edit="episodes:${e.id}" aria-label="Edit">✎</button></div>`).join('') || `<p class="muted small">${T.none}</p>`}</div></details>`;
   const savedNote = ui.savedAt ? `<div class="muted small saved-tag">✓ ${T.saved} · ${ui.savedAt}</div>` : '';
-  return `<div class="ds">${toggle}${head}
+  return `<div class="ds">${head}
     ${symptomsCard}
     <div class="card"><div class="card-h"><h2>${T.meds}</h2></div>${medsHtml}${prnHtml}</div>
     <div class="card"><div class="card-h"><h2>${T.episodes}</h2></div>${ongoing.length ? `<div class="subhead">${T.ongoing}</div>${ongoingHtml}` : ''}${endedHtml}${epForm}${allEpsBlock}</div>
