@@ -266,15 +266,16 @@ ul.tight { margin: 4px 0 0; padding-left: 18px; } ul.tight li { padding: 1px 0; 
 .ds .bars .b .bl{font-size:9px;color:var(--muted);font-weight:600;} .ds .bars .b .bv{font-size:10px;font-weight:700;}
 .ds .mini{width:100%;height:54px;display:block;}
 .ds .linkbtn{background:none;border:0;color:var(--teal);font:inherit;font-size:13px;cursor:pointer;text-decoration:underline;}
-.ds .pfilters{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;}
-.ds .pchip{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--line);background:#fff;border-radius:999px;padding:4px 10px;font-size:11px;cursor:pointer;color:var(--ink);}
-.ds .pchip.off{opacity:.4;text-decoration:line-through;}
-.ds .pdot{width:9px;height:9px;border-radius:50%;display:inline-block;}
-.ds .pyear{font-weight:800;font-size:13px;color:var(--teal-d);margin:10px 0 4px;padding-left:26px;}
-.ds .prail{position:relative;padding-left:26px;}
-.ds .prail::before{content:'';position:absolute;left:8px;top:6px;bottom:6px;width:2px;background:var(--line);}
-.ds .pitem{position:relative;display:flex;gap:8px;width:100%;border:0;background:transparent;cursor:pointer;text-align:left;padding:8px 0;font:inherit;align-items:flex-start;}
-.ds .pidot{position:absolute;left:-22px;top:11px;width:12px;height:12px;border-radius:50%;border:2px solid var(--card);}
+.ds .plegend{display:flex;flex-wrap:wrap;gap:16px;margin-bottom:14px;font-size:12px;color:var(--muted);}
+.ds .plegend>span{display:inline-flex;align-items:center;gap:6px;}
+.ds .plegk{width:22px;height:22px;border-radius:50%;background:var(--card);border:1px solid var(--line);display:inline-flex;align-items:center;justify-content:center;}
+.ds .plegk svg{width:13px;height:13px;}
+.ds .pyear{font-weight:800;font-size:13px;color:var(--teal-d);margin:10px 0 4px;padding-left:36px;}
+.ds .prail{position:relative;padding-left:36px;}
+.ds .prail::before{content:'';position:absolute;left:13px;top:6px;bottom:6px;width:2px;background:var(--line);}
+.ds .pitem{position:relative;display:flex;gap:10px;width:100%;border:0;background:transparent;cursor:pointer;text-align:left;padding:8px 0;font:inherit;align-items:flex-start;}
+.ds .picon{position:absolute;left:2px;top:7px;width:24px;height:24px;border-radius:50%;background:var(--card);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;}
+.ds .picon svg{width:14px;height:14px;}
 .ds .pibody{display:flex;flex-direction:column;flex:1;}
 .ds .pidate{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;}
 .ds .pilabel{font-weight:500;font-size:13.5px;line-height:1.3;}
@@ -994,7 +995,7 @@ function renderBig(state) {
   // ONE chip per condition: investigating → "Investigating"; otherwise the control state.
   const condChip = (c) => c.status === 'investigating'
     ? `<span class="chip info">${STATUS[lang].investigating}</span>`
-    : (c.control && T.control && T.control[c.control] ? `<span class="chip ${CTRL_CLS[c.control] || 'neutral'}">${T.control[c.control]}</span>` : '');
+    : (c.control && c.control !== 'no_treatment' && T.control && T.control[c.control] ? `<span class="chip ${CTRL_CLS[c.control] || 'neutral'}">${T.control[c.control]}</span>` : '');
   const condRow = (c) => {
     const sub = condSub(c);
     return `<div class="drow"><div><div class="dname">${esc(tx(c.name, lang))}</div>${sub ? `<div class="dmeta">${esc(sub)}</div>` : ''}</div><div class="dright">${condChip(c)}<button class="ed-btn2" data-edit="conditions:${c.id}" aria-label="Edit">✎</button></div></div>`;
@@ -1110,7 +1111,7 @@ const { tx, specialistLabel } = DL;
 
 
 
-const ui = { labId: null, win: '1y', openMs: null, tlHidden: new Set(), scoreWin: '30d', symTrend: null, labGroups: new Set() };
+const ui = { labId: null, win: '1y', openMs: null, scoreWin: '30d', symTrend: null, labGroups: new Set() };
 
 const STR = {
   en: { conditions: 'Conditions', meds: 'Meds', symptoms: 'Symptoms', episodes: 'Episodes', labs: 'Labs', timeline: 'Map',
@@ -1120,7 +1121,7 @@ const STR = {
         doseHistory: 'Dose history', since: 'since', latest: 'Latest', daysUnwell: 'Days unwell', ongoing: 'ongoing',
         all: 'All', noData: 'No data in this window.', window: { '3m': '3 mo', '1y': '1 yr', all: 'All' }, back: '‹ All labs', close: 'Close',
         epTypes: { cold_flu: 'Cold / flu', infection: 'Infection', gi: 'GI', flare: 'Flare', other: 'Other' },
-        msTypes: { diagnosis: 'Diagnosis', medication: 'Medication', new_symptom: 'Symptom', episode: 'Episode', milestone: 'Milestone' },
+        msTypes: { diagnosis: 'Diagnosis', medication: 'Treatment', new_symptom: 'Symptom', episode: 'Episode', milestone: 'Milestone' },
         thisYear: 'This year', refRange: 'Ref', ulnLine: 'ULN (×1)', archived: 'Archived', locations: 'locations', single: 'single',
         positive: 'positive', negative: 'negative',
         addC: 'Add condition', addM: 'Add medication', addS: 'Add symptom', addE: 'Add episode', addL: 'Add marker', addMs: 'Add milestone', addR: 'Add ruled-out', editMarker: 'Edit marker / results' },
@@ -1131,13 +1132,20 @@ const STR = {
         doseHistory: 'Historial de dosis', since: 'desde', latest: 'Último', daysUnwell: 'Días enfermo', ongoing: 'en curso',
         all: 'Todos', noData: 'Sin datos en este periodo.', window: { '3m': '3 m', '1y': '1 año', all: 'Todo' }, back: '‹ Analíticas', close: 'Cerrar',
         epTypes: { cold_flu: 'Resfriado / gripe', infection: 'Infección', gi: 'Digestivo', flare: 'Brote', other: 'Otro' },
-        msTypes: { diagnosis: 'Diagnóstico', medication: 'Medicación', new_symptom: 'Síntoma', episode: 'Episodio', milestone: 'Hito' },
+        msTypes: { diagnosis: 'Diagnóstico', medication: 'Tratamiento', new_symptom: 'Síntoma', episode: 'Episodio', milestone: 'Hito' },
         thisYear: 'Este año', refRange: 'Ref', ulnLine: 'ULN (×1)', archived: 'Archivado', locations: 'localizaciones', single: 'único',
         positive: 'positivo', negative: 'negativo',
         addC: 'Añadir condición', addM: 'Añadir medicación', addS: 'Añadir síntoma', addE: 'Añadir episodio', addL: 'Añadir marcador', addMs: 'Añadir hito', addR: 'Añadir descartado', editMarker: 'Editar marcador / resultados' },
 };
 const STATUS_CLS = { current: 'ok', investigating: 'warn', excluded: 'err', provisionally_excluded: 'prov', resolved: 'ok' };
-const MS_TYPE = { diagnosis: ['🩺', '#0f766e'], medication: ['💊', '#2563eb'], new_symptom: ['⚠', '#ea580c'], episode: ['🤒', '#dc2626'], milestone: ['◆', '#64748b'] };
+const MS_TYPE = { diagnosis: ['🩺', '#378ADD'], medication: ['💊', '#7F77DD'], new_symptom: ['⚡', '#1d9e75'], episode: ['🤒', '#64748b'], milestone: ['◆', '#64748b'] };
+const MS_ICON = {
+  new_symptom: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 3l0 7l6 0l-8 11l0 -7l-6 0l8 -11"/></svg>',
+  diagnosis: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4h-1a1 1 0 0 0 -1 1v3.5a5.5 5.5 0 0 0 11 0v-3.5a1 1 0 0 0 -1 -1h-1"/><path d="M8 15a6 6 0 1 0 12 0v-2"/><path d="M20 12m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"/></svg>',
+  medication: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12.5l8 -8a4.95 4.95 0 0 1 7 7l-8 8a4.95 4.95 0 0 1 -7 -7z"/><path d="M8.5 8.5l7 7"/></svg>',
+  episode: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/></svg>',
+  milestone: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/></svg>'
+};
 
 function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
 function fmtDate(iso, lang) { if (!iso) return ''; return new Date(iso + 'T00:00:00').toLocaleDateString(lang === 'es' ? 'es-ES' : 'en-GB', { day: 'numeric', month: 'short', year: 'numeric' }); }
@@ -1293,20 +1301,19 @@ function renderTrends(state) {
 function renderProg(state) {
   const lang = state.lang; const TT = TSS[lang]; const data = DL.getData();
   const RM = STR[lang].msTypes;
-  const hidden = ui.tlHidden || (ui.tlHidden = new Set());
-  const types = ['diagnosis', 'medication', 'new_symptom', 'episode', 'milestone'];
-  const chips = types.map((ty) => { const [, color] = MS_TYPE[ty]; return `<button class="pchip ${hidden.has(ty) ? 'off' : ''}" data-tlt="${ty}"><span class="pdot" style="background:${color}"></span>${RM[ty]}</button>`; }).join('');
-  const ms = (data.milestones || []).slice().filter((m) => !hidden.has(m.type)).sort((a, b) => (a.date < b.date ? 1 : -1));
+  const legendTypes = ['new_symptom', 'diagnosis', 'medication'];
+  const legend = legendTypes.map((ty) => { const [, color] = MS_TYPE[ty]; const ic = MS_ICON[ty] || MS_ICON.milestone; return `<span><span class="plegk" style="color:${color}">${ic}</span>${RM[ty]}</span>`; }).join('');
+  const ms = (data.milestones || []).slice().sort((a, b) => (a.date < b.date ? 1 : -1));
   let body = ''; let curYear = null;
   ms.forEach((m) => {
     const y = m.date.slice(0, 4);
     if (y !== curYear) { if (curYear !== null) body += '</div>'; body += `<div class="pyear">${y}</div><div class="prail">`; curYear = y; }
-    const [, color] = MS_TYPE[m.type] || MS_TYPE.milestone; const hasDetail = !!tx(m.detail, lang);
-    body += `<button class="pitem" data-ms="${m.id}"><span class="pidot" style="background:${color}"></span><span class="pibody"><span class="pidate">${fmtMonth(m.date, lang)}</span><span class="pilabel">${esc(tx(m.label, lang))}</span></span>${hasDetail ? '<span class="pichev">›</span>' : ''}</button>`;
+    const [, color] = MS_TYPE[m.type] || MS_TYPE.milestone; const ic = MS_ICON[m.type] || MS_ICON.milestone; const hasDetail = !!tx(m.detail, lang);
+    body += `<button class="pitem" data-ms="${m.id}"><span class="picon" style="color:${color}">${ic}</span><span class="pibody"><span class="pidate">${fmtMonth(m.date, lang)}</span><span class="pilabel">${esc(tx(m.label, lang))}</span></span>${hasDetail ? '<span class="pichev">›</span>' : ''}</button>`;
   });
   if (curYear !== null) body += '</div>';
   if (!ms.length) body = `<p class="muted small" style="padding:10px 4px">${STR[lang].noData}</p>`;
-  return `<div class="card"><div class="card-h"><h2>${TT.progression}</h2><button class="addmini" data-add="milestones" aria-label="Add milestone">＋</button></div><div class="pfilters">${chips}</div>${body}</div>`;
+  return `<div class="card"><div class="card-h"><h2>${TT.progression}</h2><button class="addmini" data-add="milestones" aria-label="Add milestone">＋</button></div><div class="plegend">${legend}</div>${body}</div>`;
 }
 function renderRecords(state) { return renderTrends(state); }
 function renderTimeline(state) { return '<div class="ds">' + renderProg(state) + '</div>' + renderModal(state); }
@@ -1365,7 +1372,6 @@ async function onClick(e, state, rerender) {
   if (t.dataset.pin) { const lab = (DL.getData().labs || []).find((l) => l.id === t.dataset.pin); if (lab) { lab.pinned = !lab.pinned; await DL.persist(); } rerender(); return; }
   if (t.dataset.lab) { ui.labId = t.dataset.lab === '__back' ? null : t.dataset.lab; ui.win = '1y'; rerender(); return; }
   if (t.dataset.win) { ui.win = t.dataset.win; rerender(); return; }
-  if (t.dataset.tlt) { const k = t.dataset.tlt; ui.tlHidden.has(k) ? ui.tlHidden.delete(k) : ui.tlHidden.add(k); rerender(); return; }
   if (t.dataset.ms !== undefined) { if (t.classList.contains('sheet-bg') && e.target !== t) return; ui.openMs = t.dataset.ms === '__close' ? null : t.dataset.ms; rerender(); return; }
 }
 
