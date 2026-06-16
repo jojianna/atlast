@@ -41,7 +41,7 @@ body { font:16px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helveti
 details.msgs { margin-top:8px; } details.msgs summary { cursor:pointer; font-size:13px; color:var(--muted); }
 .msglist { margin:8px 0 0; padding:0; list-style:none; font-size:12.5px; } .msglist li { padding:4px 0; border-bottom:1px solid var(--line); color:var(--muted); }
 .chips-row { display:flex; flex-wrap:wrap; gap:6px; } .pill { font-size:12px; background:var(--chip); border-radius:999px; padding:4px 10px; color:var(--ink); }
-.tabbar { position:fixed; left:0; right:0; bottom:0; z-index:10; height:calc(var(--tabbar-h) + env(safe-area-inset-bottom)); padding-bottom:env(safe-area-inset-bottom); display:grid; grid-template-columns:repeat(4,1fr); background:#fff; border-top:1px solid var(--line); }
+.tabbar { position:fixed; left:0; right:0; bottom:0; z-index:10; height:calc(var(--tabbar-h) + env(safe-area-inset-bottom)); padding-bottom:env(safe-area-inset-bottom); display:grid; grid-template-columns:repeat(5,1fr); background:#fff; border-top:1px solid var(--line); }
 .tab { border:0; background:transparent; cursor:pointer; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; color:var(--muted); font-size:11px; }
 .tab .tab-ico { font-size:20px; line-height:1; } .tab.is-active { color:var(--teal); font-weight:600; }
 .btn { border:0; background:var(--teal); color:#fff; border-radius:10px; padding:10px 14px; font-size:14px; font-weight:600; cursor:pointer; touch-action:manipulation; -webkit-tap-highlight-color:transparent; }
@@ -247,6 +247,8 @@ ul.tight { margin: 4px 0 0; padding-left: 18px; } ul.tight li { padding: 1px 0; 
 .ds .labgrp-h{width:100%;display:flex;align-items:center;gap:8px;padding:10px 0;border:0;background:transparent;text-align:left;font:inherit;font-weight:600;font-size:14px;color:var(--ink);cursor:pointer;}
 .ds .ldot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:6px;}
 .ds .labchg{margin-left:2px;}
+.ds .promrow .tr{font-size:13px;font-weight:600;flex:0 0 auto;min-width:46px;text-align:right;}
+.ds .labgrp-h .gcaret{color:var(--muted);font-size:12px;flex:0 0 auto;width:14px;}
 .ds .symclick{cursor:pointer;}
 .ds .bars{display:flex;align-items:flex-end;gap:6px;height:80px;padding-top:6px;}
 .ds .bars .b{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;height:100%;justify-content:flex-end;}
@@ -1207,7 +1209,7 @@ function stackedSVG(bars) {
   const maxTot = Math.max(1, ...bars.map((b) => b.c[1] + b.c[2] + b.c[3] + b.c[4]));
   const slot = (w - padL - padR) / n, bw = Math.min(20, slot * 0.7);
   let out = '';
-  bars.forEach((b, i) => { const x = padL + i * slot + (slot - bw) / 2; let y = h - padB; for (let lv = 1; lv <= 4; lv++) { const c = b.c[lv]; if (!c) continue; const hh = c / maxTot * (h - padT - padB); y -= hh; out += `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${bw.toFixed(1)}" height="${hh.toFixed(1)}" fill="${SEVHEX[lv]}" rx="1"/>`; } });
+  bars.forEach((b, i) => { const x = padL + i * slot + (slot - bw) / 2; let y = h - padB; for (let lv = 1; lv <= 4; lv++) { const c = b.c[lv]; if (!c) continue; const hh = c / maxTot * (h - padT - padB); y -= hh; out += `<rect x="${x.toFixed(1)}" y="${(y - 0.4).toFixed(1)}" width="${bw.toFixed(1)}" height="${(hh + 0.4).toFixed(1)}" fill="${SEVHEX[lv]}"/>`; } });
   const xl = `<text x="${padL}" y="${h - 3}" font-size="9" fill="#94a3b8">${bars.length ? ddmm(bars[0].iso) : ''}</text><text x="${w - padR}" y="${h - 3}" font-size="9" fill="#94a3b8" text-anchor="end">${bars.length ? ddmm(bars[bars.length - 1].iso) : ''}</text>`;
   return `<svg class="trend" viewBox="0 0 ${w} ${h}" role="img">${out}${xl}</svg>`;
 }
@@ -1264,7 +1266,7 @@ function renderTrends(state) {
       } else { const pn = DL.labPosNeg(l, r); const isPos = pn === 'positive'; dot = pn ? (isPos ? '#dc2626' : '#16a34a') : '#94a3b8'; val = pn ? (isPos ? TT.pos : TT.neg) : (r && r.qualitative ? esc(r.qualitative) : '—'); }
       return `<button class="lab-row" data-lab="${l.id}"><span class="bp-name"><span class="ldot" style="background:${dot}"></span>${esc(tx(l.marker, lang))}</span><span class="lab-val">${val} ${chg} ›</span></button>`;
     }).join('');
-    return `<div class="labgrp"><button class="labgrp-h" data-labgrp="${esc(g)}"><span class="ro-caret">${open ? '▾' : '▸'}</span> ${esc(g)}</button>${open ? `<div class="labgrp-b">${rows}</div>` : ''}</div>`;
+    return `<div class="labgrp"><button class="labgrp-h" data-labgrp="${esc(g)}"><span class="gcaret">${open ? '▾' : '▸'}</span> ${esc(g)}</button>${open ? `<div class="labgrp-b">${rows}</div>` : ''}</div>`;
   }).join('');
   const labsCard = `<div class="card"><div class="card-h"><div><h2>${TT.labs}</h2><div class="muted small">${TT.labsHint}</div></div><button class="addmini" data-add="labs" aria-label="Add marker">＋</button></div>${labHtml}</div>`;
   const illCard = `<div class="card"><div class="card-h"><h2>${TT.episodes}</h2></div>${illnessBars(data, lang)}</div>`;
