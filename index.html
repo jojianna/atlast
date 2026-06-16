@@ -1039,7 +1039,7 @@ function renderBig(state) {
   };
   const ro = bp.excluded.map(roItem).join('') || `<p class="muted small">${T.none}</p>`;
   return `<div class="ds">
-    <div class="card"><div class="card-h"><h2>${T.activeManaged}</h2><div class="hgrp"><span class="count">${allConds.length}</span><button class="addmini" data-add="conditions" aria-label="Add condition">＋</button></div></div>${conds}</div>
+    <div class="card"><div class="card-h"><h2>${T.activeManaged}</h2><button class="addmini" data-add="conditions" aria-label="Add condition">＋</button></div>${conds}</div>
     <div class="card"><div class="card-h"><h2>${T.currentMeds}</h2><button class="addmini" data-add="medications" aria-label="Add medication">＋</button></div>${meds}</div>
     <div class="card"><details class="ro-fold"><summary><h2>${T.ruledOut}</h2><span class="hint">${lang === 'en' ? 'tap to view' : 'toca para ver'}</span><span class="ro-caret">▶</span></summary><div class="ro-body" style="margin-top:8px">${ro}</div></details></div>
   </div>`;
@@ -1214,9 +1214,10 @@ function dailySevCounts(data, types, days, maxBars) {
 }
 function ddmm(iso) { return iso ? iso.slice(8, 10) + '.' + iso.slice(5, 7) : ''; }
 function trendSVG(series, max, avg) {
-  const w = 320, h = 120, padT = 8, padB = 18, padL = 4, padR = 4, n = series.length;
+  const w = 320, h = 124, padT = 8, padB = 18, padL = 26, padR = 6, n = series.length;
   const X = (i) => padL + (n <= 1 ? 0 : i / (n - 1) * (w - padL - padR));
   const Y = (v) => padT + (1 - (max ? v / max : 0)) * (h - padT - padB);
+  const grid = [0, max / 2, max].map((t) => { const y = Y(t).toFixed(1); return `<line x1="${padL}" y1="${y}" x2="${w - padR}" y2="${y}" stroke="#eef1f3" stroke-width="1"/><text x="${padL - 6}" y="${(+y + 3).toFixed(1)}" font-size="9" fill="#94a3b8" text-anchor="end">${Math.round(t)}</text>`; }).join('');
   let segs = [], cur = [];
   series.forEach((p, i) => { if (p.v == null) { if (cur.length) { segs.push(cur); cur = []; } } else cur.push(X(i).toFixed(1) + ',' + Y(p.v).toFixed(1)); });
   if (cur.length) segs.push(cur);
@@ -1224,7 +1225,7 @@ function trendSVG(series, max, avg) {
   const ay = Y(avg).toFixed(1);
   const avgL = (avg != null) ? `<line x1="${padL}" y1="${ay}" x2="${w - padR}" y2="${ay}" stroke="#5b6b7a" stroke-width="1.2" stroke-dasharray="5 4"/>` : '';
   const xl = `<text x="${padL}" y="${h - 4}" font-size="9" fill="#94a3b8">${ddmm(series[0] && series[0].iso)}</text><text x="${w - padR}" y="${h - 4}" font-size="9" fill="#94a3b8" text-anchor="end">${ddmm(series.length ? series[series.length - 1].iso : '')}</text>`;
-  return `<svg class="trend" viewBox="0 0 ${w} ${h}" role="img">${avgL}${polys}${xl}</svg>`;
+  return `<svg class="trend" viewBox="0 0 ${w} ${h}" role="img">${grid}${avgL}${polys}${xl}</svg>`;
 }
 function stackedSVG(bars) {
   const w = 320, h = 120, padT = 6, padB = 16, padL = 4, padR = 4, n = bars.length || 1;
