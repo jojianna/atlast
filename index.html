@@ -220,6 +220,26 @@ ul.tight { margin: 4px 0 0; padding-left: 18px; } ul.tight li { padding: 1px 0; 
 .ds .wkday.sel .wkdow,.ds .wkday.sel .wktick{color:rgba(255,255,255,.85);}
 .ds .wkday.tod:not(.sel){border-color:var(--teal);border-width:1.5px;}
 .ds .wkday.fut{opacity:.4;}
+.ds .caltoggle{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;margin-bottom:12px;}
+.ds .caltoggle button{border:0;background:#fff;color:var(--ink);font:inherit;font-size:12px;padding:5px 16px;cursor:pointer;}
+.ds .caltoggle button.on{background:var(--teal);color:#fff;}
+.ds .calhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.ds .calhead .mlabel{font-size:15px;font-weight:700;color:var(--ink);}
+.ds .calgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;}
+.ds .caldow{font-size:10px;color:var(--muted);text-align:center;padding-bottom:2px;}
+.ds .calday{aspect-ratio:1;border-radius:7px;border:1px solid var(--line);background:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--ink);cursor:pointer;font:inherit;padding:0;touch-action:manipulation;-webkit-tap-highlight-color:transparent;}
+.ds .calday.empty{border:0;background:transparent;cursor:default;}
+.ds .calday.fut{opacity:.35;}
+.ds .calday.tod{box-shadow:0 0 0 2px var(--teal);}
+.ds .calday.sel{outline:2px solid var(--ink);outline-offset:1px;}
+.ds .calb0{background:#f1f5f9;border-color:#f1f5f9;color:#64748b;}
+.ds .calb1{background:#fde047;border-color:#fde047;color:#422006;}
+.ds .calb2{background:#f59e0b;border-color:#f59e0b;color:#3b2606;}
+.ds .calb3{background:#f97316;border-color:#f97316;color:#fff;}
+.ds .calb4{background:#b91c1c;border-color:#b91c1c;color:#fff;}
+.ds .callegend{display:flex;flex-wrap:wrap;gap:7px 12px;margin-top:12px;font-size:11px;color:var(--muted);align-items:center;}
+.ds .callegend .lgsw{width:12px;height:12px;border-radius:3px;display:inline-block;vertical-align:-1px;margin-right:4px;}
+.ds .calnote{font-size:11px;color:var(--muted);margin-top:8px;line-height:1.5;}
 .ds .wksub{text-align:center;margin-bottom:10px;}
 .ds .symrow .symctl{display:flex;align-items:center;gap:6px;}
 .ds .sevpick{border:0;background:transparent;padding:0;cursor:pointer;}
@@ -717,7 +737,7 @@ const { tx } = DL;
 
 
 
-const ui = { expanded: new Set(['sym_jointpain']), epFormOpen: false, savedAt: null, noteOpen: new Set(), scaleOpen: new Set(), confirmClear: false };
+const ui = { expanded: new Set(['sym_jointpain']), epFormOpen: false, savedAt: null, noteOpen: new Set(), scaleOpen: new Set(), confirmClear: false, calView: 'week', calMonth: null };
 
 const STR = {
   en: { today: 'Today', symptoms: 'Symptoms', meds: 'Medications', asNeeded: 'As needed (PRN)',
@@ -784,6 +804,44 @@ function symRow(state, symId, locId, label) {
 function agoLabel(n, lang) { return lang === 'es' ? (n === 1 ? 'hace 1 día' : 'hace ' + n + ' días') : (n === 1 ? '1 day ago' : n + ' days ago'); }
 function daysBetween(aISO, bISO) { const a = new Date(aISO + 'T00:00:00Z'); const b = new Date(bISO + 'T00:00:00Z'); return Math.round((b - a) / 86400000); }
 
+// Daily burden = sum of symptom severities (located symptoms roll up by their derived overall).
+// Returns null for days with nothing logged. Bands (Anna 16 Jun): 0 clear · 1–5 light · 6–10 typical · 11–15 heavy · 16+ very heavy.
+function dayBurden(iso, types, data) {
+  const l = DL.getDailyLog(iso, data);
+  if (!l || !(l.symptoms || []).some((r) => typeof r.severity === 'number')) return null;
+  let sum = 0;
+  types.forEach((s) => {
+    if (s.trackBy === 'locations') { const d = DL.derivedOverall(s, l.symptoms || []); sum += (d || 0); }
+    else { const v = DL.getSeverity(iso, s.id, null, data); sum += (v || 0); }
+  });
+  return sum;
+}
+function burdenBandIdx(b) { if (b == null) return -1; if (b === 0) return 0; if (b <= 5) return 1; if (b <= 10) return 2; if (b <= 15) return 3; return 4; }
+function monthCal(state, data, types) {
+  const lang = state.lang; const date = state.date; const tISO = todayISO();
+  const monthIso = ui.calMonth || date.slice(0, 7);
+  const [yy, mm] = monthIso.split('-').map(Number);
+  const first = new Date(Date.UTC(yy, mm - 1, 1));
+  const lead = (first.getUTCDay() + 6) % 7;
+  const daysIn = new Date(Date.UTC(yy, mm, 0)).getUTCDate();
+  const dows = lang === 'es' ? ['L', 'M', 'X', 'J', 'V', 'S', 'D'] : ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+  const mlabel = first.toLocaleDateString(lang === 'es' ? 'es-ES' : 'en-GB', { month: 'long', year: 'numeric' });
+  let cells = dows.map((d) => `<div class="caldow">${d}</div>`).join('');
+  for (let i = 0; i < lead; i++) cells += '<div class="calday empty"></div>';
+  for (let d = 1; d <= daysIn; d++) {
+    const iso = `${monthIso}-${String(d).padStart(2, '0')}`;
+    const fut = iso > tISO;
+    const bi = fut ? -1 : burdenBandIdx(dayBurden(iso, types, data));
+    const cls = bi >= 0 ? ` calb${bi}` : '';
+    cells += `<button class="calday${cls}${iso === date ? ' sel' : ''}${iso === tISO ? ' tod' : ''}${fut ? ' fut' : ''}" data-day="${iso}" ${fut ? 'disabled' : ''}>${d}</button>`;
+  }
+  const canNext = monthIso < tISO.slice(0, 7);
+  const lg = (cls, txt) => `<span><span class="lgsw ${cls}"></span>${txt}</span>`;
+  const legend = `<div class="callegend"><span style="color:var(--muted)">${lang === 'es' ? 'Carga:' : 'Burden:'}</span>${lg('calb1', lang === 'es' ? 'leve 1–5' : 'light 1–5')}${lg('calb2', lang === 'es' ? 'típico 6–10' : 'typical 6–10')}${lg('calb3', lang === 'es' ? 'fuerte 11–15' : 'heavy 11–15')}${lg('calb4', lang === 'es' ? 'muy fuerte 16+' : 'very heavy 16+')}${lg('calb0', lang === 'es' ? 'sin síntomas' : 'clear (0)')}</div>`;
+  const note = `<div class="calnote">${lang === 'es' ? "Color = carga del día (suma de severidades). Toca un día para abrirlo." : "Colour = that day's burden (sum of severities). Tap a day to open it."}</div>`;
+  return `<div class="card"><div class="calhead"><span class="mlabel">${mlabel}</span><span class="hgrp"><button class="wknav" data-calnav="-1" aria-label="Previous month">‹</button><button class="wknav" data-calnav="1" aria-label="Next month" ${canNext ? '' : 'disabled'}>›</button></span></div><div class="calgrid">${cells}</div>${legend}${note}</div>`;
+}
+
 function renderToday(state) {
   const lang = state.lang; const T = STR[lang]; const date = state.date; const data = DL.getData();
   if (!data) return `<div class="card"><p class="muted">${T.noData}</p></div>`;
@@ -791,6 +849,8 @@ function renderToday(state) {
   const sub = isToday ? T.today : agoLabel(daysBetween(date, todayISO()), lang);
   const tISO = todayISO();
   const types = DL.activeSymptomTypes(data);
+  const toggle = `<div class="caltoggle"><button data-calview="week" class="${ui.calView === 'week' ? 'on' : ''}">${lang === 'es' ? 'Semana' : 'Week'}</button><button data-calview="month" class="${ui.calView === 'month' ? 'on' : ''}">${lang === 'es' ? 'Mes' : 'Month'}</button></div>`;
+  if (ui.calView === 'month') return `<div class="ds">${toggle}${monthCal(state, data, types)}</div>`;
   const isComplete = (iso) => { const l = DL.getDailyLog(iso, data); if (!l) return false; if (l.symptomsSubmittedAt) return true; return types.every((s) => s.trackBy === 'single' ? (DL.getSeverity(iso, s.id, null, data) != null) : (DL.derivedOverall(s, l.symptoms || []) != null)); };
   const dt = new Date(date + 'T00:00:00Z'); const dow = (dt.getUTCDay() + 6) % 7; const monday = shiftDate(date, -dow);
   const dows = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
@@ -845,7 +905,7 @@ function renderToday(state) {
   const allEps = (data.episodes || []).slice().sort((a, b) => (a.startDate < b.startDate ? 1 : -1));
   const allEpsBlock = `<details class="ro-fold" style="margin-top:10px"><summary><span class="muted small" style="font-weight:700">${lang === 'en' ? 'All episodes (edit)' : 'Todos los episodios'}</span><span class="ro-caret">▶</span></summary><div style="margin-top:6px">${allEps.map((e) => `<div class="drow"><div><div class="dname">${esc(tx(e.name, lang) || EP_TYPES[lang][e.type])}</div><div class="dmeta">${EP_TYPES[lang][e.type]} · ${esc(e.startDate)}${e.endDate ? ' → ' + esc(e.endDate) : ' → ' + (lang === 'en' ? 'ongoing' : 'en curso')}</div></div><button class="ed-btn2" data-edit="episodes:${e.id}" aria-label="Edit">✎</button></div>`).join('') || `<p class="muted small">${T.none}</p>`}</div></details>`;
   const savedNote = ui.savedAt ? `<div class="muted small saved-tag">✓ ${T.saved} · ${ui.savedAt}</div>` : '';
-  return `<div class="ds">${head}
+  return `<div class="ds">${toggle}${head}
     ${symptomsCard}
     <div class="card"><div class="card-h"><h2>${T.meds}</h2></div>${medsHtml}${prnHtml}</div>
     <div class="card"><div class="card-h"><h2>${T.episodes}</h2></div>${ongoing.length ? `<div class="subhead">${T.ongoing}</div>${ongoingHtml}` : ''}${endedHtml}${epForm}${allEpsBlock}</div>
@@ -871,7 +931,9 @@ async function onClick(e, state, rerender) {
   document.querySelectorAll('.rownote').forEach((el) => DL.setSymptomNote(state.date, el.dataset.sym, el.dataset.loc || null, el.value));
   document.querySelectorAll('.epnote').forEach((el) => DL.setEpisodeNote(el.dataset.epnote, state.lang, el.value));
   if (t.dataset.nav) { let nd = shiftDate(state.date, Number(t.dataset.nav)); if (nd > todayISO()) nd = todayISO(); state.date = nd; ui.savedAt = null; ui.confirmClear = false; rerender(); return; }
-  if (t.dataset.day) { state.date = t.dataset.day; ui.savedAt = null; ui.confirmClear = false; rerender(); return; }
+  if (t.dataset.day) { state.date = t.dataset.day; ui.calView = 'week'; ui.savedAt = null; ui.confirmClear = false; rerender(); return; }
+  if (t.dataset.calview) { ui.calView = t.dataset.calview; if (ui.calView === 'month') ui.calMonth = state.date.slice(0, 7); rerender(); return; }
+  if (t.dataset.calnav) { const base = ui.calMonth || state.date.slice(0, 7); const [yy, mm] = base.split('-').map(Number); const nd = new Date(Date.UTC(yy, mm - 1 + Number(t.dataset.calnav), 1)); ui.calMonth = nd.toISOString().slice(0, 7); rerender(); return; }
   if (t.dataset.reopen) { ui.scaleOpen.add(t.dataset.reopen); rerender(); return; }
   if (t.dataset.note) { const k = t.dataset.note; ui.noteOpen.has(k) ? ui.noteOpen.delete(k) : ui.noteOpen.add(k); rerender(); return; }
   if (t.dataset.expand) { const id = t.dataset.expand; ui.expanded.has(id) ? ui.expanded.delete(id) : ui.expanded.add(id); rerender(); return; }
@@ -1224,7 +1286,9 @@ function trendSVG(series, max, avg) {
   const polys = segs.map((s) => s.length > 1 ? `<polyline fill="none" stroke="#0f766e" stroke-width="2" points="${s.join(' ')}"/>` : (s.length ? `<circle cx="${s[0].split(',')[0]}" cy="${s[0].split(',')[1]}" r="2.2" fill="#0f766e"/>` : '')).join('');
   const ay = Y(avg).toFixed(1);
   const avgL = (avg != null) ? `<line x1="${padL}" y1="${ay}" x2="${w - padR}" y2="${ay}" stroke="#5b6b7a" stroke-width="1.2" stroke-dasharray="5 4"/>` : '';
-  const xl = `<text x="${padL}" y="${h - 4}" font-size="9" fill="#94a3b8">${ddmm(series[0] && series[0].iso)}</text><text x="${w - padR}" y="${h - 4}" font-size="9" fill="#94a3b8" text-anchor="end">${ddmm(series.length ? series[series.length - 1].iso : '')}</text>`;
+  const firstIso = series[0] && series[0].iso, lastIso = series.length ? series[series.length - 1].iso : '';
+  const fmtX = (iso) => iso ? ddmm(iso) + '.' + iso.slice(2, 4) : '';
+  const xl = `<text x="${padL}" y="${h - 4}" font-size="9" fill="#94a3b8">${fmtX(firstIso)}</text><text x="${w - padR}" y="${h - 4}" font-size="9" fill="#94a3b8" text-anchor="end">${fmtX(lastIso)}</text>`;
   return `<svg class="trend" viewBox="0 0 ${w} ${h}" role="img">${grid}${avgL}${polys}${xl}</svg>`;
 }
 function stackedSVG(bars) {
