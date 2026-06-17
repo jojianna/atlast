@@ -242,7 +242,7 @@ ul.tight { margin: 4px 0 0; padding-left: 18px; } ul.tight li { padding: 1px 0; 
 .ds .calnote{font-size:11px;color:var(--muted);margin-top:8px;line-height:1.5;}
 .ds .wksub{text-align:center;margin-bottom:10px;}
 .ds .symrow .symctl{display:flex;align-items:center;gap:6px;}
-.ds .sevpick{border:0;background:transparent;padding:0;cursor:pointer;}
+.ds .sevpick{border:0;cursor:pointer;}
 .ds .noteicon{width:38px;height:38px;border:1px solid var(--line);background:#fff;border-radius:9px;font-size:15px;cursor:pointer;color:var(--muted);touch-action:manipulation;-webkit-tap-highlight-color:transparent;}
 .ds .noteicon.on,.ds .noteicon.has{background:#e1f5ee;border-color:#9fe1cb;color:var(--teal-d);}
 .ds .chgpill{font-size:13px;font-weight:600;border-radius:999px;padding:2px 10px;white-space:nowrap;}
@@ -362,7 +362,7 @@ const SEVERITY_MIN = 0;
 const SEVERITY_MAX = 4;
 const ENUMS = {
   conditionStatus: ['current', 'investigating', 'excluded', 'provisionally_excluded', 'resolved'],
-  conditionControl: ['treated', 'no_treatment', 'adjusting', 'confirming'],
+  conditionControl: ['treated', 'no_treatment', 'adjusting'],
   medStatus: ['active', 'tapering', 'stopped', 'prn'],
   medCategory: ['prescription', 'supplement', 'otc'],
   trackBy: ['single', 'locations'], overall: ['max', 'mean'],
@@ -1009,7 +1009,7 @@ const ui = { specialistId: null, answering: null };
 
 const STR = {
   en: { dx: 'Diagnosed', conditions: 'Active conditions', activeManaged: 'Conditions', since: 'Since', currentMeds: 'Current medications',
-        control: { treated: 'Treating', no_treatment: 'No treatment', adjusting: 'Adjusting', confirming: 'Confirming' },
+        control: { treated: 'Treating', no_treatment: 'No treatment', adjusting: 'Adjusting' },
         ruledOut: 'Ruled out', other: 'Other', provShort: 'Provisional', none: 'None', revisit: 'may re-test',
         questionsFor: 'Questions for', markAnswered: 'Mark answered', cont: 'Continue', answerNotePh: 'Add a note (optional)…', medStatus: { tapering: 'tapering off', prn: 'as needed', stopped: 'stopped' }, noQuestions: 'No open questions for this specialist.', noQuestionsAll: 'No open questions.', addQ: 'Add question', appointments: 'Upcoming appointments', pastAppts: 'Past appointments', addAppt: 'Add appointment', noAppt: 'No appointments yet',
         filterBy: 'Filter by specialist', allSpecialists: 'All specialists', allQuestions: 'All open questions',
@@ -1018,7 +1018,7 @@ const STR = {
         wd: { mon: 'Mon', tue: 'Tue', wed: 'Wed', thu: 'Thu', fri: 'Fri', sat: 'Sat', sun: 'Sun' },
         medLegend: 'X-X-X = morning · midday · evening (e.g. 0-0-1 = one at night).' },
   es: { dx: 'Diagnóstico', conditions: 'Condiciones activas', activeManaged: 'Condiciones', since: 'Desde', currentMeds: 'Medicación actual',
-        control: { treated: 'En tratamiento', no_treatment: 'Sin tratamiento', adjusting: 'Ajustando', confirming: 'Confirmando' },
+        control: { treated: 'En tratamiento', no_treatment: 'Sin tratamiento', adjusting: 'Ajustando' },
         ruledOut: 'Descartado', other: 'Otros', provShort: 'Provisional', none: 'Ninguno', revisit: 'puede reevaluarse',
         questionsFor: 'Preguntas para', markAnswered: 'Marcar respondida', cont: 'Continuar', answerNotePh: 'Añadir una nota (opcional)…', medStatus: { tapering: 'en reducción', prn: 'según necesidad', stopped: 'suspendido' }, noQuestions: 'Sin preguntas pendientes para este especialista.', noQuestionsAll: 'Sin preguntas pendientes.', addQ: 'Añadir pregunta', appointments: 'Próximas citas', pastAppts: 'Citas anteriores', addAppt: 'Añadir cita', noAppt: 'Sin citas todavía',
         filterBy: 'Filtrar por especialista', allSpecialists: 'Todos los especialistas', allQuestions: 'Todas las preguntas',
@@ -1042,7 +1042,7 @@ function fmtDate(iso, lang) { if (!iso) return ''; return new Date(iso + 'T00:00
 // Overview + Records).
 
 // CONTROL enum → harmonised chip class (single status palette)
-const CTRL_CLS = { treated: 'good', no_treatment: 'neutral', adjusting: 'watch', confirming: 'info' };
+const CTRL_CLS = { treated: 'good', no_treatment: 'neutral', adjusting: 'watch' };
 function renderBig(state) {
   const lang = state.lang; const T = STR[lang]; const data = DL.getData();
   const bp = DL.bigPicture(data, lang);
@@ -1224,13 +1224,13 @@ const TSS = {
   en: { worse: 'worse', better: 'better', steady: 'steady', notEnough: 'Not enough history yet.', noData: 'No data yet.',
         period: { '30d': '30 days', '3m': '3 months', '1y': 'year' }, was: 'was', vsPrev: 'vs previous', allTime: 'all time',
         burdenSub: 'average burden', sevSub: 'average severity',
-        mostProm: 'Most prominent', daily: 'Daily score by severity', sevWords: ['', 'mild', 'distracting', 'adapt', 'halt'],
+        mostProm: 'Most prominent', daily: 'Daily score by severity', gran: { day: 'one bar per day', week: 'one bar per week (avg/day)', month: 'one bar per month (avg/day)' }, sevWords: ['', 'mild', 'distracting', 'adapt', 'halt'],
         labs: 'Labs', labsHint: '% = change since previous result', episodes: 'Episodes/Month',
         pos: 'Positive', neg: 'Negative', progression: 'Progression' },
   es: { worse: 'peor', better: 'mejor', steady: 'estable', notEnough: 'Historial insuficiente.', noData: 'Sin datos aún.',
         period: { '30d': '30 días', '3m': '3 meses', '1y': 'año' }, was: 'antes', vsPrev: 'vs', allTime: 'todo el tiempo',
         burdenSub: 'carga media', sevSub: 'gravedad media',
-        mostProm: 'Más prominente', daily: 'Puntuación diaria por gravedad', sevWords: ['', 'leve', 'molesto', 'adaptar', 'frenar'],
+        mostProm: 'Más prominente', daily: 'Puntuación diaria por gravedad', gran: { day: 'una barra por día', week: 'una barra por semana (media/día)', month: 'una barra por mes (media/día)' }, sevWords: ['', 'leve', 'molesto', 'adaptar', 'frenar'],
         labs: 'Analíticas', labsHint: '% = cambio desde el resultado anterior', episodes: 'Episodios/Mes',
         pos: 'Positivo', neg: 'Negativo', progression: 'Progresión' },
 };
@@ -1270,10 +1270,27 @@ function symStats(data, types, days) {
   const wavg = (s, a, b) => { const xs = []; for (let i = b - 1; i >= a; i--) { const log = by[isoBack(i)]; if (log && dayLogged(log)) xs.push(symValue(s, log)); } return xs.length ? xs.reduce((p, c) => p + c, 0) / xs.length : 0; };
   return types.map((s) => { const cur = wavg(s, 0, days), prev = wavg(s, days, 2 * days); return { s, cur, delta: cur - prev }; }).sort((a, b) => b.cur - a.cur);
 }
-function dailySevCounts(data, types, days, maxBars) {
-  const by = logsByDate(data); const out = [];
-  for (let i = days - 1; i >= 0; i--) { const iso = isoBack(i); const log = by[iso]; if (!(log && dayLogged(log))) continue; const c = [0, 0, 0, 0, 0]; dayVals(log, types).forEach((v) => { const r = Math.round(v); if (r >= 1 && r <= 4) c[r]++; }); out.push({ iso, c }); }
-  return out.slice(-maxBars);
+// Window-aware severity bars. day mode (≤45d) = one bar per calendar day (null = unlogged);
+// week mode (≤120d) = one bar per 7-day bucket; month mode (>120d) = one bar per calendar month.
+// Buckets average the per-severity symptom counts across their logged days, so bar heights stay comparable across windows.
+function severityBars(data, types, days) {
+  const by = logsByDate(data); const arr = [];
+  for (let i = days - 1; i >= 0; i--) {
+    const iso = isoBack(i); const log = by[iso]; let c = null;
+    if (log && dayLogged(log)) { c = [0, 0, 0, 0, 0]; dayVals(log, types).forEach((v) => { const r = Math.round(v); if (r >= 1 && r <= 4) c[r]++; }); }
+    arr.push({ iso, c });
+  }
+  const mode = days > 120 ? 'month' : days > 45 ? 'week' : 'day';
+  if (mode === 'day') return { bars: arr, mode };
+  const groups = []; const idx = {};
+  arr.forEach((d, i) => {
+    const key = mode === 'month' ? d.iso.slice(0, 7) : 'w' + Math.floor(i / 7);
+    if (!(key in idx)) { idx[key] = groups.length; groups.push({ first: d.iso, last: d.iso, sum: [0, 0, 0, 0, 0], n: 0 }); }
+    const g = groups[idx[key]]; g.last = d.iso;
+    if (d.c) { for (let lv = 1; lv <= 4; lv++) g.sum[lv] += d.c[lv]; g.n++; }
+  });
+  const bars = groups.map((g) => ({ iso: g.last, isoFirst: g.first, c: g.n ? [0, g.sum[1] / g.n, g.sum[2] / g.n, g.sum[3] / g.n, g.sum[4] / g.n] : null }));
+  return { bars, mode };
 }
 function ddmm(iso) { return iso ? iso.slice(8, 10) + '.' + iso.slice(5, 7) : ''; }
 function trendSVG(series, max, avg) {
@@ -1292,13 +1309,21 @@ function trendSVG(series, max, avg) {
   const xl = `<text x="${padL}" y="${h - 4}" font-size="9" fill="#94a3b8">${fmtX(firstIso)}</text><text x="${w - padR}" y="${h - 4}" font-size="9" fill="#94a3b8" text-anchor="end">${fmtX(lastIso)}</text>`;
   return `<svg class="trend" viewBox="0 0 ${w} ${h}" role="img">${grid}${avgL}${polys}${xl}</svg>`;
 }
-function stackedSVG(bars) {
+const MON3 = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+function stackedSVG(bars, mode) {
   const w = 320, h = 120, padT = 6, padB = 16, padL = 4, padR = 4, n = bars.length || 1;
-  const maxTot = Math.max(1, ...bars.map((b) => b.c[1] + b.c[2] + b.c[3] + b.c[4]));
+  const tot = (b) => b.c ? b.c[1] + b.c[2] + b.c[3] + b.c[4] : 0;
+  const maxTot = Math.max(1, ...bars.map(tot));
   const slot = (w - padL - padR) / n, bw = Math.min(20, slot * 0.7);
   let out = '';
-  bars.forEach((b, i) => { const x = padL + i * slot + (slot - bw) / 2; let y = h - padB; for (let lv = 1; lv <= 4; lv++) { const c = b.c[lv]; if (!c) continue; const hh = c / maxTot * (h - padT - padB); y -= hh; out += `<rect x="${x.toFixed(1)}" y="${(y - 0.4).toFixed(1)}" width="${bw.toFixed(1)}" height="${(hh + 0.4).toFixed(1)}" fill="${SEVHEX[lv]}"/>`; } });
-  const xl = `<text x="${padL}" y="${h - 3}" font-size="9" fill="#94a3b8">${bars.length ? ddmm(bars[0].iso) : ''}</text><text x="${w - padR}" y="${h - 3}" font-size="9" fill="#94a3b8" text-anchor="end">${bars.length ? ddmm(bars[bars.length - 1].iso) : ''}</text>`;
+  bars.forEach((b, i) => { if (!b.c) return; const x = padL + i * slot + (slot - bw) / 2; let y = h - padB; for (let lv = 1; lv <= 4; lv++) { const c = b.c[lv]; if (!c) continue; const hh = c / maxTot * (h - padT - padB); y -= hh; out += `<rect x="${x.toFixed(1)}" y="${(y - 0.4).toFixed(1)}" width="${bw.toFixed(1)}" height="${(hh + 0.4).toFixed(1)}" fill="${SEVHEX[lv]}"/>`; } });
+  let xl;
+  if (mode === 'month') {
+    xl = bars.map((b, i) => { if (i % 3 !== 0) return ''; const x = padL + i * slot + slot / 2; return `<text x="${x.toFixed(1)}" y="${h - 3}" font-size="9" fill="#94a3b8" text-anchor="middle">${MON3[+b.iso.slice(5, 7) - 1]}</text>`; }).join('');
+  } else {
+    const f = bars.length ? (bars[0].isoFirst || bars[0].iso) : '', l = bars.length ? bars[bars.length - 1].iso : '';
+    xl = `<text x="${padL}" y="${h - 3}" font-size="9" fill="#94a3b8">${ddmm(f)}</text><text x="${w - padR}" y="${h - 3}" font-size="9" fill="#94a3b8" text-anchor="end">${ddmm(l)}</text>`;
+  }
   return `<svg class="trend" viewBox="0 0 ${w} ${h}" role="img">${out}${xl}</svg>`;
 }
 function labHL(l) { const r = DL.latestLab(l); if (!r || typeof r.value !== 'number') return null; const rr = l.referenceRange || {}; if (l.displayMode === 'x_uln' && r.value > 1) return 'high'; if (rr.high != null && r.value > rr.high) return 'high'; if (rr.low != null && r.value < rr.low) return 'low'; return 'ok'; }
@@ -1340,9 +1365,9 @@ function renderTrends(state) {
   }).join('') || `<p class="muted small">${TT.noData}</p>`;
   const promCard = `<div class="card"><div class="card-h"><h2>${TT.mostProm}</h2></div>${promRows}</div>`;
   // Daily score by severity (recent logged days in window)
-  const bars = dailySevCounts(data, types, days, 14);
+  const { bars: sevBars, mode: sevMode } = severityBars(data, types, days);
   const legend = [1, 2, 3, 4].map((lv) => `<span class="lg"><span class="lgsw" style="background:${SEVHEX[lv]}"></span>${TT.sevWords[lv]}</span>`).join('');
-  const dailyCard = `<div class="card"><div class="card-h"><h2>${TT.daily}</h2></div><div class="lgrow">${legend}</div>${bars.length ? stackedSVG(bars) : `<p class="muted small">${TT.noData}</p>`}</div>`;
+  const dailyCard = `<div class="card"><div class="card-h"><h2>${TT.daily}</h2></div><div class="muted small" style="margin:-2px 0 8px">${TT.gran[sevMode]}</div><div class="lgrow">${legend}</div>${sevBars.some((b) => b.c) ? stackedSVG(sevBars, sevMode) : `<p class="muted small">${TT.noData}</p>`}</div>`;
   // Labs — collapsible panels
   const groups = {}; (data.labs || []).forEach((l) => { const g = l.group || 'Other'; (groups[g] = groups[g] || []).push(l); });
   const og = ui.labGroups || (ui.labGroups = new Set());
@@ -1453,11 +1478,11 @@ const SPECS = {
   conditions: { title: 'Condition', archive: false, fields: [
     { key: 'name', type: 'i18n', label: 'Name' },
     { key: 'status', type: 'select', label: 'Status', options: ['current', 'investigating', 'excluded', 'provisionally_excluded', 'resolved'] },
-    { key: 'control', type: 'select', label: 'Control (shown to doctor on Overview)', options: ['', 'treated', 'no_treatment', 'adjusting', 'confirming'] },
+    { key: 'control', type: 'select', label: 'Control (shown to doctor on Overview)', options: ['', 'treated', 'no_treatment', 'adjusting'] },
     { key: 'statusDate', type: 'date', label: 'Status date (diagnosed / investigating since / excluded / resolved)' },
     { key: 'revisitNote', type: 'i18n', label: 'Re-test note (when / why to revisit)', textarea: true, showIf: (s) => s.status === 'provisionally_excluded' },
     { key: 'specialismIds', type: 'multiselect', label: 'Specialism(s)', source: 'specialisms' },
-    { key: 'notes', type: 'i18n', label: 'Notes / evidence', textarea: true },
+    { key: 'notes', type: 'i18n', label: 'Notes / evidence', textarea: true, enOnly: true },
   ], defaults: { name: { en: '', es: '' }, status: 'investigating', control: '', statusDate: null, revisitNote: { en: '', es: '' }, specialismIds: [], notes: { en: '', es: '' } } },
   medications: { title: 'Medication', fields: [
     { key: 'name', type: 'i18n', label: 'Name' },
@@ -1560,7 +1585,7 @@ function field(f) {
   if (f.type === 'text' || f.type === 'number') return `<div class="f">${L}<input type="${f.type === 'number' ? 'number' : 'text'}" step="any" data-fkey="${f.key}" value="${esc(gv(fs, f.key) ?? '')}"></div>`;
   if (f.type === 'date') return `<div class="f">${L}<input type="date" data-fkey="${f.key}" value="${esc(gv(fs, f.key) ?? '')}"></div>`;
   if (f.type === 'checkbox') return `<div class="f f-row"><label><input type="checkbox" data-fkey="${f.key}" data-bool ${gv(fs, f.key) ? 'checked' : ''}> ${f.label}</label></div>`;
-  if (f.type === 'i18n') { const v = gv(fs, f.key) || { en: '', es: '' }; const tag = f.textarea ? 't' : 'i'; const mk = (lang) => f.textarea ? `<textarea data-fkey="${f.key}" data-lang="${lang}" rows="2">${esc(v[lang])}</textarea>` : `<input type="text" data-fkey="${f.key}" data-lang="${lang}" value="${esc(v[lang])}">`; return `<div class="f">${L}<div class="f-i18n"><span>EN</span>${mk('en')}<span>ES</span>${mk('es')}</div></div>`; }
+  if (f.type === 'i18n') { const v = gv(fs, f.key) || { en: '', es: '' }; const mk = (lang) => f.textarea ? `<textarea data-fkey="${f.key}" data-lang="${lang}" rows="2">${esc(v[lang])}</textarea>` : `<input type="text" data-fkey="${f.key}" data-lang="${lang}" value="${esc(v[lang])}">`; if (f.enOnly) return `<div class="f">${L}${mk('en')}</div>`; return `<div class="f">${L}<div class="f-i18n"><span>EN</span>${mk('en')}<span>ES</span>${mk('es')}</div></div>`; }
   if (f.type === 'datalist') { const opts = (f.source === 'labGroups' ? DL.labGroups() : []).map((g) => `<option value="${esc(g)}"></option>`).join(''); const id = 'dl_' + f.key.replace(/\./g, '_'); return `<div class="f">${L}<input type="text" list="${id}" data-fkey="${f.key}" value="${esc(gv(fs, f.key) ?? '')}"><datalist id="${id}">${opts}</datalist></div>`; }
   if (f.type === 'select') { const cur = gv(fs, f.key); const blank = f.optional ? '<option value="">—</option>' : ''; const opts = f.options ? f.options.map((o) => `<option value="${o}" ${cur === o ? 'selected' : ''}>${o}</option>`).join('') : srcOptions(f.source).map((o) => `<option value="${o.v}" ${cur === o.v ? 'selected' : ''}>${esc(o.l)}</option>`).join(''); return `<div class="f">${L}<select data-fkey="${f.key}">${blank}${opts}</select></div>`; }
   if (f.type === 'multiselect') { const cur = gv(fs, f.key) || []; const boxes = srcOptions(f.source).map((o) => `<label class="f-chk"><input type="checkbox" data-fkey="${f.key}" data-msval="${o.v}" ${cur.includes(o.v) ? 'checked' : ''}> ${esc(o.l)}</label>`).join(''); return `<div class="f">${L}<div class="f-chks">${boxes}</div></div>`; }
