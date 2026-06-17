@@ -189,6 +189,8 @@ ul.tight { margin: 4px 0 0; padding-left: 18px; } ul.tight li { padding: 1px 0; 
 .ds .sched{font-variant-numeric:tabular-nums;font-weight:700;white-space:nowrap;text-align:right;}
 .ds .sched .f{display:block;font-weight:500;color:var(--muted);font-size:11px;}
 .ds .addmini{border:0;width:28px;height:28px;border-radius:50%;background:#e1f5ee;color:var(--teal-d);font-size:18px;font-weight:700;line-height:1;cursor:pointer;}
+.ds .pickrow{display:block;width:100%;text-align:left;border:0;border-bottom:1px solid var(--line);background:transparent;padding:11px 2px;font-size:14px;color:var(--ink);cursor:pointer;}
+.ds .pickrow:last-child{border-bottom:0;}
 .ds .ed-btn2{border:1px solid var(--line);background:#fff;border-radius:8px;padding:4px 8px;font-size:13px;color:var(--muted);cursor:pointer;}
 .ds details.ro{border-top:1px solid var(--line);} .ds details.ro:first-of-type{border-top:0;}
 .ds details.ro>summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 0;}
@@ -242,7 +244,7 @@ ul.tight { margin: 4px 0 0; padding-left: 18px; } ul.tight li { padding: 1px 0; 
 .ds .calnote{font-size:11px;color:var(--muted);margin-top:8px;line-height:1.5;}
 .ds .wksub{text-align:center;margin-bottom:10px;}
 .ds .symrow .symctl{display:flex;align-items:center;gap:6px;}
-.ds .sevpick{border:0;cursor:pointer;}
+.ds .sevpick{display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;padding:0;border:0;border-radius:9px;font-size:15px;font-weight:700;cursor:pointer;}
 .ds .noteicon{width:38px;height:38px;border:1px solid var(--line);background:#fff;border-radius:9px;font-size:15px;cursor:pointer;color:var(--muted);touch-action:manipulation;-webkit-tap-highlight-color:transparent;}
 .ds .noteicon.on,.ds .noteicon.has{background:#e1f5ee;border-color:#9fe1cb;color:var(--teal-d);}
 .ds .chgpill{font-size:13px;font-weight:600;border-radius:999px;padding:2px 10px;white-space:nowrap;}
@@ -271,6 +273,22 @@ ul.tight { margin: 4px 0 0; padding-left: 18px; } ul.tight li { padding: 1px 0; 
 .ds .labgrp-h .gcaret{color:var(--muted);font-size:12px;flex:0 0 auto;width:14px;}
 .ds .labgrp .lab-row{padding:10px 0;}
 .ds .labgrp .lab-row .bp-name{font-size:14px;font-weight:500;}
+.ds .burdenrow{display:flex;align-items:center;justify-content:space-between;padding:11px 0 3px;margin-top:4px;font-size:14px;color:var(--muted);border-top:1px solid var(--line);}
+.ds .burdenrow .bval{display:flex;align-items:center;gap:7px;font-weight:600;color:var(--ink);}
+.ds .burdenrow .bdot{width:12px;height:12px;border-radius:3px;flex:0 0 auto;}
+.ds .ic-btn{width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--line);background:#fff;border-radius:8px;cursor:pointer;color:var(--muted);}
+.ds .adh-hd{display:flex;align-items:center;gap:10px;margin-bottom:12px;}
+.ds .adh-back{border:0;background:transparent;font-size:20px;cursor:pointer;color:var(--ink);padding:0;line-height:1;}
+.ds .adh-overall{display:flex;align-items:baseline;gap:8px;margin-bottom:6px;}
+.ds .adh-overall .bignum{font-size:32px;font-weight:600;line-height:1;}
+.ds .medblk{padding:12px 0;border-top:1px solid var(--line);}
+.ds .medblk:first-of-type{border-top:0;}
+.ds .medblk .ml{display:flex;justify-content:space-between;font-size:14px;margin-bottom:7px;}
+.ds .medblk .mname{font-weight:600;}
+.ds .medblk .mpct{font-size:13px;font-weight:600;}
+.ds .adh-dots{display:flex;flex-wrap:wrap;gap:3px;}
+.ds .adh-dot{width:11px;height:11px;border-radius:3px;}
+.ds .adh-streak{font-size:12px;color:var(--muted);margin-top:7px;}
 .ds .labgrp .lab-row .lab-val{font-size:14px;font-weight:600;}
 .ds .labgrp .lab-row .lab-val .small{font-weight:400;}
 .ds .btn-mark{border:1px solid var(--teal);background:var(--teal);color:#fff;border-radius:999px;padding:5px 14px;font-size:13px;font-weight:600;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;}
@@ -737,7 +755,7 @@ const { tx } = DL;
 
 
 
-const ui = { expanded: new Set(['sym_jointpain']), epFormOpen: false, savedAt: null, noteOpen: new Set(), scaleOpen: new Set(), confirmClear: false, calView: 'week', calMonth: null };
+const ui = { expanded: new Set(['sym_jointpain']), epFormOpen: false, savedAt: null, noteOpen: new Set(), scaleOpen: new Set(), confirmClear: false, calView: 'week', calMonth: null, medHist: false };
 
 const STR = {
   en: { today: 'Today', symptoms: 'Symptoms', meds: 'Medications', asNeeded: 'As needed (PRN)',
@@ -818,6 +836,7 @@ function dayBurden(iso, types, data) {
 }
 function burdenBandIdx(b) { if (b == null) return -1; if (b === 0) return 0; if (b <= 5) return 1; if (b <= 10) return 2; if (b <= 15) return 3; return 4; }
 const CAL_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z"/><path d="M16 3v4"/><path d="M8 3v4"/><path d="M4 11h16"/></svg>';
+const HIST_SVG = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 4v4h4"/><path d="M12 8v4l3 2"/></svg>';
 function monthCal(state, data, types) {
   const lang = state.lang; const date = state.date; const tISO = todayISO();
   const monthIso = ui.calMonth || date.slice(0, 7);
@@ -843,6 +862,46 @@ function monthCal(state, data, types) {
   return `<div class="card"><div class="calhead"><span class="mlabel">${mlabel}</span><span class="hgrp"><button class="wknav" data-calnav="-1" aria-label="Previous month">‹</button><button class="wknav" data-calnav="1" aria-label="Next month" ${canNext ? '' : 'disabled'}>›</button><button class="wkcal on" data-calview="week" aria-label="${lang === 'es' ? 'Volver a la semana' : 'Back to week'}">${CAL_SVG}</button></span></div><div class="calgrid">${cells}</div>${legend}${note}</div>`;
 }
 
+// Medication adherence sub-view (last 30 days). Per med: taken/missed strip + count/%, streak; PRN shows dose count.
+function renderAdherence(state, data) {
+  const lang = state.lang; const days = 30; const tISO = todayISO();
+  const meds = (data.medications || []).filter((m) => m.status !== 'stopped' && m.track !== false);
+  const info = {}; meds.forEach((m) => { info[m.id] = { m, dots: [], sched: 0, taken: 0, prn: 0, isPrn: false }; });
+  for (let i = days - 1; i >= 0; i--) {
+    const iso = shiftDate(tISO, -i);
+    const { scheduled, prn } = DL.medsForDate(iso, data);
+    const sset = new Set(scheduled.map((x) => x.id)); const pset = new Set(prn.map((x) => x.id));
+    meds.forEach((m) => {
+      const o = info[m.id]; const tk = DL.getMedTaken(iso, m.id, data);
+      if (pset.has(m.id)) { o.isPrn = true; o.dots.push(tk === true ? 't' : 'n'); if (tk === true) o.prn++; }
+      else if (sset.has(m.id)) { o.sched++; const ok = tk === true; if (ok) o.taken++; o.dots.push(ok ? 't' : 'm'); }
+      else o.dots.push('x');
+    });
+  }
+  let totS = 0, totT = 0; Object.values(info).forEach((o) => { if (!o.isPrn) { totS += o.sched; totT += o.taken; } });
+  const overall = totS ? Math.round(totT / totS * 100) : null;
+  const DOTCOL = { t: '#1d9e75', m: '#e2e8f0', n: '#e2e8f0', x: 'transparent' };
+  const streakOf = (o) => { let s = 0; for (let i = o.dots.length - 1; i >= 0; i--) { const d = o.dots[i]; if (d === 'x' || d === 'n') continue; if (d === 't') s++; else break; } return s; };
+  const blocks = Object.values(info).map((o) => {
+    const name = esc(tx(o.m.name, lang));
+    const dotsHtml = o.dots.map((d) => `<span class="adh-dot" style="background:${DOTCOL[d]}${d === 'x' ? ';border:1px solid #eef1f3' : ''}"></span>`).join('');
+    let line, streak;
+    if (o.isPrn) {
+      line = `<span class="mpct" style="color:var(--muted)">${o.prn} ${lang === 'es' ? 'tomas' : 'doses'}</span>`;
+      streak = lang === 'es' ? 'PRN — frecuencia, no cumplimiento' : 'PRN — frequency, not adherence';
+    } else {
+      const pct = o.sched ? Math.round(o.taken / o.sched * 100) : null;
+      const col = pct == null ? 'var(--muted)' : pct >= 80 ? '#15803d' : '#854f0b';
+      line = `<span class="mpct" style="color:${col}">${o.sched ? `${o.taken}/${o.sched} · ${pct}%` : (lang === 'es' ? 'sin pauta' : 'none due')}</span>`;
+      const st = streakOf(o);
+      streak = st > 0 ? `${st}-${lang === 'es' ? 'día racha' : 'day streak'}` : (lang === 'es' ? 'sin racha actual' : 'no current streak');
+    }
+    return `<div class="medblk"><div class="ml"><span class="mname">${name}</span>${line}</div><div class="adh-dots">${dotsHtml}</div><div class="adh-streak">${streak}</div></div>`;
+  }).join('') || `<p class="muted small">${STR[lang].noMeds}</p>`;
+  const sub = lang === 'es' ? 'tomadas · últimos 30 días' : 'taken · last 30 days';
+  return `<div class="ds"><div class="card"><div class="adh-hd"><button class="adh-back" data-medback aria-label="Back">‹</button><h2 style="margin:0">${lang === 'es' ? 'Cumplimiento de medicación' : 'Medication adherence'}</h2></div>${overall != null ? `<div class="adh-overall"><span class="bignum">${overall}%</span><span class="muted small">${sub}</span></div>` : ''}${blocks}</div></div>`;
+}
+
 function renderToday(state) {
   const lang = state.lang; const T = STR[lang]; const date = state.date; const data = DL.getData();
   if (!data) return `<div class="card"><p class="muted">${T.noData}</p></div>`;
@@ -851,6 +910,7 @@ function renderToday(state) {
   const tISO = todayISO();
   const types = DL.activeSymptomTypes(data);
   if (ui.calView === 'month') return `<div class="ds">${monthCal(state, data, types)}</div>`;
+  if (ui.medHist) return renderAdherence(state, data);
   const isComplete = (iso) => { const l = DL.getDailyLog(iso, data); if (!l) return false; if (l.symptomsSubmittedAt) return true; return types.every((s) => s.trackBy === 'single' ? (DL.getSeverity(iso, s.id, null, data) != null) : (DL.derivedOverall(s, l.symptoms || []) != null)); };
   const dt = new Date(date + 'T00:00:00Z'); const dow = (dt.getUTCDay() + 6) % 7; const monday = shiftDate(date, -dow);
   const dows = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
@@ -885,7 +945,12 @@ function renderToday(state) {
   const completeBtn = complete ? `<span class="prog-chip done">✓ ${lang === 'en' ? 'Complete' : 'Completado'}</span>` : `<button class="btn-mark" id="markZero">${lang === 'en' ? 'Mark complete' : 'Marcar completo'}</button>`;
   const editSyms = (data.symptomTypes || []).map((s) => `<div class="drow"><div><div class="dname">${esc(tx(s.name, lang))}${s.archived ? ` <span class="muted small">(${lang === 'en' ? 'archived' : 'archivado'})</span>` : ''}</div></div><button class="ed-btn2" data-edit="symptomTypes:${s.id}" aria-label="Edit">✎</button></div>`).join('');
   const editSymsBlock = `<details class="ro-fold" style="margin-top:10px"><summary><span class="muted small" style="font-weight:700">${lang === 'en' ? 'Edit symptoms & sites' : 'Editar síntomas y zonas'}</span><span class="ro-caret">▶</span></summary><div style="margin-top:6px">${editSyms}<button class="addmini" data-add="symptomTypes" aria-label="Add symptom" style="margin-top:8px">＋</button></div></details>`;
-  const symptomsCard = `<div class="card"><div class="sec-head"><h2>${T.symptoms}</h2>${completeBtn}</div>${symptomCards}<div class="scale-foot muted">${T.scaleHint}</div>${editSymsBlock}</div>`;
+  const bd = dayBurden(date, types, data);
+  const bBand = burdenBandIdx(bd);
+  const bWords = lang === 'es' ? ['sin síntomas', 'leve', 'típico', 'fuerte', 'muy fuerte'] : ['clear', 'light', 'typical', 'heavy', 'very heavy'];
+  const bCols = ['#94a3b8', '#fde047', '#f59e0b', '#f97316', '#b91c1c'];
+  const burdenRow = bd == null ? '' : `<div class="burdenrow"><span>${lang === 'es' ? 'Carga de hoy' : "Today's burden"}</span><span class="bval"><span class="bdot" style="background:${bCols[bBand]}"></span>${bd} · ${bWords[bBand]}</span></div>`;
+  const symptomsCard = `<div class="card"><div class="sec-head"><h2>${T.symptoms}</h2>${completeBtn}</div>${symptomCards}${burdenRow}<div class="scale-foot muted">${T.scaleHint}</div>${editSymsBlock}</div>`;
 
   const { scheduled, prn } = DL.medsForDate(date, data);
   const medRow = (m) => { const taken = DL.getMedTaken(date, m.id, data); return `<div class="med"><div class="med-name">${esc(tx(m.name, lang))} <span class="muted small">${esc(m.dose)}</span></div><div class="med-toggle"><button class="tgl ${taken === true ? 'is-yes' : ''}" data-med="${m.id}" data-taken="yes">✓</button><button class="tgl ${taken === false ? 'is-no' : ''}" data-med="${m.id}" data-taken="no">✗</button></div></div>`; };
@@ -908,7 +973,7 @@ function renderToday(state) {
   const savedNote = ui.savedAt ? `<div class="muted small saved-tag">✓ ${T.saved} · ${ui.savedAt}</div>` : '';
   return `<div class="ds">${head}
     ${symptomsCard}
-    <div class="card"><div class="card-h"><h2>${T.meds}</h2></div>${medsHtml}${prnHtml}</div>
+    <div class="card"><div class="card-h"><h2>${T.meds}</h2><button class="ic-btn" data-medhist aria-label="${lang === 'es' ? 'Historial de cumplimiento' : 'Adherence history'}">${HIST_SVG}</button></div>${medsHtml}${prnHtml}</div>
     <div class="card"><div class="card-h"><h2>${T.episodes}</h2></div>${ongoing.length ? `<div class="subhead">${T.ongoing}</div>${ongoingHtml}` : ''}${endedHtml}${epForm}${allEpsBlock}</div>
     ${savedNote}
     <div class="clearday-row"><button class="linkbtn ${ui.confirmClear?'danger':''}" data-clearday>${ui.confirmClear?T.confirmClear:T.clearDay}</button></div></div>`;
@@ -931,6 +996,8 @@ async function onClick(e, state, rerender) {
   if (nb) DL.setNote(state.date, state.lang, nb.value);
   document.querySelectorAll('.rownote').forEach((el) => DL.setSymptomNote(state.date, el.dataset.sym, el.dataset.loc || null, el.value));
   document.querySelectorAll('.epnote').forEach((el) => DL.setEpisodeNote(el.dataset.epnote, state.lang, el.value));
+  if (t.dataset.medhist != null) { ui.medHist = true; rerender(); return; }
+  if (t.dataset.medback != null) { ui.medHist = false; rerender(); return; }
   if (t.dataset.nav) { let nd = shiftDate(state.date, Number(t.dataset.nav)); if (nd > todayISO()) nd = todayISO(); state.date = nd; ui.savedAt = null; ui.confirmClear = false; rerender(); return; }
   if (t.dataset.day) { state.date = t.dataset.day; ui.calView = 'week'; ui.savedAt = null; ui.confirmClear = false; rerender(); return; }
   if (t.dataset.calview) { ui.calView = t.dataset.calview; if (ui.calView === 'month') ui.calMonth = state.date.slice(0, 7); rerender(); return; }
@@ -1005,7 +1072,7 @@ const { tx, specialistLabel } = DL;
 
 
 
-const ui = { specialistId: null, answering: null };
+const ui = { specialistId: null, answering: null, editPick: null };
 
 const STR = {
   en: { dx: 'Diagnosed', conditions: 'Active conditions', activeManaged: 'Conditions', since: 'Since', currentMeds: 'Current medications',
@@ -1061,7 +1128,7 @@ function renderBig(state) {
     : (c.control && c.control !== 'no_treatment' && T.control && T.control[c.control] ? `<span class="chip ${CTRL_CLS[c.control] || 'neutral'}">${T.control[c.control]}</span>` : '');
   const condRow = (c) => {
     const sub = condSub(c);
-    return `<div class="drow"><div><div class="dname">${esc(tx(c.name, lang))}</div>${sub ? `<div class="dmeta">${esc(sub)}</div>` : ''}</div><div class="dright">${condChip(c)}<button class="ed-btn2" data-edit="conditions:${c.id}" aria-label="Edit">✎</button></div></div>`;
+    return `<div class="drow"><div><div class="dname">${esc(tx(c.name, lang))}</div>${sub ? `<div class="dmeta">${esc(sub)}</div>` : ''}</div><div class="dright">${condChip(c)}</div></div>`;
   };
   const byDateDesc = (a, b) => { const da = a.statusDate || '', db = b.statusDate || ''; if (da === db) return 0; if (!da) return 1; if (!db) return -1; return da < db ? 1 : -1; };
   const allConds = bp.conditions.slice().sort(byDateDesc);
@@ -1082,7 +1149,7 @@ function renderBig(state) {
     const firstCond = (m.conditionIds || [])[0];
     const tag = (firstCond && condById[firstCond]) ? tx(condById[firstCond].name, lang) : (tx(m.purpose, lang) || '');
     const sub = (tag ? esc(tag) : '') + (tag && m.dose ? ' · ' : '') + (m.dose ? `<b>${esc(m.dose)}</b>` : '');
-    return `<div class="drow"><div><div class="dname">${esc(tx(m.name, lang))}</div>${sub ? `<div class="dmeta">${sub}</div>` : ''}</div><div class="dright"><div class="sched">${right}</div><button class="ed-btn2" data-edit="medications:${m.id}" aria-label="Edit">✎</button></div></div>`;
+    return `<div class="drow"><div><div class="dname">${esc(tx(m.name, lang))}</div>${sub ? `<div class="dmeta">${sub}</div>` : ''}</div><div class="dright"><div class="sched">${right}</div></div></div>`;
   };
   const TOD_ORDER = { morning: 0, midday: 1, evening: 2, bedtime: 2, prn: 3 };
   const byTimeOfDay = (a, b) => ((TOD_ORDER[a.timeOfDay] != null ? TOD_ORDER[a.timeOfDay] : 1) - (TOD_ORDER[b.timeOfDay] != null ? TOD_ORDER[b.timeOfDay] : 1));
@@ -1101,10 +1168,14 @@ function renderBig(state) {
     return `<details class="ro"><summary><span class="chip ${prov ? 'info' : 'neutral'}">${esc(tx(r.name, lang))}${prov ? ' ↺' : ''}</span><span class="muted small">${r.date ? fmtDate(r.date, lang) : ''} ›</span></summary><div class="ro-why">${esc(why || '—')}</div></details>`;
   };
   const ro = bp.excluded.map(roItem).join('') || `<p class="muted small">${T.none}</p>`;
+  // One ✎ per card opens a list to pick which item to edit (instead of a pencil on every row).
+  const editHint = lang === 'es' ? 'Elige cuál editar:' : 'Choose which to edit:';
+  const pickList = (items, coll, nameFn) => `<div class="muted small" style="margin:2px 0 6px">${editHint}</div>` + (items.length ? items.map((it) => `<button class="pickrow" data-edit="${coll}:${it.id}">${esc(nameFn(it))}</button>`).join('') : `<p class="muted small">${T.none}</p>`);
+  const editBtn = (coll) => `<button class="addmini" data-editpick="${coll}" aria-label="${lang === 'es' ? 'Editar' : 'Edit'}">${ui.editPick === coll ? '✕' : '✎'}</button>`;
   return `<div class="ds">
-    <div class="card"><div class="card-h"><h2>${T.activeManaged}</h2><button class="addmini" data-add="conditions" aria-label="Add condition">＋</button></div>${conds}</div>
-    <div class="card"><div class="card-h"><h2>${T.currentMeds}</h2><button class="addmini" data-add="medications" aria-label="Add medication">＋</button></div>${meds}</div>
-    <div class="card"><details class="ro-fold"><summary><h2>${T.ruledOut}</h2><span class="hint">${lang === 'en' ? 'tap to view' : 'toca para ver'}</span><span class="ro-caret">▶</span></summary><div class="ro-body" style="margin-top:8px">${ro}</div></details></div>
+    <div class="card"><div class="card-h"><h2>${T.activeManaged}</h2><span class="hgrp">${editBtn('conditions')}<button class="addmini" data-add="conditions" aria-label="Add condition">＋</button></span></div>${ui.editPick === 'conditions' ? pickList(allConds, 'conditions', (c) => tx(c.name, lang)) : conds}</div>
+    <div class="card"><div class="card-h"><h2>${T.currentMeds}</h2><span class="hgrp">${editBtn('medications')}<button class="addmini" data-add="medications" aria-label="Add medication">＋</button></span></div>${ui.editPick === 'medications' ? pickList(allMeds, 'medications', (m) => tx(m.name, lang)) : meds}</div>
+    <div class="card"><div class="card-h"><h2>${T.ruledOut}</h2><span class="hgrp">${editBtn('excluded')}<button class="addmini" data-add="conditions" data-prefill='{"status":"excluded"}' aria-label="${lang === 'es' ? 'Añadir descartado' : 'Add ruled-out'}">＋</button></span></div>${ui.editPick === 'excluded' ? pickList(bp.excluded, 'conditions', (r) => tx(r.name, lang)) : `<details class="ro-fold"><summary><span class="hint">${lang === 'en' ? 'tap to view' : 'toca para ver'}</span><span class="ro-caret">▶</span></summary><div class="ro-body" style="margin-top:8px">${ro}</div></details>`}</div>
   </div>`;
 }
 
@@ -1157,6 +1228,7 @@ function renderQuestions(state) {
 async function onClick(e, state, rerender) {
   const t = e.target.closest('button');
   if (!t) return;
+  if (t.dataset.editpick != null) { ui.editPick = ui.editPick === t.dataset.editpick ? null : t.dataset.editpick; rerender(); return; }
   if (t.dataset.answer) { ui.answering = (ui.answering === t.dataset.answer) ? null : t.dataset.answer; rerender(); return; }
   if (t.dataset.continue) { const qid = t.dataset.continue; const ta = document.querySelector('.q-note[data-qnote="' + qid + '"]'); const rec = DL.getRecord('questions', qid); if (rec && ta) { rec.answerNote = rec.answerNote || { en: '', es: '' }; rec.answerNote[state.lang] = ta.value; } DL.markQuestionAnswered(qid); ui.answering = null; await DL.persist(); rerender(); return; }
 }
@@ -1222,16 +1294,16 @@ const add = (coll, label) => `<button class="btn ghost addbtn" data-add="${coll}
 // ===== TRENDS (the repurposed 4th tab). Reuses lab charts / modal. =====
 const TSS = {
   en: { worse: 'worse', better: 'better', steady: 'steady', notEnough: 'Not enough history yet.', noData: 'No data yet.',
-        period: { '30d': '30 days', '3m': '3 months', '1y': 'year' }, was: 'was', vsPrev: 'vs previous', allTime: 'all time',
+        period: { '30d': '30 days', '3m': '3 months', '1y': 'year' }, was: 'was', vsPrev: 'vs previous', allTime: 'all time', past: 'past',
         burdenSub: 'average burden', sevSub: 'average severity',
         mostProm: 'Most prominent', daily: 'Daily score by severity', gran: { day: 'one bar per day', week: 'one bar per week (avg/day)', month: 'one bar per month (avg/day)' }, sevWords: ['', 'mild', 'distracting', 'adapt', 'halt'],
-        labs: 'Labs', labsHint: '% = change since previous result', episodes: 'Episodes/Month',
+        labs: 'Labs', episodes: 'Episodes/Month',
         pos: 'Positive', neg: 'Negative', progression: 'Progression' },
   es: { worse: 'peor', better: 'mejor', steady: 'estable', notEnough: 'Historial insuficiente.', noData: 'Sin datos aún.',
-        period: { '30d': '30 días', '3m': '3 meses', '1y': 'año' }, was: 'antes', vsPrev: 'vs', allTime: 'todo el tiempo',
+        period: { '30d': '30 días', '3m': '3 meses', '1y': 'año' }, was: 'antes', vsPrev: 'vs', allTime: 'todo el tiempo', past: 'últimos',
         burdenSub: 'carga media', sevSub: 'gravedad media',
         mostProm: 'Más prominente', daily: 'Puntuación diaria por gravedad', gran: { day: 'una barra por día', week: 'una barra por semana (media/día)', month: 'una barra por mes (media/día)' }, sevWords: ['', 'leve', 'molesto', 'adaptar', 'frenar'],
-        labs: 'Analíticas', labsHint: '% = cambio desde el resultado anterior', episodes: 'Episodios/Mes',
+        labs: 'Analíticas', episodes: 'Episodios/Mes',
         pos: 'Positivo', neg: 'Negativo', progression: 'Progresión' },
 };
 function dayLogged(log) { return !!log && (log.symptoms || []).some((r) => typeof r.severity === 'number'); }
@@ -1250,7 +1322,12 @@ function windowSeries(data, types, days, fn) {
   const cur = daily.filter((x) => x.v != null).map((x) => x.v);
   const prev = []; for (let i = 2 * days - 1; i >= days; i--) { const log = by[isoBack(i)]; if (log && dayLogged(log)) { const v = fn(log, types); if (v != null) prev.push(v); } }
   const mean = (a) => a.length ? a.reduce((s, c) => s + c, 0) / a.length : null;
-  const c = mean(cur), p = mean(prev);
+  const c = mean(cur);
+  // Only compare to the previous period if logged data actually spans a full prior window
+  // (otherwise e.g. "vs previous year" compares against a partial slice — misleading).
+  const allDates = Object.keys(by).sort();
+  const prevComplete = allDates.length && allDates[0] <= isoBack(2 * days - 1);
+  const p = prevComplete ? mean(prev) : null;
   const pct = (c != null && p != null && p > 0) ? Math.round((c - p) / p * 100) : null;
   // Bucket long windows so the line stays readable (~45 plotted points max)
   const MAXP = 45;
@@ -1293,15 +1370,26 @@ function severityBars(data, types, days) {
   return { bars, mode };
 }
 function ddmm(iso) { return iso ? iso.slice(8, 10) + '.' + iso.slice(5, 7) : ''; }
-function trendSVG(series, max, avg) {
+function trendSVG(series, max, avg, colorByValue) {
   const w = 320, h = 124, padT = 8, padB = 18, padL = 26, padR = 6, n = series.length;
   const X = (i) => padL + (n <= 1 ? 0 : i / (n - 1) * (w - padL - padR));
   const Y = (v) => padT + (1 - (max ? v / max : 0)) * (h - padT - padB);
   const grid = [0, max / 2, max].map((t) => { const y = Y(t).toFixed(1); return `<line x1="${padL}" y1="${y}" x2="${w - padR}" y2="${y}" stroke="#eef1f3" stroke-width="1"/><text x="${padL - 6}" y="${(+y + 3).toFixed(1)}" font-size="9" fill="#94a3b8" text-anchor="end">${Math.round(t)}</text>`; }).join('');
-  let segs = [], cur = [];
-  series.forEach((p, i) => { if (p.v == null) { if (cur.length) { segs.push(cur); cur = []; } } else cur.push(X(i).toFixed(1) + ',' + Y(p.v).toFixed(1)); });
-  if (cur.length) segs.push(cur);
-  const polys = segs.map((s) => s.length > 1 ? `<polyline fill="none" stroke="#0f766e" stroke-width="2" points="${s.join(' ')}"/>` : (s.length ? `<circle cx="${s[0].split(',')[0]}" cy="${s[0].split(',')[1]}" r="2.2" fill="#0f766e"/>` : '')).join('');
+  let polys;
+  if (colorByValue) {
+    // Each segment coloured by the severity band of its midpoint (mild→halt), so height reads as severity at a glance.
+    const band = (v) => SEVHEX[Math.max(1, Math.min(4, Math.round(v)))];
+    const pts = series.map((p, i) => p.v == null ? null : { x: X(i), y: Y(p.v), v: p.v });
+    let parts = '';
+    for (let i = 0; i < pts.length - 1; i++) { const a = pts[i], b = pts[i + 1]; if (a && b) parts += `<line x1="${a.x.toFixed(1)}" y1="${a.y.toFixed(1)}" x2="${b.x.toFixed(1)}" y2="${b.y.toFixed(1)}" stroke="${band((a.v + b.v) / 2)}" stroke-width="2.5" stroke-linecap="round"/>`; }
+    pts.forEach((p, i) => { if (p && !pts[i - 1] && !pts[i + 1]) parts += `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="2.4" fill="${band(p.v)}"/>`; });
+    polys = parts;
+  } else {
+    let segs = [], cur = [];
+    series.forEach((p, i) => { if (p.v == null) { if (cur.length) { segs.push(cur); cur = []; } } else cur.push(X(i).toFixed(1) + ',' + Y(p.v).toFixed(1)); });
+    if (cur.length) segs.push(cur);
+    polys = segs.map((s) => s.length > 1 ? `<polyline fill="none" stroke="#0f766e" stroke-width="2" points="${s.join(' ')}"/>` : (s.length ? `<circle cx="${s[0].split(',')[0]}" cy="${s[0].split(',')[1]}" r="2.2" fill="#0f766e"/>` : '')).join('');
+  }
   const ay = Y(avg).toFixed(1);
   const avgL = (avg != null) ? `<line x1="${padL}" y1="${ay}" x2="${w - padR}" y2="${ay}" stroke="#5b6b7a" stroke-width="1.2" stroke-dasharray="5 4"/>` : '';
   const firstIso = series[0] && series[0].iso, lastIso = series.length ? series[series.length - 1].iso : '';
@@ -1344,15 +1432,15 @@ function renderTrends(state) {
   const allDays = (() => { const ds = (data.dailyLogs || []).map((l) => l.date).filter(Boolean).sort(); if (!ds.length) return 365; return Math.round((Date.now() - new Date(ds[0] + 'T00:00:00Z').getTime()) / 86400000) + 1; })();
   const days = win === 'all' ? allDays : (WIN_DAYS[win] || 30);
   const winseg = `<div class="winseg">${[['30d', '30d'], ['3m', '3m'], ['1y', '1y'], ['all', 'All']].map(([k, lbl]) => `<button class="${win === k ? 'on' : ''}" data-scorewin="${k}">${lbl}</button>`).join('')}</div>`;
-  const subFor = (label, prev) => win === 'all' ? `${label} · ${TT.allTime}` : `${label} ${TT.vsPrev} ${TT.period[win]} (${TT.was} ${prev != null ? prev.toFixed(1) : '–'})`;
+  const subFor = (label, prev) => (win === 'all') ? `${label} · ${TT.allTime}` : (prev == null) ? `${label} · ${TT.past} ${TT.period[win]}` : `${label} ${TT.vsPrev} ${TT.period[win]} (${TT.was} ${prev.toFixed(1)})`;
   const arrow = (pct) => { if (pct == null) return `<span class="muted small">${TT.notEnough}</span>`; const cls = pct === 0 ? 'flat' : (pct < 0 ? 'down' : 'up'); const word = pct < 0 ? TT.better : pct > 0 ? TT.worse : TT.steady; const a = pct > 0 ? '↑' : pct < 0 ? '↓' : '→'; return `<span class="chgpill ${cls}">${a} ${Math.abs(pct)}% ${word}</span>`; };
   // Burden = total severity across symptoms (severity × breadth)
   const b = windowSeries(data, types, days, daySum);
   const bMax = Math.max(4, ...b.series.map((x) => x.v || 0));
-  const burdenCard = `<div class="card"><div class="bignum">${b.cur != null ? b.cur.toFixed(1) : '–'} ${win === 'all' ? '' : arrow(b.pct)}</div><div class="muted small bn-sub">${subFor(TT.burdenSub, b.prev)}</div>${trendSVG(b.series, bMax, b.cur)}</div>`;
+  const burdenCard = `<div class="card"><div class="bignum">${b.cur != null ? b.cur.toFixed(1) : '–'} ${(win === 'all' || b.pct == null) ? '' : arrow(b.pct)}</div><div class="muted small bn-sub">${subFor(TT.burdenSub, b.prev)}</div>${trendSVG(b.series, bMax, b.cur)}</div>`;
   // Average severity = mean of symptoms that are present (0–4)
   const sv = windowSeries(data, types, days, dayPresentMean);
-  const sevCard = `<div class="card"><div class="bignum">${sv.cur != null ? sv.cur.toFixed(1) : '–'} <span class="muted small">/ 4</span> ${win === 'all' ? '' : arrow(sv.pct)}</div><div class="muted small bn-sub">${subFor(TT.sevSub, sv.prev)}</div>${trendSVG(sv.series, 4, sv.cur)}</div>`;
+  const sevCard = `<div class="card"><div class="bignum">${sv.cur != null ? sv.cur.toFixed(1) : '–'} <span class="muted small">/ 4</span> ${(win === 'all' || sv.pct == null) ? '' : arrow(sv.pct)}</div><div class="muted small bn-sub">${subFor(TT.sevSub, sv.prev)}</div>${trendSVG(sv.series, 4, sv.cur, true)}</div>`;
   // Most prominent = current level + change, tap to drill in
   const stats = symStats(data, types, days).filter((x) => x.cur > 0.05);
   const promRows = stats.map((x) => {
@@ -1360,7 +1448,7 @@ function renderTrends(state) {
     const worse = x.delta > 0.05, better = x.delta < -0.05; const dc = worse ? 'up' : better ? 'down' : 'flat'; const ar = worse ? '↑' : better ? '↓' : '→';
     const dtxt = Math.abs(x.delta) < 0.05 ? '' : ' ' + (worse ? '+' : '') + x.delta.toFixed(1);
     const open = ui.symTrend === x.s.id;
-    const line = open ? `<div class="promline">${trendSVG(windowSeries(data, [x.s], days, (lg, t) => symValue(t[0], lg)).series, 4, x.cur)}</div>` : '';
+    const line = open ? `<div class="promline">${trendSVG(windowSeries(data, [x.s], days, (lg, t) => symValue(t[0], lg)).series, 4, x.cur, true)}</div>` : '';
     return `<div class="promrow" data-symtrend="${x.s.id}"><span class="promname">${esc(tx(x.s.name, lang))}</span><span class="prombar"><span style="width:${(x.cur / 4 * 100).toFixed(0)}%;background:${col}"></span></span><span class="promval">${x.cur.toFixed(1)}</span><span class="tr ${dc}">${ar}${dtxt}</span></div>${line}`;
   }).join('') || `<p class="muted small">${TT.noData}</p>`;
   const promCard = `<div class="card"><div class="card-h"><h2>${TT.mostProm}</h2></div>${promRows}</div>`;
@@ -1384,7 +1472,7 @@ function renderTrends(state) {
     }).join('');
     return `<div class="labgrp"><button class="labgrp-h" data-labgrp="${esc(g)}"><span class="gcaret">${open ? '▾' : '▸'}</span> ${esc(g)}</button>${open ? `<div class="labgrp-b">${rows}</div>` : ''}</div>`;
   }).join('');
-  const labsCard = `<div class="card"><div class="card-h"><div><h2>${TT.labs}</h2><div class="muted small">${TT.labsHint}</div></div><button class="addmini" data-add="labs" aria-label="Add marker">＋</button></div>${labHtml}</div>`;
+  const labsCard = `<div class="card"><div class="card-h"><h2>${TT.labs}</h2><button class="addmini" data-add="labs" aria-label="Add marker">＋</button></div>${labHtml}</div>`;
   const illCard = `<div class="card"><div class="card-h"><h2>${TT.episodes}</h2></div>${illnessBars(data, lang)}</div>`;
   return `<div class="ds">${winseg}${burdenCard}${sevCard}${promCard}${dailyCard}${labsCard}${illCard}</div>` + renderModal(state);
 }
