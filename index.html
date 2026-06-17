@@ -381,7 +381,7 @@ const ENUMS = {
   conditionStatus: ['current', 'investigating', 'excluded', 'provisionally_excluded', 'resolved'],
   conditionControl: ['treated', 'no_treatment', 'adjusting'],
   medStatus: ['active', 'tapering', 'stopped', 'prn'],
-  medCategory: ['prescription', 'supplement', 'otc'],
+  medCategory: ['prescription', 'supplement', 'otc', 'therapy'],
   trackBy: ['single', 'locations'], overall: ['max', 'mean'],
   episodeType: ['cold_flu', 'infection', 'gi', 'flare', 'other'],
   labDisplayMode: ['raw', 'x_uln'], questionStatus: ['open', 'answered'],
@@ -754,10 +754,10 @@ const { tx } = DL;
 
 
 
-const ui = { expanded: new Set(['sym_jointpain']), epFormOpen: false, savedAt: null, noteOpen: new Set(), scaleOpen: new Set(), confirmClear: false, calView: 'week', calMonth: null, medHist: false, weekAnchor: null };
+const ui = { expanded: new Set(['sym_jointpain']), epFormOpen: false, savedAt: null, noteOpen: new Set(), scaleOpen: new Set(), confirmClear: false, calView: 'week', calMonth: null, medHist: false, weekAnchor: null, editPick: null };
 
 const STR = {
-  en: { today: 'Today', symptoms: 'Symptoms', meds: 'Medications', asNeeded: 'As needed (PRN)', secRegular: 'Regular', secSupplements: 'Supplements',
+  en: { today: 'Today', symptoms: 'Symptoms', meds: 'Medications', asNeeded: 'As needed (PRN)', secRegular: 'Regular', secSupplements: 'Supplements', secTherapies: 'Therapies',
         note: 'Note (optional)', notePlaceholder: 'Anything worth remembering about today…',
         overall: 'overall', taken: 'Taken', skipped: 'Skipped', episodes: 'Episodes',
         ongoing: 'Ongoing', startEp: '+ Start an episode', end: 'End today', endedToday: 'Ended',
@@ -770,7 +770,7 @@ const STR = {
         painLevels: ['No pain','Noticeable','Distracting','Interferes with activities','Prevents activity'],
         prevDay: 'Previous day', nextDay: 'Next day', noData: 'No data.', sites: 'sites',
         rowNotePh: 'Add a detail (optional)…', addNote: 'Add note', epNotePh: 'Add a note (e.g. still burning today)…', reopen: 'Reopen', morning: 'Morning', midday: 'Midday', evening: 'Evening' },
-  es: { today: 'Hoy', symptoms: 'Síntomas', meds: 'Medicación', asNeeded: 'Según necesidad (PRN)', secRegular: 'Pauta fija', secSupplements: 'Suplementos',
+  es: { today: 'Hoy', symptoms: 'Síntomas', meds: 'Medicación', asNeeded: 'Según necesidad (PRN)', secRegular: 'Pauta fija', secSupplements: 'Suplementos', secTherapies: 'Terapias',
         note: 'Nota (opcional)', notePlaceholder: 'Algo que recordar de hoy…',
         overall: 'general', taken: 'Tomado', skipped: 'Omitido', episodes: 'Episodios',
         ongoing: 'En curso', startEp: '+ Iniciar un episodio', end: 'Finalizar hoy', endedToday: 'Finalizado',
@@ -950,21 +950,25 @@ function renderToday(state) {
   }).join('');
   const complete = isComplete(date);
   const completeBtn = complete ? `<span class="prog-chip done">✓ ${lang === 'en' ? 'Complete' : 'Completado'}</span>` : `<button class="btn-mark" id="markZero">${lang === 'en' ? 'Mark complete' : 'Marcar completo'}</button>`;
-  const editSyms = (data.symptomTypes || []).map((s) => `<div class="drow"><div><div class="dname">${esc(tx(s.name, lang))}${s.archived ? ` <span class="muted small">(${lang === 'en' ? 'archived' : 'archivado'})</span>` : ''}</div></div><button class="ed-btn2" data-edit="symptomTypes:${s.id}" aria-label="Edit">✎</button></div>`).join('');
-  const editSymsBlock = `<details class="ro-fold" style="margin-top:10px"><summary><span class="muted small" style="font-weight:700">${lang === 'en' ? 'Edit symptoms & sites' : 'Editar síntomas y zonas'}</span><span class="ro-caret">▶</span></summary><div style="margin-top:6px">${editSyms}<button class="addmini" data-add="symptomTypes" aria-label="Add symptom" style="margin-top:8px">＋</button></div></details>`;
+  const symEditing = ui.editPick === 'symptomTypes';
+  const symPick = (data.symptomTypes || []).map((s) => `<button class="pickrow" data-edit="symptomTypes:${s.id}">${esc(tx(s.name, lang))}${s.archived ? ` <span class="muted small">(${lang === 'en' ? 'archived' : 'archivado'})</span>` : ''}</button>`).join('');
+  const symEditBtns = `<button class="addmini" data-editpick="symptomTypes" aria-label="${lang === 'es' ? 'Editar' : 'Edit'}">${symEditing ? '✕' : '✎'}</button><button class="addmini" data-add="symptomTypes" aria-label="${lang === 'en' ? 'Add symptom' : 'Añadir síntoma'}">＋</button>`;
   const bd = dayBurden(date, types, data);
   const bBand = burdenBandIdx(bd);
   const bWords = lang === 'es' ? ['sin síntomas', 'leve', 'típico', 'fuerte', 'muy fuerte'] : ['clear', 'light', 'typical', 'heavy', 'very heavy'];
   const bCols = ['#94a3b8', '#fde047', '#f59e0b', '#f97316', '#b91c1c'];
   const burdenRow = bd == null ? '' : `<div class="burdenrow"><span>${lang === 'es' ? 'Carga de hoy' : "Today's burden"}</span><span class="bval"><span class="bdot" style="background:${bCols[bBand]}"></span>${bd} · ${bWords[bBand]}</span></div>`;
-  const symptomsCard = `<div class="card"><div class="sec-head"><h2>${T.symptoms}</h2>${completeBtn}</div>${symptomCards}${burdenRow}<div class="scale-foot muted">${T.scaleHint}</div>${editSymsBlock}</div>`;
+  const symptomsCard = symEditing
+    ? `<div class="card"><div class="sec-head"><h2>${T.symptoms}</h2><span class="hgrp">${symEditBtns}</span></div><div class="muted small" style="margin:2px 0 6px">${lang === 'es' ? 'Elige cuál editar:' : 'Choose which to edit:'}</div>${symPick}</div>`
+    : `<div class="card"><div class="sec-head"><h2>${T.symptoms}</h2><span class="hgrp">${completeBtn}${symEditBtns}</span></div>${symptomCards}${burdenRow}<div class="scale-foot muted">${T.scaleHint}</div></div>`;
 
   const { scheduled, prn } = DL.medsForDate(date, data);
   const medRow = (m) => { const taken = DL.getMedTaken(date, m.id, data); return `<div class="med"><div class="med-name">${esc(tx(m.name, lang))} <span class="muted small">${esc(m.dose)}</span></div><div class="med-toggle"><button class="tgl ${taken === true ? 'is-yes' : ''}" data-med="${m.id}" data-taken="yes">✓</button><button class="tgl ${taken === false ? 'is-no' : ''}" data-med="${m.id}" data-taken="no">✗</button></div></div>`; };
   const medSec = (label, list) => list.length ? `<div class="subsec">${label}</div>${list.map(medRow).join('')}` : '';
-  const regMeds = scheduled.filter((m) => m.category !== 'supplement');
+  const regMeds = scheduled.filter((m) => m.category !== 'supplement' && m.category !== 'therapy');
   const suppMeds = scheduled.filter((m) => m.category === 'supplement');
-  const medsBody = (medSec(T.secRegular, regMeds) + medSec(T.secSupplements, suppMeds) + medSec(T.asNeeded, prn)) || `<p class="muted small">${T.noMeds}</p>`;
+  const therMeds = scheduled.filter((m) => m.category === 'therapy');
+  const medsBody = (medSec(T.secRegular, regMeds) + medSec(T.secSupplements, suppMeds) + medSec(T.secTherapies, therMeds) + medSec(T.asNeeded, prn)) || `<p class="muted small">${T.noMeds}</p>`;
 
   const noteVal = esc(dayLog?.note?.[lang] || '');
   // Episodes active on the selected day (so past days show what was ongoing then), not just today's ongoing.
@@ -979,12 +983,13 @@ function renderToday(state) {
   const typeOpts = Object.entries(EP_TYPES[lang]).map(([k, v]) => `<option value="${k}">${v}</option>`).join('');
   const epForm = ui.epFormOpen ? `<div class="ep-form"><input id="epName" placeholder="${T.name}" /><div class="ep-form-row"><select id="epType">${typeOpts}</select><input type="date" id="epStart" value="${date}" /></div><div class="ep-form-actions"><button class="btn" id="epSave">${T.start2}</button><button class="btn ghost" id="epCancel">${T.cancel}</button></div></div>` : `<button class="btn ghost wide" id="epStartBtn">${T.startEp}</button>`;
   const allEps = (data.episodes || []).slice().sort((a, b) => (a.startDate < b.startDate ? 1 : -1));
-  const allEpsBlock = `<details class="ro-fold" style="margin-top:10px"><summary><span class="muted small" style="font-weight:700">${lang === 'en' ? 'All episodes (edit)' : 'Todos los episodios'}</span><span class="ro-caret">▶</span></summary><div style="margin-top:6px">${allEps.map((e) => `<div class="drow"><div><div class="dname">${esc(tx(e.name, lang) || EP_TYPES[lang][e.type])}</div><div class="dmeta">${EP_TYPES[lang][e.type]} · ${esc(e.startDate)}${e.endDate ? ' → ' + esc(e.endDate) : ' → ' + (lang === 'en' ? 'ongoing' : 'en curso')}</div></div><button class="ed-btn2" data-edit="episodes:${e.id}" aria-label="Edit">✎</button></div>`).join('') || `<p class="muted small">${T.none}</p>`}</div></details>`;
+  const epEditing = ui.editPick === 'episodes';
+  const epPick = allEps.map((e) => `<button class="pickrow" data-edit="episodes:${e.id}">${esc(tx(e.name, lang) || EP_TYPES[lang][e.type])} <span class="muted small">${esc(e.startDate)}${e.endDate ? ' → ' + esc(e.endDate) : ''}</span></button>`).join('') || `<p class="muted small">${T.none}</p>`;
   const savedNote = ui.savedAt ? `<div class="muted small saved-tag">✓ ${T.saved} · ${ui.savedAt}</div>` : '';
   return `<div class="ds">${head}
     ${symptomsCard}
     <div class="card" id="medsCard"><div class="card-h"><h2>${T.meds}</h2><button class="ic-btn" data-medhist aria-label="${lang === 'es' ? 'Historial de cumplimiento' : 'Adherence history'}">${HIST_SVG}</button></div>${medsBody}</div>
-    <div class="card"><div class="card-h"><h2>${T.episodes}</h2></div>${ongoing.length ? `<div class="subhead">${T.ongoing}</div>${ongoingHtml}` : ''}${endedHtml}${epForm}${allEpsBlock}</div>
+    <div class="card"><div class="card-h"><h2>${T.episodes}</h2><button class="addmini" data-editpick="episodes" aria-label="${lang === 'es' ? 'Editar' : 'Edit'}">${epEditing ? '✕' : '✎'}</button></div>${epEditing ? `<div class="muted small" style="margin:2px 0 6px">${lang === 'es' ? 'Elige cuál editar:' : 'Choose which to edit:'}</div>${epPick}` : `${ongoing.length ? `<div class="subhead">${T.ongoing}</div>${ongoingHtml}` : ''}${endedHtml}${epForm}`}</div>
     ${savedNote}
     <div class="clearday-row"><button class="linkbtn ${ui.confirmClear?'danger':''}" data-clearday>${ui.confirmClear?T.confirmClear:T.clearDay}</button></div></div>`;
 }
@@ -1008,6 +1013,7 @@ async function onClick(e, state, rerender) {
   document.querySelectorAll('.epnote').forEach((el) => DL.setEpisodeNote(el.dataset.epnote, state.lang, el.value));
   if (t.dataset.medhist != null) { ui.medHist = true; rerender(); return; }
   if (t.dataset.medback != null) { ui.medHist = false; rerender(); document.getElementById('medsCard')?.scrollIntoView({ block: 'start' }); return; }
+  if (t.dataset.editpick != null) { ui.editPick = ui.editPick === t.dataset.editpick ? null : t.dataset.editpick; rerender(); return; }
   if (t.dataset.weekshift) { const tI = todayISO(); const cur = (ui.weekAnchor && ui.weekAnchor <= tI) ? ui.weekAnchor : tI; let na = shiftDate(cur, Number(t.dataset.weekshift)); if (na > tI) na = tI; ui.weekAnchor = na; state.date = na; ui.savedAt = null; ui.confirmClear = false; rerender(); return; }
   if (t.dataset.today != null) { ui.weekAnchor = null; state.date = todayISO(); ui.savedAt = null; ui.confirmClear = false; rerender(); return; }
   if (t.dataset.day) { const dd = t.dataset.day; if (ui.calView === 'month') ui.weekAnchor = (dd >= todayISO()) ? null : dd; state.date = dd; ui.calView = 'week'; ui.savedAt = null; ui.confirmClear = false; rerender(); return; }
@@ -1091,7 +1097,7 @@ const STR = {
         ruledOut: 'Ruled out', other: 'Other', provShort: 'Provisional', none: 'None', revisit: 'may re-test',
         questionsFor: 'Questions for', markAnswered: 'Mark answered', cont: 'Continue', answerNotePh: 'Add a note (optional)…', medStatus: { tapering: 'tapering off', prn: 'as needed', stopped: 'stopped' }, noQuestions: 'No open questions for this specialist.', noQuestionsAll: 'No open questions.', addQ: 'Add question', appointments: 'Upcoming appointments', pastAppts: 'Past appointments', addAppt: 'Add appointment', noAppt: 'No appointments yet',
         filterBy: 'Filter by specialist', allSpecialists: 'All specialists', allQuestions: 'All open questions',
-        secRegular: 'Regular', secSupplements: 'Supplements', secPrn: 'As needed (PRN)',
+        secRegular: 'Regular', secSupplements: 'Supplements', secTherapies: 'Therapies', secPrn: 'As needed (PRN)',
         prnLabel: 'PRN', everyOther: 'every other day', everyN: 'every {n} days',
         wd: { mon: 'Mon', tue: 'Tue', wed: 'Wed', thu: 'Thu', fri: 'Fri', sat: 'Sat', sun: 'Sun' },
         medLegend: 'X-X-X = morning · midday · evening (e.g. 0-0-1 = one at night).' },
@@ -1100,7 +1106,7 @@ const STR = {
         ruledOut: 'Descartado', other: 'Otros', provShort: 'Provisional', none: 'Ninguno', revisit: 'puede reevaluarse',
         questionsFor: 'Preguntas para', markAnswered: 'Marcar respondida', cont: 'Continuar', answerNotePh: 'Añadir una nota (opcional)…', medStatus: { tapering: 'en reducción', prn: 'según necesidad', stopped: 'suspendido' }, noQuestions: 'Sin preguntas pendientes para este especialista.', noQuestionsAll: 'Sin preguntas pendientes.', addQ: 'Añadir pregunta', appointments: 'Próximas citas', pastAppts: 'Citas anteriores', addAppt: 'Añadir cita', noAppt: 'Sin citas todavía',
         filterBy: 'Filtrar por especialista', allSpecialists: 'Todos los especialistas', allQuestions: 'Todas las preguntas',
-        secRegular: 'Pauta fija', secSupplements: 'Suplementos', secPrn: 'Según necesidad (PRN)',
+        secRegular: 'Pauta fija', secSupplements: 'Suplementos', secTherapies: 'Terapias', secPrn: 'Según necesidad (PRN)',
         prnLabel: 'PRN', everyOther: 'días alternos', everyN: 'cada {n} días',
         wd: { mon: 'Lun', tue: 'Mar', wed: 'Mié', thu: 'Jue', fri: 'Vie', sat: 'Sáb', sun: 'Dom' },
         medLegend: 'X-X-X = mañana · mediodía · noche (p. ej. 0-0-1 = uno por la noche).' },
@@ -1167,9 +1173,10 @@ function renderBig(state) {
   const allMeds = bp.medications;
   const prnMeds = allMeds.filter(isPrnMed);
   const suppMeds = allMeds.filter((m) => !isPrnMed(m) && m.category === 'supplement').sort(byTimeOfDay);
-  const regMeds = allMeds.filter((m) => !isPrnMed(m) && m.category !== 'supplement').sort(byTimeOfDay);
+  const regMeds = allMeds.filter((m) => !isPrnMed(m) && m.category !== 'supplement' && m.category !== 'therapy').sort(byTimeOfDay);
+  const therMeds = allMeds.filter((m) => !isPrnMed(m) && m.category === 'therapy').sort(byTimeOfDay);
   const medSection = (label, list) => list.length ? `<div class="subsec">${label}</div>${list.map(medRowHtml).join('')}` : '';
-  const meds = (medSection(T.secRegular, regMeds) + medSection(T.secSupplements, suppMeds) + medSection(T.secPrn, prnMeds)) || `<p class="muted small">${T.none}</p>`;
+  const meds = (medSection(T.secRegular, regMeds) + medSection(T.secSupplements, suppMeds) + medSection(T.secTherapies, therMeds) + medSection(T.secPrn, prnMeds)) || `<p class="muted small">${T.none}</p>`;
   // Ruled out — one collapsed line; each item taps for why/when.
   const roItem = (r) => {
     const prov = r.status === 'provisionally_excluded';
@@ -1209,10 +1216,14 @@ function renderQuestions(state) {
     hero = `<div class="vhero"><div class="vlbl">${L('Next appointment', 'Próxima cita')}</div><div class="vwhen">${fmtDate(next.date, lang)}${next.time ? ` · ${esc(next.time)}` : ''}</div><div class="vwho">${esc(spName(next.specialismId))}${spDr(next.specialismId) ? ` · ${esc(spDr(next.specialismId))}` : ''}</div><span class="vcd">${cd}</span></div>`;
   }
   // --- Upcoming (rest after next) ---
-  const apptRow = (a) => `<div class="drow"><div><div class="dname">${fmtDate(a.date, lang)}${a.time ? ` · ${esc(a.time)}` : ''}</div><div class="dmeta">${esc(spName(a.specialismId))}${tx(a.note, lang) ? ` — ${esc(tx(a.note, lang))}` : ''}</div></div><button class="ed-btn2" data-edit="appointments:${a.id}" aria-label="Edit">✎</button></div>`;
+  const editHint = lang === 'es' ? 'Elige cuál editar:' : 'Choose which to edit:';
+  const pickList = (items, coll, nameFn) => `<div class="muted small" style="margin:2px 0 6px">${editHint}</div>` + (items.length ? items.map((it) => `<button class="pickrow" data-edit="${coll}:${it.id}">${esc(nameFn(it))}</button>`).join('') : `<p class="muted small">${T.none}</p>`);
+  const editBtn = (coll) => `<button class="addmini" data-editpick="${coll}" aria-label="${lang === 'es' ? 'Editar' : 'Edit'}">${ui.editPick === coll ? '✕' : '✎'}</button>`;
+  const apptRow = (a) => `<div class="drow"><div><div class="dname">${fmtDate(a.date, lang)}${a.time ? ` · ${esc(a.time)}` : ''}</div><div class="dmeta">${esc(spName(a.specialismId))}${tx(a.note, lang) ? ` — ${esc(tx(a.note, lang))}` : ''}</div></div></div>`;
+  const apptName = (a) => `${fmtDate(a.date, lang)}${a.time ? ' · ' + a.time : ''} — ${spName(a.specialismId)}`;
   const restUp = upcoming.slice(1);
   const upList = restUp.length ? restUp.map(apptRow).join('') : `<p class="muted small">${L('Nothing else scheduled', 'Nada más programado')}</p>`;
-  const apptCard = `<div class="card"><div class="card-h"><h2>${L('Upcoming', 'Próximas')}</h2><button class="addmini" data-add="appointments" aria-label="Add appointment">＋</button></div>${upList}</div>`;
+  const apptCard = `<div class="card"><div class="card-h"><h2>${L('Upcoming', 'Próximas')}</h2><span class="hgrp">${editBtn('appointments')}<button class="addmini" data-add="appointments" aria-label="Add appointment">＋</button></span></div>${ui.editPick === 'appointments' ? pickList(upcoming.concat(past), 'appointments', apptName) : upList}</div>`;
   // --- Questions: grouped by specialist, next-visit specialist first ---
   const openAll = (data.questions || []).filter((q) => q.status === 'open');
   const qRow = (q) => {
@@ -1231,8 +1242,8 @@ function renderQuestions(state) {
   // --- Past appointments (collapsed) ---
   const pastCard = past.length ? `<div class="card"><details class="ro-fold"><summary><h2>${T.pastAppts}</h2><span class="hint">${L('tap to view', 'toca para ver')}</span><span class="ro-caret">▶</span></summary><div class="ro-body" style="margin-top:8px">${past.map(apptRow).join('')}</div></details></div>` : '';
   // --- Care team (collapsed; editing folded in here) ---
-  const ct = specs.map((s) => `<div class="drow"><div><div class="dname">${esc(specialistLabel(s, lang))}</div>${s.doctor ? `<div class="dmeta">${esc(s.doctor)}</div>` : ''}</div><button class="ed-btn2" data-edit="specialisms:${s.id}" aria-label="Edit">✎</button></div>`).join('');
-  const careCard = `<div class="card"><details class="ro-fold"><summary><h2>${L('Care team', 'Equipo médico')}</h2><span class="hint">${L('tap to view', 'toca para ver')}</span><span class="ro-caret">▶</span></summary><div class="ro-body" style="margin-top:8px">${ct}<button class="addmini" data-add="specialisms" aria-label="Add specialist" style="margin-top:8px">＋</button></div></details></div>`;
+  const ct = specs.map((s) => `<div class="drow"><div><div class="dname">${esc(specialistLabel(s, lang))}</div>${s.doctor ? `<div class="dmeta">${esc(s.doctor)}</div>` : ''}</div></div>`).join('');
+  const careCard = `<div class="card"><div class="card-h"><h2>${L('Care team', 'Equipo médico')}</h2><span class="hgrp">${editBtn('specialisms')}<button class="addmini" data-add="specialisms" aria-label="Add specialist">＋</button></span></div>${ui.editPick === 'specialisms' ? pickList(specs, 'specialisms', (s) => specialistLabel(s, lang)) : `<details class="ro-fold"><summary><span class="hint">${L('tap to view', 'toca para ver')}</span><span class="ro-caret">▶</span></summary><div class="ro-body" style="margin-top:8px">${ct}</div></details>`}</div>`;
   return `<div class="ds">${hero}${apptCard}${qCard}${pastCard}${careCard}</div>`;
 }
 
@@ -1593,7 +1604,7 @@ const SPECS = {
     { key: 'anchorDate', type: 'date', label: 'Anchor date (a day it is due)', showIf: (s) => s.cadence === 'interval' },
     { key: 'timeOfDay', type: 'select', label: 'Time of day', options: ['morning', 'midday', 'evening', 'prn'] },
     { key: 'track', type: 'checkbox', label: 'Track daily (show in the Today med check-off)' },
-    { key: 'category', type: 'select', label: 'Category (prescription/supplement shown to doctor; otc hidden)', options: ['prescription', 'supplement', 'otc'] },
+    { key: 'category', type: 'select', label: 'Category (prescription/supplement/therapy shown to doctor; otc hidden)', options: ['prescription', 'supplement', 'otc', 'therapy'] },
     { key: 'purpose', type: 'i18n', label: 'Purpose' },
     { key: 'conditionIds', type: 'multiselect', label: 'For condition(s)', source: 'conditions' },
     { key: 'status', type: 'select', label: 'Status', options: ['active', 'tapering', 'stopped', 'prn'] },
