@@ -244,9 +244,10 @@ ul.tight { margin: 4px 0 0; padding-left: 18px; } ul.tight li { padding: 1px 0; 
 .ds .calnote{font-size:11px;color:var(--muted);margin-top:8px;line-height:1.5;}
 .ds .wksub{text-align:center;margin-bottom:10px;}
 .ds .symrow .symctl{display:flex;align-items:center;gap:6px;}
-.ds .sevpick{display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;padding:0;border:0;border-radius:9px;font-size:15px;font-weight:700;cursor:pointer;}
-.ds .noteicon{width:38px;height:38px;border:1px solid var(--line);background:#fff;border-radius:9px;font-size:15px;cursor:pointer;color:var(--muted);touch-action:manipulation;-webkit-tap-highlight-color:transparent;}
-.ds .noteicon.on,.ds .noteicon.has{background:#e1f5ee;border-color:#9fe1cb;color:var(--teal-d);}
+.ds .sevpick,.ds .sev-chip.sevsq{display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;min-width:38px;padding:0;border:0;border-radius:9px;font-size:15px;font-weight:700;cursor:pointer;}
+.ds .noteicon{width:38px;height:38px;display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--line);background:#fff;border-radius:9px;cursor:pointer;color:var(--muted);touch-action:manipulation;-webkit-tap-highlight-color:transparent;}
+.ds .noteicon.has{color:#0f766e;}
+.ds .noteicon.on{color:#0f766e;border-color:#0f766e;}
 .ds .chgpill{font-size:13px;font-weight:600;border-radius:999px;padding:2px 10px;white-space:nowrap;}
 .ds .chgpill.up{background:#fde8e8;color:#b91c1c;}
 .ds .chgpill.down{background:#dcfce7;color:#15803d;}
@@ -755,29 +756,29 @@ const { tx } = DL;
 
 
 
-const ui = { expanded: new Set(['sym_jointpain']), epFormOpen: false, savedAt: null, noteOpen: new Set(), scaleOpen: new Set(), confirmClear: false, calView: 'week', calMonth: null, medHist: false };
+const ui = { expanded: new Set(['sym_jointpain']), epFormOpen: false, savedAt: null, noteOpen: new Set(), scaleOpen: new Set(), confirmClear: false, calView: 'week', calMonth: null, medHist: false, weekAnchor: null };
 
 const STR = {
-  en: { today: 'Today', symptoms: 'Symptoms', meds: 'Medications', asNeeded: 'As needed (PRN)',
+  en: { today: 'Today', symptoms: 'Symptoms', meds: 'Medications', asNeeded: 'As needed (PRN)', secRegular: 'Regular', secSupplements: 'Supplements',
         note: 'Note (optional)', notePlaceholder: 'Anything worth remembering about today…',
         overall: 'overall', taken: 'Taken', skipped: 'Skipped', episodes: 'Episodes',
         ongoing: 'Ongoing', startEp: '+ Start an episode', end: 'End today', endedToday: 'Ended',
         name: 'Short label', type: 'Type', start: 'Start date', start2: 'Start', cancel: 'Cancel',
         none: 'none', saved: 'Saved locally', noMeds: 'No medications scheduled for this day.',
-        scaleHint: '0 none · 1 noticeable · 2 distracting · 3 interferes · 4 prevents activity', clear: 'clear',
+        scaleHint: '0 none · 1 noticeable · 2 distracting · 3 interferes · 4 prevents', clear: 'clear',
         markZero: 'Mark untouched symptoms as 0 (not experienced)', allZeroed: 'All symptoms logged',
         clearDay: 'Clear this day', confirmClear: 'Tap again to clear',
         overallPain: 'Overall', overallTap: 'Tap to set your score for the day',
         painLevels: ['No pain','Noticeable','Distracting','Interferes with activities','Prevents activity'],
         prevDay: 'Previous day', nextDay: 'Next day', noData: 'No data.', sites: 'sites',
         rowNotePh: 'Add a detail (optional)…', addNote: 'Add note', epNotePh: 'Add a note (e.g. still burning today)…', reopen: 'Reopen', morning: 'Morning', midday: 'Midday', evening: 'Evening' },
-  es: { today: 'Hoy', symptoms: 'Síntomas', meds: 'Medicación', asNeeded: 'Según necesidad (PRN)',
+  es: { today: 'Hoy', symptoms: 'Síntomas', meds: 'Medicación', asNeeded: 'Según necesidad (PRN)', secRegular: 'Pauta fija', secSupplements: 'Suplementos',
         note: 'Nota (opcional)', notePlaceholder: 'Algo que recordar de hoy…',
         overall: 'general', taken: 'Tomado', skipped: 'Omitido', episodes: 'Episodios',
         ongoing: 'En curso', startEp: '+ Iniciar un episodio', end: 'Finalizar hoy', endedToday: 'Finalizado',
         name: 'Etiqueta corta', type: 'Tipo', start: 'Fecha de inicio', start2: 'Inicio', cancel: 'Cancelar',
         none: 'ninguno', saved: 'Guardado localmente', noMeds: 'No hay medicación programada para este día.',
-        scaleHint: '0 ninguno · 1 leve · 2 molesto · 3 interfiere · 4 impide actividad', clear: 'borrar',
+        scaleHint: '0 ninguno · 1 leve · 2 molesto · 3 interfiere · 4 impide', clear: 'borrar',
         markZero: 'Marcar síntomas sin tocar como 0 (no experimentado)', allZeroed: 'Todos los síntomas registrados',
         clearDay: 'Borrar este día', confirmClear: 'Toca otra vez para borrar',
         overallPain: 'General', overallTap: 'Toca para registrar tu puntuación del día',
@@ -804,12 +805,14 @@ function sevSelector(symptomId, locationId, value) {
 const rowKey = (sym, loc) => sym + '|' + (loc || '');
 function symRow(state, symId, locId, label) {
   const { date, lang } = state; const data = DL.getData();
-  const v = DL.getSeverity(date, symId, locId, data);
+  // On a day marked complete, ungraded symptoms read as 0 (Mark complete = unmarked are none).
+  const vRaw = DL.getSeverity(date, symId, locId, data);
+  const _log = DL.getDailyLog(date, data); const v = (vRaw == null && _log && _log.symptomsSubmittedAt) ? 0 : vRaw;
   const note = DL.getSymptomNote(date, symId, locId, data);
   const key = rowKey(symId, locId);
   const expanded = (v == null) || ui.scaleOpen.has(key);
   const noteOpen = ui.noteOpen.has(key) || !!note;
-  const noteBtn = (v != null) ? `<button class="noteicon${note ? ' has' : ''}${noteOpen ? ' on' : ''}" data-note="${key}" aria-label="${STR[lang].addNote}">🗒</button>` : '';
+  const noteBtn = (v != null) ? `<button class="noteicon${note ? ' has' : ''}${noteOpen ? ' on' : ''}" data-note="${key}" aria-label="${STR[lang].addNote}">${NOTE_SVG}</button>` : '';
   const control = expanded ? (sevSelector(symId, locId, v) + noteBtn)
     : (`<button class="sevpick sev-chip sev-${v}" data-reopen="${key}" aria-label="${esc(label)} = ${v}">${v}</button>` + noteBtn);
   const noteArea = (v != null && noteOpen) ? `<textarea class="rownote" data-sym="${symId}"${locId ? ` data-loc="${locId}"` : ''} rows="2" placeholder="${STR[lang].rowNotePh}">${esc(note)}</textarea>` : '';
@@ -837,6 +840,7 @@ function dayBurden(iso, types, data) {
 function burdenBandIdx(b) { if (b == null) return -1; if (b === 0) return 0; if (b <= 5) return 1; if (b <= 10) return 2; if (b <= 15) return 3; return 4; }
 const CAL_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z"/><path d="M16 3v4"/><path d="M8 3v4"/><path d="M4 11h16"/></svg>';
 const HIST_SVG = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 4v4h4"/><path d="M12 8v4l3 2"/></svg>';
+const NOTE_SVG = '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4h8a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-8a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2z"/><path d="M9 9h6"/><path d="M9 13h6"/><path d="M9 17h4"/></svg>';
 function monthCal(state, data, types) {
   const lang = state.lang; const date = state.date; const tISO = todayISO();
   const monthIso = ui.calMonth || date.slice(0, 7);
@@ -912,21 +916,24 @@ function renderToday(state) {
   if (ui.calView === 'month') return `<div class="ds">${monthCal(state, data, types)}</div>`;
   if (ui.medHist) return renderAdherence(state, data);
   const isComplete = (iso) => { const l = DL.getDailyLog(iso, data); if (!l) return false; if (l.symptomsSubmittedAt) return true; return types.every((s) => s.trackBy === 'single' ? (DL.getSeverity(iso, s.id, null, data) != null) : (DL.derivedOverall(s, l.symptoms || []) != null)); };
-  const dt = new Date(date + 'T00:00:00Z'); const dow = (dt.getUTCDay() + 6) % 7; const monday = shiftDate(date, -dow);
-  const dows = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
-  const tiles = dows.map((dl, i) => {
-    const iso = shiftDate(monday, i); const fut = iso > tISO; const done = isComplete(iso); const isTod = iso === tISO; const sel = iso === date;
-    const mark = done ? '✓' : (fut ? '' : '·');
-    return `<button class="wkday${sel ? ' sel' : ''}${isTod ? ' tod' : ''}${fut ? ' fut' : ''}" data-day="${iso}" ${fut ? 'disabled' : ''}><span class="wkdow">${dl}</span><span class="wkdate">${iso.slice(8, 10)}</span><span class="wktick">${mark}</span></button>`;
-  }).join('');
-  const weekHasToday = (tISO >= monday && tISO <= shiftDate(monday, 6));
+  // Rolling 7-day window ending on the anchor (default = today, so today is the rightmost tile and there are no future/empty days).
+  const anchor = (ui.weekAnchor && ui.weekAnchor <= tISO) ? ui.weekAnchor : tISO;
+  const DOWL = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+  let tiles = '';
+  for (let i = 0; i < 7; i++) {
+    const iso = shiftDate(anchor, -6 + i);
+    const wd = new Date(iso + 'T00:00:00Z'); const dl = DOWL[(wd.getUTCDay() + 6) % 7];
+    const done = isComplete(iso); const isTod = iso === tISO; const sel = iso === date;
+    tiles += `<button class="wkday${sel ? ' sel' : ''}${isTod ? ' tod' : ''}" data-day="${iso}"><span class="wkdow">${dl}</span><span class="wkdate">${iso.slice(8, 10)}</span><span class="wktick">${done ? '✓' : '·'}</span></button>`;
+  }
+  const atToday = anchor === tISO;
   const head = `<div class="wkstrip">
-    <button class="wknav" data-nav="-7" aria-label="${T.prevDay}">‹</button>
+    <button class="wknav" data-weekshift="-7" aria-label="${T.prevDay}">‹</button>
     <div class="wkdays">${tiles}</div>
-    <button class="wknav" data-nav="7" aria-label="${T.nextDay}" ${weekHasToday ? 'disabled' : ''}>›</button>
+    <button class="wknav" data-weekshift="7" aria-label="${T.nextDay}" ${atToday ? 'disabled' : ''}>›</button>
     <button class="wkcal" data-calview="month" aria-label="${lang === 'es' ? 'Vista de mes' : 'Month view'}">${CAL_SVG}</button>
   </div>
-  <div class="wksub muted small">${isToday ? T.today : fmtDate(date, lang) + ' · ' + agoLabel(daysBetween(date, tISO), lang)}</div>`;
+  <div class="wksub muted small">${isToday ? T.today : fmtDate(date, lang) + ' · ' + agoLabel(daysBetween(date, tISO), lang) + ` · <button class="linkbtn" data-today>${lang === 'es' ? 'Ir a hoy' : 'Jump to today'}</button>`}</div>`;
 
   const dayLog = DL.getDailyLog(date, data);
   const isLogged = (s) => s.trackBy === 'single' ? DL.getSeverity(date, s.id, null, data) != null : DL.derivedOverall(s, (dayLog?.symptoms) || []) != null;
@@ -934,11 +941,13 @@ function renderToday(state) {
   const symptomCards = types.map((s) => {
     if (s.trackBy === 'single') return symRow(state, s.id, null, tx(s.name, lang));
     const open = ui.expanded.has(s.id);
-    const overall = DL.derivedOverall(s, (dayLog?.symptoms) || []);
-    const chip = overall != null ? `<span class="sev-chip sev-${overall}">${overall}</span>` : '<span class="muted small">—</span>';
+    const submitted = !!(dayLog && dayLog.symptomsSubmittedAt);
+    const ov = DL.derivedOverall(s, (dayLog?.symptoms) || []);
+    const overall = (ov == null && submitted) ? 0 : ov;
+    const chip = overall != null ? `<span class="sev-chip sevsq sev-${overall}">${overall}</span>` : '<span class="muted small">—</span>';
     const locsArr = DL.activeLocations(s);
     const locs = locsArr.map((l) => symRow(state, s.id, l.id, tx(l.name, lang))).join('');
-    return `<div class="symrow located-head sym-head expandable" data-expand="${s.id}"><span class="symrow-name as-text">${esc(tx(s.name, lang))} <span class="muted small loc-count">${locsArr.length} ${T.sites} ${open ? '▾' : '▸'}</span></span>${chip}</div>
+    return `<div class="symrow located-head sym-head expandable" data-expand="${s.id}"><span class="symrow-name as-text">${esc(tx(s.name, lang))} <span class="muted small loc-count">${open ? '▾' : '▸'}</span></span>${chip}</div>
     <div class="loc-list" ${open ? '' : 'hidden'}>${locs}</div>`;
   }).join('');
   const complete = isComplete(date);
@@ -954,16 +963,19 @@ function renderToday(state) {
 
   const { scheduled, prn } = DL.medsForDate(date, data);
   const medRow = (m) => { const taken = DL.getMedTaken(date, m.id, data); return `<div class="med"><div class="med-name">${esc(tx(m.name, lang))} <span class="muted small">${esc(m.dose)}</span></div><div class="med-toggle"><button class="tgl ${taken === true ? 'is-yes' : ''}" data-med="${m.id}" data-taken="yes">✓</button><button class="tgl ${taken === false ? 'is-no' : ''}" data-med="${m.id}" data-taken="no">✗</button></div></div>`; };
-  let medsHtml = scheduled.length ? scheduled.map(medRow).join('') : `<p class="muted small">${T.noMeds}</p>`;
-  const prnHtml = prn.length ? `<div class="subhead">${T.asNeeded}</div>${prn.map(medRow).join('')}` : '';
+  const medSec = (label, list) => list.length ? `<div class="subsec">${label}</div>${list.map(medRow).join('')}` : '';
+  const regMeds = scheduled.filter((m) => m.category !== 'supplement');
+  const suppMeds = scheduled.filter((m) => m.category === 'supplement');
+  const medsBody = (medSec(T.secRegular, regMeds) + medSec(T.secSupplements, suppMeds) + medSec(T.asNeeded, prn)) || `<p class="muted small">${T.noMeds}</p>`;
 
   const noteVal = esc(dayLog?.note?.[lang] || '');
-  const ongoing = DL.ongoingEpisodes(data);
+  // Episodes active on the selected day (so past days show what was ongoing then), not just today's ongoing.
+  const ongoing = (data.episodes || []).filter((e) => e.startDate && e.startDate <= date && (e.endDate == null || e.endDate > date));
   const epNote = (e) => esc((e.note && e.note[lang]) || '');
-  const ongoingHtml = ongoing.map((e) => `<div class="ep-ongoing-block">
-      <div class="ep-ongoing"><span>${esc(tx(e.name, lang) || EP_TYPES[lang][e.type])} <span class="pill">${EP_TYPES[lang][e.type] || e.type}</span> <span class="muted small">${e.startDate}→</span></span><button class="btn-sm" data-end-ep="${e.id}">${T.end}</button></div>
+  const ongoingHtml = ongoing.map((e) => { const live = e.endDate == null; return `<div class="ep-ongoing-block">
+      <div class="ep-ongoing"><span>${esc(tx(e.name, lang) || EP_TYPES[lang][e.type])} <span class="pill">${EP_TYPES[lang][e.type] || e.type}</span> <span class="muted small">${e.startDate}→${live ? '' : ' ' + e.endDate}</span></span>${live ? `<button class="btn-sm" data-end-ep="${e.id}">${T.end}</button>` : ''}</div>
       <textarea class="epnote" data-epnote="${e.id}" rows="1" placeholder="${T.epNotePh}">${epNote(e)}</textarea>
-    </div>`).join('');
+    </div>`; }).join('');
   const endedToday = DL.episodesEndedOn(date, data);
   const endedHtml = endedToday.map((e) => `<div class="ep-ongoing"><span class="muted">${esc(tx(e.name, lang) || EP_TYPES[lang][e.type])} <span class="pill">${EP_TYPES[lang][e.type] || e.type}</span> <span class="small">${T.endedToday} ${e.endDate}</span></span><button class="btn-sm" data-reopen-ep="${e.id}">↺ ${T.reopen}</button></div>`).join('');
   const typeOpts = Object.entries(EP_TYPES[lang]).map(([k, v]) => `<option value="${k}">${v}</option>`).join('');
@@ -973,7 +985,7 @@ function renderToday(state) {
   const savedNote = ui.savedAt ? `<div class="muted small saved-tag">✓ ${T.saved} · ${ui.savedAt}</div>` : '';
   return `<div class="ds">${head}
     ${symptomsCard}
-    <div class="card"><div class="card-h"><h2>${T.meds}</h2><button class="ic-btn" data-medhist aria-label="${lang === 'es' ? 'Historial de cumplimiento' : 'Adherence history'}">${HIST_SVG}</button></div>${medsHtml}${prnHtml}</div>
+    <div class="card"><div class="card-h"><h2>${T.meds}</h2><button class="ic-btn" data-medhist aria-label="${lang === 'es' ? 'Historial de cumplimiento' : 'Adherence history'}">${HIST_SVG}</button></div>${medsBody}</div>
     <div class="card"><div class="card-h"><h2>${T.episodes}</h2></div>${ongoing.length ? `<div class="subhead">${T.ongoing}</div>${ongoingHtml}` : ''}${endedHtml}${epForm}${allEpsBlock}</div>
     ${savedNote}
     <div class="clearday-row"><button class="linkbtn ${ui.confirmClear?'danger':''}" data-clearday>${ui.confirmClear?T.confirmClear:T.clearDay}</button></div></div>`;
@@ -998,8 +1010,9 @@ async function onClick(e, state, rerender) {
   document.querySelectorAll('.epnote').forEach((el) => DL.setEpisodeNote(el.dataset.epnote, state.lang, el.value));
   if (t.dataset.medhist != null) { ui.medHist = true; rerender(); return; }
   if (t.dataset.medback != null) { ui.medHist = false; rerender(); return; }
-  if (t.dataset.nav) { let nd = shiftDate(state.date, Number(t.dataset.nav)); if (nd > todayISO()) nd = todayISO(); state.date = nd; ui.savedAt = null; ui.confirmClear = false; rerender(); return; }
-  if (t.dataset.day) { state.date = t.dataset.day; ui.calView = 'week'; ui.savedAt = null; ui.confirmClear = false; rerender(); return; }
+  if (t.dataset.weekshift) { const tI = todayISO(); const cur = (ui.weekAnchor && ui.weekAnchor <= tI) ? ui.weekAnchor : tI; let na = shiftDate(cur, Number(t.dataset.weekshift)); if (na > tI) na = tI; ui.weekAnchor = na; state.date = na; ui.savedAt = null; ui.confirmClear = false; rerender(); return; }
+  if (t.dataset.today != null) { ui.weekAnchor = null; state.date = todayISO(); ui.savedAt = null; ui.confirmClear = false; rerender(); return; }
+  if (t.dataset.day) { const dd = t.dataset.day; if (ui.calView === 'month') ui.weekAnchor = (dd >= todayISO()) ? null : dd; state.date = dd; ui.calView = 'week'; ui.savedAt = null; ui.confirmClear = false; rerender(); return; }
   if (t.dataset.calview) { ui.calView = t.dataset.calview; if (ui.calView === 'month') ui.calMonth = state.date.slice(0, 7); rerender(); return; }
   if (t.dataset.calnav) { const base = ui.calMonth || state.date.slice(0, 7); const [yy, mm] = base.split('-').map(Number); const nd = new Date(Date.UTC(yy, mm - 1 + Number(t.dataset.calnav), 1)); ui.calMonth = nd.toISOString().slice(0, 7); rerender(); return; }
   if (t.dataset.reopen) { ui.scaleOpen.add(t.dataset.reopen); rerender(); return; }
@@ -1296,13 +1309,13 @@ const TSS = {
   en: { worse: 'worse', better: 'better', steady: 'steady', notEnough: 'Not enough history yet.', noData: 'No data yet.',
         period: { '30d': '30 days', '3m': '3 months', '1y': 'year' }, was: 'was', vsPrev: 'vs previous', allTime: 'all time', past: 'past',
         burdenSub: 'average burden', sevSub: 'average severity',
-        mostProm: 'Most prominent', daily: 'Daily score by severity', gran: { day: 'one bar per day', week: 'one bar per week (avg/day)', month: 'one bar per month (avg/day)' }, sevWords: ['', 'mild', 'distracting', 'adapt', 'halt'],
+        mostProm: 'Most prominent', daily: 'Daily score by severity', gran: { day: 'one bar per day', week: 'one bar per week (avg/day)', month: 'one bar per month (avg/day)' }, sevWords: ['', 'noticeable', 'distracting', 'interferes', 'prevents'],
         labs: 'Labs', episodes: 'Episodes/Month',
         pos: 'Positive', neg: 'Negative', progression: 'Progression' },
   es: { worse: 'peor', better: 'mejor', steady: 'estable', notEnough: 'Historial insuficiente.', noData: 'Sin datos aún.',
         period: { '30d': '30 días', '3m': '3 meses', '1y': 'año' }, was: 'antes', vsPrev: 'vs', allTime: 'todo el tiempo', past: 'últimos',
         burdenSub: 'carga media', sevSub: 'gravedad media',
-        mostProm: 'Más prominente', daily: 'Puntuación diaria por gravedad', gran: { day: 'una barra por día', week: 'una barra por semana (media/día)', month: 'una barra por mes (media/día)' }, sevWords: ['', 'leve', 'molesto', 'adaptar', 'frenar'],
+        mostProm: 'Más prominente', daily: 'Puntuación diaria por gravedad', gran: { day: 'una barra por día', week: 'una barra por semana (media/día)', month: 'una barra por mes (media/día)' }, sevWords: ['', 'leve', 'molesto', 'interfiere', 'impide'],
         labs: 'Analíticas', episodes: 'Episodios/Mes',
         pos: 'Positivo', neg: 'Negativo', progression: 'Progresión' },
 };
