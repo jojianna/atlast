@@ -970,7 +970,6 @@ function renderToday(state) {
   const therMeds = scheduled.filter((m) => m.category === 'therapy');
   const medsBody = (medSec(T.secRegular, regMeds) + medSec(T.secSupplements, suppMeds) + medSec(T.secTherapies, therMeds) + medSec(T.asNeeded, prn)) || `<p class="muted small">${T.noMeds}</p>`;
 
-  const noteVal = esc(dayLog?.note?.[lang] || '');
   // Episodes active on the selected day (so past days show what was ongoing then), not just today's ongoing.
   const ongoing = (data.episodes || []).filter((e) => e.startDate && e.startDate <= date && (e.endDate == null || e.endDate > date));
   const epNote = (e) => esc((e.note && e.note[lang]) || '');
@@ -1007,8 +1006,6 @@ function save() {
 async function onClick(e, state, rerender) {
   const t = e.target.closest('button, .sym-head.expandable');
   if (!t) return;
-  const nb = document.getElementById('noteBox');
-  if (nb) DL.setNote(state.date, state.lang, nb.value);
   document.querySelectorAll('.rownote').forEach((el) => DL.setSymptomNote(state.date, el.dataset.sym, el.dataset.loc || null, el.value));
   document.querySelectorAll('.epnote').forEach((el) => DL.setEpisodeNote(el.dataset.epnote, state.lang, el.value));
   if (t.dataset.medhist != null) { ui.medHist = true; rerender(); return; }
@@ -1035,8 +1032,7 @@ async function onClick(e, state, rerender) {
 async function onChange(e, state, rerender) { if (e.target.id === 'dateInput') { state.date = e.target.value; ui.savedAt = null; rerender(); } }
 let _noteTimer = null;
 function onInput(e, state) {
-  if (e.target.id === 'noteBox') { DL.setNote(state.date, state.lang, e.target.value); }
-  else if (e.target.classList.contains('rownote')) { DL.setSymptomNote(state.date, e.target.dataset.sym, e.target.dataset.loc || null, e.target.value); }
+  if (e.target.classList.contains('rownote')) { DL.setSymptomNote(state.date, e.target.dataset.sym, e.target.dataset.loc || null, e.target.value); }
   else if (e.target.classList.contains('epnote')) { DL.setEpisodeNote(e.target.dataset.epnote, state.lang, e.target.value); }
   else { return; }
   clearTimeout(_noteTimer); _noteTimer = setTimeout(() => { DL.persist(); }, 600);
@@ -1616,12 +1612,12 @@ const SPECS = {
     { key: 'notes', type: 'i18n', label: 'Notes', textarea: true },
   ], defaults: { name: { en: '', es: '' }, dose: '', freqLabel: { en: '', es: '' }, cadence: 'weekly', scheduledDays: ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'], timeOfDay: 'morning', track: true, category: 'prescription', purpose: { en: '', es: '' }, conditionIds: [], status: 'active', statusNote: { en: '', es: '' }, startDate: null, stopDate: null, lastDoseChange: null, doseHistory: [], notes: { en: '', es: '' } } },
   episodes: { title: 'Episode', fields: [
-    { key: 'name', type: 'i18n', label: 'Name' },
+    { key: 'name', type: 'i18n', label: 'Name', enOnly: true },
     { key: 'type', type: 'select', label: 'Type', options: ['cold_flu', 'infection', 'gi', 'flare', 'other'] },
     { key: 'startDate', type: 'date', label: 'Start' },
     { key: 'endDate', type: 'date', label: 'End (blank = ongoing)' },
     { key: 'showOnTimeline', type: 'checkbox', label: 'Show on timeline' },
-    { key: 'note', type: 'i18n', label: 'Note', textarea: true },
+    { key: 'note', type: 'i18n', label: 'Note', textarea: true, enOnly: true },
   ], defaults: { name: { en: '', es: '' }, type: 'cold_flu', startDate: null, endDate: null, showOnTimeline: false, note: { en: '', es: '' } } },
   labs: { title: 'Lab marker', fields: [
     { key: 'marker', type: 'i18n', label: 'Marker' },
