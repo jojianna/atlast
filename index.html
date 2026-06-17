@@ -1638,7 +1638,7 @@ const SPECS = {
     { key: 'specialismId', type: 'select', label: 'Specialism', source: 'specialisms' },
     { key: 'conditionIds', type: 'multiselect', label: 'Condition(s)', source: 'conditions' },
     { key: 'status', type: 'select', label: 'Status', options: ['open', 'answered'] },
-    { key: 'answerNote', type: 'i18n', label: 'Answer note', textarea: true },
+    { key: 'answerNote', type: 'i18n', label: 'Answer note', textarea: true, enOnly: true },
   ], defaults: { text: { en: '', es: '' }, specialismId: '', conditionIds: [], status: 'open', createdDate: new Date().toISOString().slice(0, 10), answerNote: { en: '', es: '' } } },
   milestones: { title: 'Milestone', fields: [
     { key: 'date', type: 'date', label: 'Date' },
@@ -1650,7 +1650,7 @@ const SPECS = {
     { key: 'date', type: 'date', label: 'Date' },
     { key: 'time', type: 'text', label: 'Time (24h CET, e.g. 09:45)' },
     { key: 'specialismId', type: 'select', label: 'Specialism', source: 'specialisms' },
-    { key: 'note', type: 'i18n', label: 'Note', textarea: true },
+    { key: 'note', type: 'i18n', label: 'Note', textarea: true, enOnly: true },
   ], defaults: { date: null, time: null, specialismId: '', note: { en: '', es: '' } } },
   specialisms: { title: 'Specialism', fields: [
     { key: 'specialism', type: 'text', label: 'Specialism (English)' },
