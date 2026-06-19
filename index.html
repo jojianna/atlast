@@ -148,6 +148,7 @@ ul.tight { margin: 4px 0 0; padding-left: 18px; } ul.tight li { padding: 1px 0; 
 .notedot { width:6px; height:6px; border-radius:50%; background:var(--teal); display:inline-block; }
 .loc-list { border-left:2px solid var(--chip); padding-left:10px; margin:2px 0 2px 4px; }
 .scale-foot { text-align:center; border-top:1px solid var(--line); padding-top:8px; margin-top:6px; font-size:11px; }
+.scale-head { border-bottom:1px solid var(--line); padding-bottom:8px; margin-bottom:4px; font-size:11px; line-height:1.5; }
 .med { padding:10px 0; }
 .linkbtn { background:none; border:0; color:var(--teal); font:inherit; font-size:13px; cursor:pointer; text-decoration:underline; }
 .linkbtn.danger { color:var(--err); }
@@ -210,7 +211,7 @@ ul.tight { margin: 4px 0 0; padding-left: 18px; } ul.tight li { padding: 1px 0; 
 .ds .sevbar .fill{height:100%;border-radius:999px;}
 .ds .sevbar .sevval{font-weight:700;font-size:13px;min-width:22px;text-align:right;font-variant-numeric:tabular-nums;}
 .ds .fill0{background:#94a3b8;}.ds .fill1{background:#fde047;}.ds .fill2{background:#f59e0b;}.ds .fill3{background:#f97316;}.ds .fill4{background:#b91c1c;}
-.ds .wkstrip{display:flex;align-items:center;gap:6px;margin-bottom:6px;}
+.ds .wkstrip{display:flex;align-items:center;gap:6px;position:sticky;top:var(--topbar-h,56px);z-index:9;background:var(--bg);padding:8px 0 6px;border-bottom:1px solid var(--line);}
 .ds .wknav{width:28px;height:34px;border:0;background:transparent;color:var(--muted);font-size:20px;cursor:pointer;flex:0 0 auto;touch-action:manipulation;}
 .ds .wknav:disabled{opacity:.3;}
 .ds .wkdays{display:flex;gap:4px;flex:1;}
@@ -321,9 +322,24 @@ ul.tight { margin: 4px 0 0; padding-left: 18px; } ul.tight li { padding: 1px 0; 
 .ds .vhero .vlbl{font-size:11px;text-transform:uppercase;letter-spacing:.08em;opacity:.85;font-weight:700;}
 .ds .vhero .vwhen{font-size:22px;font-weight:800;margin:3px 0 1px;}
 .ds .vhero .vwho{font-size:14px;opacity:.95;}
-.ds .vhero .vcd{display:inline-block;margin-top:9px;background:rgba(255,255,255,.2);border-radius:999px;padding:3px 11px;font-size:11px;font-weight:700;}
-.ds .qgroup{font-size:13px;font-weight:800;color:var(--teal-d);margin:14px 0 2px;}
+.ds .vhero .vcd{display:inline-block;background:rgba(255,255,255,.2);border-radius:999px;padding:3px 11px;font-size:11px;font-weight:700;}
+.ds .vhero .vhero-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:11px;}
+.ds .vhero .vdone{background:#fff;color:var(--teal-d);border:0;border-radius:999px;padding:6px 14px;font-size:13px;font-weight:700;cursor:pointer;}
+.pv-checks{display:flex;flex-direction:column;gap:2px;}
+.pv-check{display:flex;gap:9px;align-items:flex-start;padding:7px 0;border-top:1px solid var(--line);font-size:14px;line-height:1.4;cursor:pointer;}
+.pv-check:first-child{border-top:0;}
+.pv-check input{margin-top:2px;flex:none;}
+.ds .qgroup{font-size:13px;font-weight:800;color:var(--teal-d);margin:14px 0 2px;display:flex;align-items:center;justify-content:space-between;gap:8px;}
 .ds .qgroup:first-child{margin-top:0;}
+.ds .qgroup .hgrp{display:flex;gap:4px;}
+.ds .q-answered{margin:6px 0 2px;}
+.ds .q-answered summary{list-style:none;cursor:pointer;font-size:13px;color:var(--muted);padding:6px 0;}
+.ds .q-answered summary::-webkit-details-marker{display:none;}
+.ds .q-answered .ro-caret{display:inline-block;transition:transform .15s;font-size:10px;}
+.ds .q-answered[open] .ro-caret{transform:rotate(90deg);}
+.ds .qrow.answered{align-items:flex-start;}
+.ds .qrow.answered .qtext{color:var(--muted);}
+.ds .qanote{margin-top:3px;color:var(--muted);font-style:italic;}
 .ds .qrow{display:flex;gap:11px;align-items:flex-start;padding:11px 0;border-top:1px solid var(--line);}
 .ds .qrow:first-of-type{border-top:0;}
 .ds .qtick{flex:none;width:24px;height:24px;border-radius:50%;border:2px solid var(--line);background:#fff;cursor:pointer;margin-top:1px;}
@@ -355,8 +371,8 @@ ul.tight { margin: 4px 0 0; padding-left: 18px; } ul.tight li { padding: 1px 0; 
     <button class="tab is-active" data-tab="today"><span class="tab-ico" aria-hidden="true">✓</span><span class="tab-label">Log</span></button>
     <button class="tab" data-tab="overview"><span class="tab-ico" aria-hidden="true">📋</span><span class="tab-label">Summary</span></button>
     <button class="tab" data-tab="records"><span class="tab-ico" aria-hidden="true">📈</span><span class="tab-label">Trends</span></button>
-    <button class="tab" data-tab="timeline"><span class="tab-ico" aria-hidden="true">🕓</span><span class="tab-label">Timeline</span></button>
     <button class="tab" data-tab="next"><span class="tab-ico" aria-hidden="true">🗓</span><span class="tab-label">Visits</span></button>
+    <button class="tab" data-tab="timeline"><span class="tab-ico" aria-hidden="true">🕓</span><span class="tab-label">Timeline</span></button>
   </nav>
   <script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@3/lib/msal-browser.min.js"></script>
   <script>
@@ -946,10 +962,9 @@ function renderToday(state) {
     const locsArr = DL.activeLocations(s);
     const locs = locsArr.map((l) => symRow(state, s.id, l.id, tx(l.name, lang))).join('');
     return `<div class="symrow located-head sym-head expandable" data-expand="${s.id}"><span class="symrow-name as-text">${esc(tx(s.name, lang))} <span class="muted small loc-count">${open ? '▾' : '▸'}</span></span>${chip}</div>
-    <div class="loc-list" ${open ? '' : 'hidden'}>${locs}</div>`;
+    <div class="loc-list" ${open ? '' : 'hidden'}>${locs}<button class="linkbtn" data-edit="symptomTypes:${s.id}" style="margin:6px 0 2px 4px">+ ${lang === 'es' ? 'Añadir zona' : 'Add site'}</button></div>`;
   }).join('');
   const complete = isComplete(date);
-  const completeBtn = complete ? `<span class="prog-chip done">✓ ${lang === 'en' ? 'Complete' : 'Completado'}</span>` : `<button class="btn-mark" id="markZero">${lang === 'en' ? 'Mark complete' : 'Marcar completo'}</button>`;
   const symEditing = ui.editPick === 'symptomTypes';
   const symPick = (data.symptomTypes || []).map((s) => `<button class="pickrow" data-edit="symptomTypes:${s.id}">${esc(tx(s.name, lang))}${s.archived ? ` <span class="muted small">(${lang === 'en' ? 'archived' : 'archivado'})</span>` : ''}</button>`).join('');
   const symEditBtns = `<button class="addmini" data-editpick="symptomTypes" aria-label="${lang === 'es' ? 'Editar' : 'Edit'}">${symEditing ? '✕' : '✎'}</button><button class="addmini" data-add="symptomTypes" aria-label="${lang === 'en' ? 'Add symptom' : 'Añadir síntoma'}">＋</button>`;
@@ -957,10 +972,15 @@ function renderToday(state) {
   const bBand = burdenBandIdx(bd);
   const bWords = lang === 'es' ? ['sin síntomas', 'leve', 'típico', 'fuerte', 'muy fuerte'] : ['clear', 'light', 'typical', 'heavy', 'very heavy'];
   const bCols = ['#94a3b8', '#fde047', '#f59e0b', '#f97316', '#b91c1c'];
-  const burdenRow = bd == null ? '' : `<div class="burdenrow"><span>${lang === 'es' ? 'Carga de hoy' : "Today's burden"}</span><span class="bval"><span class="bdot" style="background:${bCols[bBand]}"></span>${bd} · ${bWords[bBand]}</span></div>`;
+  const bTextCols = ['#fff', '#422006', '#422006', '#fff', '#fff'];
+  const burdenChip = bd == null ? '' : `<span class="prog-chip burden-chip" style="background:${bCols[bBand]};color:${bTextCols[bBand]}">${bd} · ${bWords[bBand]}</span>`;
+  const doneChip = `<span class="prog-chip done">✓ ${lang === 'en' ? 'Complete' : 'Completado'}</span>`;
+  const markBtn = `<button class="btn-mark" id="markZero">${lang === 'en' ? 'Mark complete' : 'Marcar completo'}</button>`;
+  const headStatus = complete ? (burdenChip || doneChip) : markBtn;
+  const scaleTop = `<div class="scale-head muted">${T.scaleHint}</div>`;
   const symptomsCard = symEditing
     ? `<div class="card"><div class="sec-head"><h2>${T.symptoms}</h2><span class="hgrp">${symEditBtns}</span></div><div class="muted small" style="margin:2px 0 6px">${lang === 'es' ? 'Elige cuál editar:' : 'Choose which to edit:'}</div>${symPick}</div>`
-    : `<div class="card"><div class="sec-head"><h2>${T.symptoms}</h2><span class="hgrp">${completeBtn}${symEditBtns}</span></div>${symptomCards}${burdenRow}<div class="scale-foot muted">${T.scaleHint}</div></div>`;
+    : `<div class="card"><div class="sec-head"><h2>${T.symptoms}</h2><span class="hgrp">${headStatus}${symEditBtns}</span></div>${scaleTop}${symptomCards}</div>`;
 
   const { scheduled, prn } = DL.medsForDate(date, data);
   const medRow = (m) => { const taken = DL.getMedTaken(date, m.id, data); return `<div class="med"><div class="med-name">${esc(tx(m.name, lang))} <span class="muted small">${esc(m.dose)}</span></div><div class="med-toggle"><button class="tgl ${taken === true ? 'is-yes' : ''}" data-med="${m.id}" data-taken="yes">✓</button><button class="tgl ${taken === false ? 'is-no' : ''}" data-med="${m.id}" data-taken="no">✗</button></div></div>`; };
@@ -1085,7 +1105,7 @@ const { tx, specialistLabel } = DL;
 
 
 
-const ui = { specialistId: null, answering: null, editPick: null };
+const ui = { specialistId: null, answering: null, editPick: null, postVisit: null };
 
 const STR = {
   en: { dx: 'Diagnosed', conditions: 'Active conditions', activeManaged: 'Conditions', since: 'Since', currentMeds: 'Current medications',
@@ -1200,8 +1220,8 @@ function renderQuestions(state) {
   const spName = (id) => { const s = specs.find((x) => x.id === id); return s ? specialistLabel(s, lang) : ''; };
   const spDr = (id) => { const s = specs.find((x) => x.id === id); return (s && s.doctor) ? s.doctor : ''; };
   const appts = (data.appointments || []);
-  const upcoming = appts.filter((a) => a.date >= todayStr).sort((a, b) => (a.date < b.date ? -1 : 1));
-  const past = appts.filter((a) => a.date < todayStr).sort((a, b) => (a.date < b.date ? 1 : -1));
+  const upcoming = appts.filter((a) => a.date >= todayStr && !a.attended).sort((a, b) => (a.date < b.date ? -1 : 1));
+  const past = appts.filter((a) => a.date < todayStr || a.attended).sort((a, b) => (a.date < b.date ? 1 : -1));
   const next = upcoming[0] || null;
   const L = (en, es) => lang === 'en' ? en : es;
   // --- Next-appointment hero ---
@@ -1209,43 +1229,101 @@ function renderQuestions(state) {
   if (next) {
     const days = Math.round((new Date(next.date + 'T00:00:00') - new Date(todayStr + 'T00:00:00')) / 86400000);
     const cd = days <= 0 ? L('today', 'hoy') : days === 1 ? L('tomorrow', 'mañana') : L(`in ${days} days`, `en ${days} días`);
-    hero = `<div class="vhero"><div class="vlbl">${L('Next appointment', 'Próxima cita')}</div><div class="vwhen">${fmtDate(next.date, lang)}${next.time ? ` · ${esc(next.time)}` : ''}</div><div class="vwho">${esc(spName(next.specialismId))}${spDr(next.specialismId) ? ` · ${esc(spDr(next.specialismId))}` : ''}</div><span class="vcd">${cd}</span></div>`;
+    hero = `<div class="vhero"><div class="vlbl">${L('Next appointment', 'Próxima cita')}</div><div class="vwhen">${fmtDate(next.date, lang)}${next.time ? ` · ${esc(next.time)}` : ''}</div><div class="vwho">${esc(spName(next.specialismId))}${spDr(next.specialismId) ? ` · ${esc(spDr(next.specialismId))}` : ''}</div><div class="vhero-foot"><span class="vcd">${cd}</span><button class="vdone" data-pvopen="${next.id}">✓ ${L('Mark done', 'Marcar hecha')}</button></div></div>`;
   }
   // --- Upcoming (rest after next) ---
   const editHint = lang === 'es' ? 'Elige cuál editar:' : 'Choose which to edit:';
   const pickList = (items, coll, nameFn) => `<div class="muted small" style="margin:2px 0 6px">${editHint}</div>` + (items.length ? items.map((it) => `<button class="pickrow" data-edit="${coll}:${it.id}">${esc(nameFn(it))}</button>`).join('') : `<p class="muted small">${T.none}</p>`);
   const editBtn = (coll) => `<button class="addmini" data-editpick="${coll}" aria-label="${lang === 'es' ? 'Editar' : 'Edit'}">${ui.editPick === coll ? '✕' : '✎'}</button>`;
-  const apptRow = (a) => `<div class="drow"><div><div class="dname">${fmtDate(a.date, lang)}${a.time ? ` · ${esc(a.time)}` : ''}</div><div class="dmeta">${esc(spName(a.specialismId))}${tx(a.note, lang) ? ` — ${esc(tx(a.note, lang))}` : ''}</div></div></div>`;
+  const apptRow = (a, showNote) => `<div class="drow"><div><div class="dname">${fmtDate(a.date, lang)}${a.time ? ` · ${esc(a.time)}` : ''}</div><div class="dmeta">${esc(spName(a.specialismId))}${showNote && tx(a.note, lang) ? ` — ${esc(tx(a.note, lang))}` : ''}</div></div></div>`;
   const apptName = (a) => `${fmtDate(a.date, lang)}${a.time ? ' · ' + a.time : ''} — ${spName(a.specialismId)}`;
   const restUp = upcoming.slice(1);
-  const upList = restUp.length ? restUp.map(apptRow).join('') : `<p class="muted small">${L('Nothing else scheduled', 'Nada más programado')}</p>`;
+  const upList = restUp.length ? restUp.map((a) => apptRow(a, false)).join('') : `<p class="muted small">${L('Nothing else scheduled', 'Nada más programado')}</p>`;
   const apptCard = `<div class="card"><div class="card-h"><h2>${L('Upcoming', 'Próximas')}</h2><span class="hgrp">${editBtn('appointments')}<button class="addmini" data-add="appointments" aria-label="Add appointment">＋</button></span></div>${ui.editPick === 'appointments' ? pickList(upcoming.concat(past), 'appointments', apptName) : upList}</div>`;
   // --- Questions: grouped by specialist, next-visit specialist first ---
   const openAll = (data.questions || []).filter((q) => q.status === 'open');
+  const answeredAll = (data.questions || []).filter((q) => q.status === 'answered');
+  const qName = (q) => esc(tx(q.text, lang));
+  const aNote = (q) => (q.answerNote && (q.answerNote[lang] || q.answerNote.en)) || '';
   const qRow = (q) => {
     if (ui.answering === q.id) {
       const note = (q.answerNote && q.answerNote[lang]) || '';
-      return `<div class="qrow answering"><div class="qtext">${esc(tx(q.text, lang))}</div><textarea class="q-note" data-qnote="${q.id}" rows="2" placeholder="${T.answerNotePh}">${esc(note)}</textarea><button class="btn q-continue" data-continue="${q.id}">${T.cont}</button></div>`;
+      return `<div class="qrow answering"><div class="qtext">${qName(q)}</div><textarea class="q-note" data-qnote="${q.id}" rows="2" placeholder="${T.answerNotePh}">${esc(note)}</textarea><button class="btn q-continue" data-continue="${q.id}">${T.cont}</button></div>`;
     }
-    return `<div class="qrow"><button class="qtick" data-answer="${q.id}" aria-label="${T.markAnswered}"></button><div class="qtext">${esc(tx(q.text, lang))}</div><button class="ed-btn2" data-edit="questions:${q.id}" aria-label="Edit">✎</button></div>`;
+    return `<div class="qrow"><button class="qtick" data-answer="${q.id}" aria-label="${T.markAnswered}"></button><div class="qtext">${qName(q)}</div><button class="ed-btn2" data-edit="questions:${q.id}" aria-label="Edit">✎</button></div>`;
   };
+  const answeredFold = (ans) => `<details class="q-answered"><summary><span class="ro-caret">▶</span> ${L('Answered', 'Respondidas')} (${ans.length})</summary><div class="q-answered-body">${ans.map((q) => `<div class="qrow answered"><div class="qtext">${qName(q)}${aNote(q) ? `<div class="qanote muted small">${esc(aNote(q))}</div>` : ''}</div><button class="ed-btn2" data-edit="questions:${q.id}" aria-label="Edit">✎</button></div>`).join('')}</div></details>`;
+  const grpHead = (id, isNext) => { const editing = ui.editPick === 'q:' + id; return `<div class="qgroup"><span class="qgroup-t">${esc(spName(id))}${isNext ? ` · ${L('next visit', 'próxima visita')}` : ''}</span><span class="hgrp"><button class="addmini" data-editpick="q:${id}" aria-label="${lang === 'es' ? 'Editar' : 'Edit'}">${editing ? '✕' : '✎'}</button><button class="addmini" data-add="questions" data-prefill='${esc(JSON.stringify({ specialismId: id }))}' aria-label="${lang === 'es' ? 'Añadir pregunta' : 'Add question'}">＋</button></span></div>`; };
   const order = next ? [next.specialismId, ...specs.map((s) => s.id).filter((id) => id !== next.specialismId)] : specs.map((s) => s.id);
   let groups = '';
-  order.forEach((id) => { const qs = openAll.filter((q) => q.specialismId === id); if (!qs.length) return; const isNext = next && id === next.specialismId; groups += `<div class="qgroup">${esc(spName(id))}${isNext ? ` · ${L('next visit', 'próxima visita')}` : ''}</div>${qs.map(qRow).join('')}`; });
+  order.forEach((id) => {
+    const qs = openAll.filter((q) => q.specialismId === id);
+    const ans = answeredAll.filter((q) => q.specialismId === id);
+    if (!qs.length && !ans.length) return;
+    const isNext = next && id === next.specialismId;
+    groups += grpHead(id, isNext);
+    if (ui.editPick === 'q:' + id) {
+      const all = qs.concat(ans);
+      groups += `<div class="muted small" style="margin:2px 0 6px">${lang === 'es' ? 'Elige cuál editar:' : 'Choose which to edit:'}</div>` + all.map((q) => `<button class="pickrow" data-edit="questions:${q.id}">${qName(q)}${q.status === 'answered' ? ` <span class="muted small">(${L('answered', 'respondida')})</span>` : ''}</button>`).join('');
+    } else {
+      groups += qs.map(qRow).join('');
+      if (ans.length) groups += answeredFold(ans);
+    }
+  });
   const orphans = openAll.filter((q) => !specs.some((s) => s.id === q.specialismId));
-  if (orphans.length) groups += `<div class="qgroup">${T.other}</div>${orphans.map(qRow).join('')}`;
-  const qCard = `<div class="card"><div class="card-h"><div class="hgrp"><h2>${L('Questions to ask', 'Preguntas para preguntar')}</h2><span class="count">${openAll.length}</span></div><button class="addmini" data-add="questions" aria-label="Add question">＋</button></div>${groups || `<p class="muted small">${T.noQuestionsAll}</p>`}</div>`;
+  if (orphans.length) groups += `<div class="qgroup"><span class="qgroup-t">${T.other}</span></div>${orphans.map(qRow).join('')}`;
+  const qCard = `<div class="card"><div class="card-h"><h2>${L('Questions to ask', 'Preguntas para preguntar')}</h2><button class="addmini" data-add="questions" aria-label="Add question">＋</button></div>${groups || `<p class="muted small">${T.noQuestionsAll}</p>`}</div>`;
   // --- Past appointments (collapsed) ---
-  const pastCard = past.length ? `<div class="card"><details class="ro-fold"><summary><h2>${T.pastAppts}</h2><span class="hint">${L('tap to view', 'toca para ver')}</span><span class="ro-caret">▶</span></summary><div class="ro-body" style="margin-top:8px">${past.map(apptRow).join('')}</div></details></div>` : '';
+  const pastCard = past.length ? `<div class="card"><details class="ro-fold"><summary><h2>${T.pastAppts}</h2><span class="hint">${L('tap to view', 'toca para ver')}</span><span class="ro-caret">▶</span></summary><div class="ro-body" style="margin-top:8px">${past.map((a) => apptRow(a, true)).join('')}</div></details></div>` : '';
   // --- Care team (collapsed; editing folded in here) ---
   const ct = specs.map((s) => `<div class="drow"><div><div class="dname">${esc(specialistLabel(s, lang))}</div>${s.doctor ? `<div class="dmeta">${esc(s.doctor)}</div>` : ''}</div></div>`).join('');
   const careCard = `<div class="card"><div class="card-h"><h2>${L('Care team', 'Equipo médico')}</h2><span class="hgrp">${editBtn('specialisms')}<button class="addmini" data-add="specialisms" aria-label="Add specialist">＋</button></span></div>${ui.editPick === 'specialisms' ? pickList(specs, 'specialisms', (s) => specialistLabel(s, lang)) : `<details class="ro-fold"><summary><span class="hint">${L('tap to view', 'toca para ver')}</span><span class="ro-caret">▶</span></summary><div class="ro-body" style="margin-top:8px">${ct}</div></details>`}</div>`;
-  return `<div class="ds">${hero}${apptCard}${qCard}${pastCard}${careCard}</div>`;
+  // --- Post-visit sheet (Mark done flow) ---
+  let pvModal = '';
+  if (ui.postVisit) {
+    const a = appts.find((x) => x.id === ui.postVisit);
+    if (a) {
+      const sp = a.specialismId;
+      const noteEn = (a.note && a.note.en) || '';
+      const openQs = (data.questions || []).filter((q) => q.status === 'open' && q.specialismId === sp);
+      const qChecks = openQs.length ? openQs.map((q) => `<label class="pv-check"><input type="checkbox" data-pvq="${q.id}"><span>${qName(q)}</span></label>`).join('') : `<p class="muted small">${L('No open questions for this specialist.', 'Sin preguntas abiertas para este especialista.')}</p>`;
+      pvModal = `<div class="modal-bg" data-pvcancelbg><div class="modal" role="dialog">
+        <h2 style="margin:0 0 2px">${esc(spName(sp))} — ${fmtDate(a.date, lang)}</h2>
+        ${spDr(sp) ? `<div class="muted small" style="margin-bottom:12px">${esc(spDr(sp))}</div>` : '<div style="height:8px"></div>'}
+        <div class="f-label">${L('What came out of it?', '¿Qué resultó de la cita?')}</div>
+        <textarea id="pvNote" class="q-note" rows="3" placeholder="${L('Decisions, results, next steps…', 'Decisiones, resultados, próximos pasos…')}">${esc(noteEn)}</textarea>
+        <div class="f-label" style="margin-top:14px">${L('Questions you raised — tick what you covered', 'Preguntas planteadas — marca las que cubriste')}</div>
+        <div class="pv-checks">${qChecks}</div>
+        <div class="f-label" style="margin-top:14px">${L('New follow-ups (one per line)', 'Nuevos seguimientos (uno por línea)')}</div>
+        <textarea id="pvFollow" class="q-note" rows="2" placeholder="${L('e.g. Chase biopsy results if none by 10 Jul', 'p. ej. reclamar biopsia si no llega para 10 jul')}"></textarea>
+        <div class="form-actions" style="margin-top:16px"><span class="spacer"></span><button class="btn ghost" data-pvcancel>${L('Cancel', 'Cancelar')}</button><button class="btn" data-pvsave="${a.id}">${L('Save & archive visit', 'Guardar y archivar')}</button></div>
+      </div></div>`;
+    }
+  }
+  return `<div class="ds">${hero}${apptCard}${qCard}${pastCard}${careCard}</div>${pvModal}`;
 }
 
 async function onClick(e, state, rerender) {
+  const bg = e.target.closest('[data-pvcancelbg]');
+  if (bg && e.target === bg) { ui.postVisit = null; rerender(); return; }
   const t = e.target.closest('button');
   if (!t) return;
+  if (t.dataset.pvopen != null) { ui.postVisit = t.dataset.pvopen; rerender(); return; }
+  if (t.dataset.pvcancel != null) { ui.postVisit = null; rerender(); return; }
+  if (t.dataset.pvsave != null) {
+    const a = DL.getRecord('appointments', t.dataset.pvsave);
+    if (a) {
+      const todayStr = new Date().toLocaleDateString('en-CA');
+      const noteEl = document.getElementById('pvNote');
+      if (noteEl) { a.note = a.note || { en: '', es: '' }; a.note.en = noteEl.value; }
+      document.querySelectorAll('[data-pvq]:checked').forEach((cb) => DL.markQuestionAnswered(cb.dataset.pvq));
+      const followEl = document.getElementById('pvFollow');
+      if (followEl) followEl.value.split('\n').map((s) => s.trim()).filter(Boolean).forEach((line) => DL.upsert('questions', { text: { en: line, es: '' }, specialismId: a.specialismId, conditionIds: [], status: 'open', createdDate: todayStr, answerNote: { en: '', es: '' } }));
+      a.attended = true; a.attendedDate = todayStr;
+      await DL.persist();
+    }
+    ui.postVisit = null; rerender(); return;
+  }
   if (t.dataset.editpick != null) { ui.editPick = ui.editPick === t.dataset.editpick ? null : t.dataset.editpick; rerender(); return; }
   if (t.dataset.answer) { ui.answering = (ui.answering === t.dataset.answer) ? null : t.dataset.answer; rerender(); return; }
   if (t.dataset.continue) { const qid = t.dataset.continue; const ta = document.querySelector('.q-note[data-qnote="' + qid + '"]'); const rec = DL.getRecord('questions', qid); if (rec && ta) { rec.answerNote = rec.answerNote || { en: '', es: '' }; rec.answerNote[state.lang] = ta.value; } DL.markQuestionAnswered(qid); ui.answering = null; await DL.persist(); rerender(); return; }
@@ -1631,7 +1709,7 @@ const SPECS = {
   ], defaults: { marker: { en: '', es: '' }, unit: '', group: '', displayMode: 'raw', posNeg: false, referenceRange: null, results: [] } },
   questions: { title: 'Question', fields: [
     { key: 'text', type: 'i18n', label: 'Question' },
-    { key: 'specialismId', type: 'select', label: 'Specialism', source: 'specialisms' },
+    { key: 'specialismId', type: 'select', label: 'Specialism', source: 'specialisms', required: true },
     { key: 'conditionIds', type: 'multiselect', label: 'Condition(s)', source: 'conditions' },
     { key: 'status', type: 'select', label: 'Status', options: ['open', 'answered'] },
     { key: 'answerNote', type: 'i18n', label: 'Answer note', textarea: true, enOnly: true },
@@ -1662,17 +1740,17 @@ const SPECS = {
   ], defaults: { name: { en: '', es: '' }, trackBy: 'single', archived: false, locations: [] } },
 };
 
-let fs = null, fcol = null, fmode = null, fconfirm = false;
+let fs = null, fcol = null, fmode = null, fconfirm = false, ferr = '';
 function isOpen() { return fcol != null; }
 function open(collection, id, prefill) {
-  fcol = collection; fconfirm = false;
+  fcol = collection; fconfirm = false; ferr = '';
   const spec = SPECS[collection];
   fs = id ? JSON.parse(JSON.stringify(DL.getRecord(collection, id) || {})) : JSON.parse(JSON.stringify(spec.defaults || {}));
   fmode = id ? 'edit' : 'add';
   if (!id && prefill) Object.assign(fs, prefill);
   if (collection === 'medications') fs.cadence = fs.everyNDays != null ? 'interval' : (fs.scheduledDays === 'prn' ? 'prn' : 'weekly');
 }
-function close() { fcol = null; fs = null; fmode = null; fconfirm = false; }
+function close() { fcol = null; fs = null; fmode = null; fconfirm = false; ferr = ''; }
 
 function gv(o, k) { return k.split('.').reduce((a, p) => (a == null ? a : a[p]), o); }
 function sv(o, k, v) { const ps = k.split('.'); let t = o; for (let i = 0; i < ps.length - 1; i++) { t[ps[i]] = t[ps[i]] || {}; t = t[ps[i]]; } t[ps[ps.length - 1]] = v; }
@@ -1693,7 +1771,7 @@ function field(f) {
   if (f.type === 'checkbox') return `<div class="f f-row"><label><input type="checkbox" data-fkey="${f.key}" data-bool ${gv(fs, f.key) ? 'checked' : ''}> ${f.label}</label></div>`;
   if (f.type === 'i18n') { const v = gv(fs, f.key) || { en: '', es: '' }; const mk = (lang) => f.textarea ? `<textarea data-fkey="${f.key}" data-lang="${lang}" rows="2">${esc(v[lang])}</textarea>` : `<input type="text" data-fkey="${f.key}" data-lang="${lang}" value="${esc(v[lang])}">`; if (f.enOnly) return `<div class="f">${L}${mk('en')}</div>`; return `<div class="f">${L}<div class="f-i18n"><span>EN</span>${mk('en')}<span>ES</span>${mk('es')}</div></div>`; }
   if (f.type === 'datalist') { const opts = (f.source === 'labGroups' ? DL.labGroups() : []).map((g) => `<option value="${esc(g)}"></option>`).join(''); const id = 'dl_' + f.key.replace(/\./g, '_'); return `<div class="f">${L}<input type="text" list="${id}" data-fkey="${f.key}" value="${esc(gv(fs, f.key) ?? '')}"><datalist id="${id}">${opts}</datalist></div>`; }
-  if (f.type === 'select') { const cur = gv(fs, f.key); const blank = f.optional ? '<option value="">—</option>' : ''; const opts = f.options ? f.options.map((o) => `<option value="${o}" ${cur === o ? 'selected' : ''}>${o}</option>`).join('') : srcOptions(f.source).map((o) => `<option value="${o.v}" ${cur === o.v ? 'selected' : ''}>${esc(o.l)}</option>`).join(''); return `<div class="f">${L}<select data-fkey="${f.key}">${blank}${opts}</select></div>`; }
+  if (f.type === 'select') { const cur = gv(fs, f.key); const blank = (f.required && !cur) ? '<option value="" selected disabled>— Choose —</option>' : (f.optional ? '<option value="">—</option>' : ''); const opts = f.options ? f.options.map((o) => `<option value="${o}" ${cur === o ? 'selected' : ''}>${o}</option>`).join('') : srcOptions(f.source).map((o) => `<option value="${o.v}" ${cur === o.v ? 'selected' : ''}>${esc(o.l)}</option>`).join(''); return `<div class="f">${L}<select data-fkey="${f.key}">${blank}${opts}</select></div>`; }
   if (f.type === 'multiselect') { const cur = gv(fs, f.key) || []; const boxes = srcOptions(f.source).map((o) => `<label class="f-chk"><input type="checkbox" data-fkey="${f.key}" data-msval="${o.v}" ${cur.includes(o.v) ? 'checked' : ''}> ${esc(o.l)}</label>`).join(''); return `<div class="f">${L}<div class="f-chks">${boxes}</div></div>`; }
   if (f.type === 'weekdays') { const cur = Array.isArray(gv(fs, f.key)) ? gv(fs, f.key) : []; const boxes = WD.map((d) => `<label class="f-chk"><input type="checkbox" data-fkey="${f.key}" data-wd="${d}" ${cur.includes(d) ? 'checked' : ''}> ${d}</label>`).join(''); return `<div class="f">${L}<div class="f-chks">${boxes}</div></div>`; }
   if (f.type === 'rows') { const rows = (gv(fs, f.key) || []).map((r, i) => { const subs = f.sub.map((sf) => { if (sf.type === 'i18n') { const v = r[sf.key] || { en: '', es: '' }; return `<input type="text" placeholder="${sf.label} EN" data-row="${f.key}" data-idx="${i}" data-sub="${sf.key}" data-lang="en" value="${esc(v.en)}"><input type="text" placeholder="${sf.label} ES" data-row="${f.key}" data-idx="${i}" data-sub="${sf.key}" data-lang="es" value="${esc(v.es)}">`; } return `<input type="${sf.type === 'number' ? 'number' : (sf.type === 'date' ? 'date' : 'text')}" step="any" placeholder="${sf.label}" data-row="${f.key}" data-idx="${i}" data-sub="${sf.key}" value="${esc(r[sf.key] ?? '')}">`; }).join(''); return `<div class="f-rowitem">${subs}<button class="btn-sm" data-formaction="delrow" data-row="${f.key}" data-idx="${i}">×</button></div>`; }).join(''); return `<div class="f">${L}${rows}<button class="btn ghost" data-formaction="addrow" data-row="${f.key}">+ Add</button></div>`; }
@@ -1710,6 +1788,7 @@ function renderForm() {
   return `<div class="modal-bg" data-formaction="cancelbg"><div class="modal modal-form" role="dialog">
     <h2>${fmode === 'add' ? 'Add' : 'Edit'} ${spec.title}</h2>
     <div class="form-body">${body}</div>
+    ${ferr ? `<div class="f-err" style="color:var(--err);font-size:13px;margin:4px 2px 0">${esc(ferr)}</div>` : ''}
     <div class="form-actions">${delBtn}<span class="spacer"></span><button class="btn ghost" data-formaction="cancel">Cancel</button><button class="btn" data-formaction="save">Save</button></div>
   </div></div>`;
 }
@@ -1771,7 +1850,13 @@ async function onClick(e, rerender) {
     if (spec.archive) DL.archiveSymptomType(fs.id, true); else DL.remove(fcol, fs.id);
     await DL.persist(); close(); rerender(); return true;
   }
-  if (a === 'save') { postprocess(); DL.upsert(fcol, fs); await DL.persist(); close(); rerender(); return true; }
+  if (a === 'save') {
+    const spec = SPECS[fcol];
+    const missing = (spec.fields || []).filter((f) => f.required && (!f.showIf || f.showIf(fs)) && !gv(fs, f.key));
+    if (missing.length) { ferr = (missing.length === 1 ? 'Please choose a ' : 'Please complete: ') + missing.map((f) => f.label.toLowerCase()).join(', ') + '.'; rerender(); return true; }
+    ferr = '';
+    postprocess(); DL.upsert(fcol, fs); await DL.persist(); close(); rerender(); return true;
+  }
   return true;
 }
 
@@ -1998,6 +2083,7 @@ function render() {
     else content = '';
   }
   screen.innerHTML = content + (Forms.isOpen() ? Forms.renderForm() : '');
+  const tb = document.querySelector('.topbar'); if (tb) document.documentElement.style.setProperty('--topbar-h', tb.offsetHeight + 'px');
 }
 function renderDataScreen() {
   const data = getData(); const meta = getLoadMeta();
