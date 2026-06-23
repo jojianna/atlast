@@ -398,7 +398,7 @@ const ENUMS = {
   conditionControl: ['treated', 'no_treatment', 'adjusting'],
   medStatus: ['active', 'tapering', 'stopped', 'prn'],
   medCategory: ['prescription', 'supplement', 'otc', 'therapy'],
-  trackBy: ['single', 'locations'], overall: ['max', 'mean'],
+  trackBy: ['single', 'locations'], overall: ['max', 'mean', 'sum'],
   episodeType: ['cold_flu', 'infection', 'gi', 'flare', 'other'],
   labDisplayMode: ['raw', 'x_uln'], questionStatus: ['open', 'answered'],
   milestoneType: ['diagnosis', 'medication', 'new_symptom', 'episode', 'milestone'],
@@ -525,7 +525,15 @@ function derivedOverall(symptomType, dayRows) {
   const vals = (dayRows || []).filter((r) => r.symptomId === symptomType.id && r.locationId != null && typeof r.severity === 'number').map((r) => r.severity);
   if (!vals.length) return null;
   if (symptomType.overall === 'mean') return Math.round((vals.reduce((a, b) => a + b, 0) / vals.length) * 10) / 10;
+  if (symptomType.overall === 'sum') return vals.reduce((a, b) => a + b, 0);
   return Math.max(...vals);
+}
+// 0–4 intensity of a located symptom (worst site that day), regardless of the burden rollup.
+// Burden uses derivedOverall (may be a sum >4); the per-symptom severity views use this so they stay on the 0–4 scale.
+function derivedIntensity(symptomType, dayRows) {
+  if (!symptomType || symptomType.trackBy !== 'locations') return null;
+  const vals = (dayRows || []).filter((r) => r.symptomId === symptomType.id && r.locationId != null && typeof r.severity === 'number').map((r) => r.severity);
+  return vals.length ? Math.max(...vals) : null;
 }
 function activeSymptomTypes(data = _data) { return (data.symptomTypes || []).filter((s) => !s.archived); }
 function activeLocations(symptomType) { return (symptomType?.locations || []).filter((l) => !l.archived); }
@@ -762,7 +770,7 @@ async function importData(text) {
   return report;
 }
 
-return { CONFIG, getData, getLoadMeta, subscribe, setActiveSource, getActiveSource, loadData, resetToSeed, saveData, t, tx, specialistLabel, derivedOverall, activeSymptomTypes, activeLocations, episodeFrequency, daysUnwell, latestLab, labWindow, activeConditions, excludedList, bigPicture, labStatus, labTrend, labPosNeg, labGroups, questionsForSpecialist, parseReport, weekdayOf, getDailyLog, setSeverity, getSeverity, setSymptomNote, getSymptomNote, setOverallPain, getOverallPain, setMedTaken, getMedTaken, setNote, medDueOn, TIME_ORDER, medTimeOfDay, medsForDate, submitSymptoms, symptomsSubmitted, startEpisode, endEpisode, reopenEpisode, setEpisodeNote, ongoingEpisodes, episodesEndedOn, persist, persistLocal, markQuestionAnswered, genId, getRecord, upsert, remove, archiveSymptomType, addSymptomType, renameSymptomType, setSymptomOverall, addLocation, renameLocation, archiveLocation, addLabResult, removeLabResult, recordDoseChange, clearDay, exportJSON, importData };
+return { CONFIG, getData, getLoadMeta, subscribe, setActiveSource, getActiveSource, loadData, resetToSeed, saveData, t, tx, specialistLabel, derivedOverall, derivedIntensity, activeSymptomTypes, activeLocations, episodeFrequency, daysUnwell, latestLab, labWindow, activeConditions, excludedList, bigPicture, labStatus, labTrend, labPosNeg, labGroups, questionsForSpecialist, parseReport, weekdayOf, getDailyLog, setSeverity, getSeverity, setSymptomNote, getSymptomNote, setOverallPain, getOverallPain, setMedTaken, getMedTaken, setNote, medDueOn, TIME_ORDER, medTimeOfDay, medsForDate, submitSymptoms, symptomsSubmitted, startEpisode, endEpisode, reopenEpisode, setEpisodeNote, ongoingEpisodes, episodesEndedOn, persist, persistLocal, markQuestionAnswered, genId, getRecord, upsert, remove, archiveSymptomType, addSymptomType, renameSymptomType, setSymptomOverall, addLocation, renameLocation, archiveLocation, addLabResult, removeLabResult, recordDoseChange, clearDay, exportJSON, importData };
 })();
 
 const Today = (function(){
@@ -956,7 +964,7 @@ function renderToday(state) {
     if (s.trackBy === 'single') return symRow(state, s.id, null, tx(s.name, lang));
     const open = ui.expanded.has(s.id);
     const submitted = !!(dayLog && dayLog.symptomsSubmittedAt);
-    const ov = DL.derivedOverall(s, (dayLog?.symptoms) || []);
+    const ov = DL.derivedIntensity(s, (dayLog?.symptoms) || []);
     const overall = (ov == null && submitted) ? 0 : ov;
     const chip = overall != null ? `<span class="sev-chip sevsq sev-${overall}">${overall}</span>` : '<span class="muted small">—</span>';
     const locsArr = DL.activeLocations(s);
@@ -1405,10 +1413,13 @@ const TSS = {
 function dayLogged(log) { return !!log && (log.symptoms || []).some((r) => typeof r.severity === 'number'); }
 const WIN_DAYS = { '30d': 30, '3m': 90, '1y': 365 };
 const SEVHEX = ['#94a3b8', '#fde047', '#f59e0b', '#f97316', '#b91c1c'];
+// Burden value: located symptoms use derivedOverall (sum for joint pain → severity × breadth).
 function symValue(s, log) { if (s.trackBy === 'locations') { const d = DL.derivedOverall(s, log.symptoms || []); return d == null ? 0 : d; } const r = (log.symptoms || []).find((x) => x.symptomId === s.id && x.locationId == null); return (r && typeof r.severity === 'number') ? r.severity : 0; }
+// Intensity value: located symptoms collapse to their 0–4 worst-site (derivedIntensity) so per-symptom severity views stay on the 0–4 scale even when the burden rollup is a sum.
+function symIntensity(s, log) { if (s.trackBy === 'locations') { const d = DL.derivedIntensity(s, log.symptoms || []); return d == null ? 0 : d; } const r = (log.symptoms || []).find((x) => x.symptomId === s.id && x.locationId == null); return (r && typeof r.severity === 'number') ? r.severity : 0; }
 function dayVals(log, types) { return types.map((s) => symValue(s, log)); }
 function daySum(log, types) { return dayVals(log, types).reduce((a, b) => a + b, 0); }
-function dayPresentMean(log, types) { const v = dayVals(log, types).filter((x) => x > 0); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null; }
+function dayPresentMean(log, types) { const v = types.map((s) => symIntensity(s, log)).filter((x) => x > 0); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null; }
 function logsByDate(data) { const m = {}; (data.dailyLogs || []).forEach((l) => { if (l.date) m[l.date] = l; }); return m; }
 function isoBack(n) { const d = new Date(); d.setUTCHours(0, 0, 0, 0); d.setUTCDate(d.getUTCDate() - n); return d.toISOString().slice(0, 10); }
 function windowSeries(data, types, days, fn) {
@@ -1443,7 +1454,7 @@ function windowSeries(data, types, days, fn) {
 }
 function symStats(data, types, days) {
   const by = logsByDate(data);
-  const wavg = (s, a, b) => { const xs = []; for (let i = b - 1; i >= a; i--) { const log = by[isoBack(i)]; if (log && dayLogged(log)) xs.push(symValue(s, log)); } return xs.length ? xs.reduce((p, c) => p + c, 0) / xs.length : 0; };
+  const wavg = (s, a, b) => { const xs = []; for (let i = b - 1; i >= a; i--) { const log = by[isoBack(i)]; if (log && dayLogged(log)) xs.push(symIntensity(s, log)); } return xs.length ? xs.reduce((p, c) => p + c, 0) / xs.length : 0; };
   return types.map((s) => { const cur = wavg(s, 0, days), prev = wavg(s, days, 2 * days); return { s, cur, delta: cur - prev }; }).sort((a, b) => b.cur - a.cur);
 }
 // Window-aware severity bars. day mode (≤45d) = one bar per calendar day (null = unlogged);
@@ -1453,7 +1464,7 @@ function severityBars(data, types, days) {
   const by = logsByDate(data); const arr = [];
   for (let i = days - 1; i >= 0; i--) {
     const iso = isoBack(i); const log = by[iso]; let c = null;
-    if (log && dayLogged(log)) { c = [0, 0, 0, 0, 0]; dayVals(log, types).forEach((v) => { const r = Math.round(v); if (r >= 1 && r <= 4) c[r]++; }); }
+    if (log && dayLogged(log)) { c = [0, 0, 0, 0, 0]; types.map((s) => symIntensity(s, log)).forEach((v) => { const r = Math.round(v); if (r >= 1 && r <= 4) c[r]++; }); }
     arr.push({ iso, c });
   }
   const mode = days > 120 ? 'month' : days > 45 ? 'week' : 'day';
@@ -1547,7 +1558,7 @@ function renderTrends(state) {
     const worse = x.delta > 0.05, better = x.delta < -0.05; const dc = worse ? 'up' : better ? 'down' : 'flat'; const ar = worse ? '↑' : better ? '↓' : '→';
     const dtxt = Math.abs(x.delta) < 0.05 ? '' : ' ' + (worse ? '+' : '') + x.delta.toFixed(1);
     const open = ui.symTrend === x.s.id;
-    const line = open ? `<div class="promline">${trendSVG(windowSeries(data, [x.s], days, (lg, t) => symValue(t[0], lg)).series, 4, x.cur, true)}</div>` : '';
+    const line = open ? `<div class="promline">${trendSVG(windowSeries(data, [x.s], days, (lg, t) => symIntensity(t[0], lg)).series, 4, x.cur, true)}</div>` : '';
     return `<div class="promrow" data-symtrend="${x.s.id}"><span class="promname">${esc(tx(x.s.name, lang))}</span><span class="prombar"><span style="width:${(x.cur / 4 * 100).toFixed(0)}%;background:${col}"></span></span><span class="promval">${x.cur.toFixed(1)}</span><span class="tr ${dc}">${ar}${dtxt}</span></div>${line}`;
   }).join('') || `<p class="muted small">${TT.noData}</p>`;
   const promCard = `<div class="card"><div class="card-h"><h2>${TT.mostProm}</h2></div>${promRows}</div>`;
