@@ -221,7 +221,8 @@ ul.tight { margin: 4px 0 0; padding-left: 18px; } ul.tight li { padding: 1px 0; 
 .ds .wknav{width:28px;height:34px;border:0;background:transparent;color:var(--muted);font-size:20px;cursor:pointer;flex:0 0 auto;touch-action:manipulation;}
 .ds .wknav:disabled{opacity:.3;}
 .ds .wkdays{display:flex;gap:6px;}
-.ds .wkdays.scroll{overflow-x:auto;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding-bottom:2px;}
+.ds .wkdays.scroll{overflow-x:auto;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding-bottom:2px;cursor:grab;user-select:none;-webkit-user-select:none;}
+.ds .wkdays.scroll.grabbing{cursor:grabbing;scroll-snap-type:none;}
 .ds .wkdays.scroll::-webkit-scrollbar{display:none;}
 .ds .wkday{flex:0 0 52px;scroll-snap-align:end;display:flex;flex-direction:column;align-items:center;gap:2px;border:1px solid var(--line);background:#fff;border-radius:10px;padding:5px 0;cursor:pointer;font:inherit;color:var(--ink);min-width:0;touch-action:manipulation;-webkit-tap-highlight-color:transparent;}
 .ds .wkday .wkdow{font-size:10px;color:var(--muted);}
@@ -2107,6 +2108,29 @@ function wireChrome() {
 function setLang(lang) { state.lang = lang; document.documentElement.lang = lang; document.querySelectorAll('.lang-btn').forEach((b) => b.classList.toggle('is-active', b.dataset.lang === lang)); render(); }
 function setTab(tab) { state.tab = tab; document.querySelectorAll('.tab').forEach((b) => b.classList.toggle('is-active', b.dataset.tab === tab)); render(); }
 function setStatus(msg, kind) { if (!msg) { statusStrip.hidden = true; return; } statusStrip.hidden = false; statusStrip.className = 'status-strip' + (kind ? ' ' + kind : ''); statusStrip.textContent = msg; }
+function attachDrag(el) {
+  let down = false, moved = false, startX = 0, startScroll = 0;
+  el.addEventListener('pointerdown', (e) => {
+    if (e.pointerType === 'touch') return;
+    down = true; moved = false; startX = e.clientX; startScroll = el.scrollLeft;
+    el.classList.add('grabbing');
+    try { el.setPointerCapture(e.pointerId); } catch {}
+  });
+  el.addEventListener('pointermove', (e) => {
+    if (!down) return;
+    const dx = e.clientX - startX;
+    if (Math.abs(dx) > 3) moved = true;
+    el.scrollLeft = startScroll - dx;
+  });
+  const end = (e) => {
+    if (!down) return;
+    down = false; el.classList.remove('grabbing');
+    try { el.releasePointerCapture(e.pointerId); } catch {}
+  };
+  el.addEventListener('pointerup', end);
+  el.addEventListener('pointercancel', end);
+  el.addEventListener('click', (e) => { if (moved) { e.preventDefault(); e.stopPropagation(); moved = false; } }, true);
+}
 function render() {
   const titles = TAB_TITLES;
   document.querySelectorAll('.tab').forEach((b) => { const el = b.querySelector('.tab-label'); if (el && titles[b.dataset.tab]) el.textContent = titles[b.dataset.tab]; });
@@ -2123,7 +2147,7 @@ function render() {
   screen.innerHTML = content + (Forms.isOpen() ? Forms.renderForm() : '');
   const tb = document.querySelector('.topbar'); if (tb) document.documentElement.style.setProperty('--topbar-h', tb.offsetHeight + 'px');
   const wd = screen.querySelector('.wkdays.scroll');
-  if (wd) { const sel = wd.querySelector('.wkday.sel'); wd.scrollLeft = sel ? Math.max(0, sel.offsetLeft - wd.clientWidth / 2 + sel.offsetWidth / 2) : wd.scrollWidth; }
+  if (wd) { const sel = wd.querySelector('.wkday.sel'); wd.scrollLeft = sel ? Math.max(0, sel.offsetLeft - wd.clientWidth / 2 + sel.offsetWidth / 2) : wd.scrollWidth; attachDrag(wd); }
 }
 function renderDataScreen() {
   const data = getData(); const meta = getLoadMeta();
