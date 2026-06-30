@@ -86,6 +86,10 @@ details.msgs { margin-top:8px; } details.msgs summary { cursor:pointer; font-siz
 .notebtn { border:1px solid var(--line); background:#fff; border-radius:8px; padding:3px 8px; font-size:13px; cursor:pointer; opacity:.55; }
 .notebtn.has { opacity:1; border-color:var(--teal); background:#ecfeff; }
 .rownote { width:100%; margin-top:8px; border:1px solid var(--line); border-radius:9px; padding:8px; font:inherit; font-size:14px; resize:vertical; }
+.rownote-wrap { margin-top:8px; }
+.rownote-wrap .rownote { margin-top:0; }
+.rownote-done { margin-top:6px; display:inline-flex; align-items:center; gap:6px; border:1px solid #0f766e; background:#0f766e; color:#fff; border-radius:8px; padding:6px 14px; font:inherit; font-size:13px; font-weight:600; cursor:pointer; touch-action:manipulation; -webkit-tap-highlight-color:transparent; }
+.rownote-done:active { opacity:.85; }
 .appt-head { display:flex; align-items:center; justify-content:space-between; gap:10px; }
 .appt-sp { font-size:18px; font-weight:700; color:var(--teal-d); }
 .subtabs { display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:12px; }
@@ -803,7 +807,7 @@ const { tx } = DL;
 
 
 
-const ui = { expanded: new Set(['sym_jointpain']), epFormOpen: false, savedAt: null, noteOpen: new Set(), scaleOpen: new Set(), confirmClear: false, calView: 'week', calMonth: null, medHist: false, weekAnchor: null, editPick: null };
+const ui = { expanded: new Set(['sym_jointpain']), epFormOpen: false, savedAt: null, noteOpen: new Set(), noteInit: new Set(), scaleOpen: new Set(), confirmClear: false, calView: 'week', calMonth: null, medHist: false, weekAnchor: null, editPick: null };
 
 const STR = {
   en: { today: 'Today', symptoms: 'Symptoms', meds: 'Medications', asNeeded: 'As needed (PRN)', secRegular: 'Regular', secSupplements: 'Supplements', secTherapies: 'Therapies',
@@ -818,7 +822,7 @@ const STR = {
         overallPain: 'Overall', overallTap: 'Tap to set your score for the day',
         painLevels: ['No pain','Noticeable','Distracting','Interferes with activities','Prevents activity'],
         prevDay: 'Previous day', nextDay: 'Next day', noData: 'No data.', sites: 'sites',
-        rowNotePh: 'Add a detail (optional)…', addNote: 'Add note', epNotePh: 'Add a note (e.g. still burning today)…', reopen: 'Reopen', morning: 'Morning', midday: 'Midday', evening: 'Evening' },
+        rowNotePh: 'Add a detail (optional)…', addNote: 'Add note', done: 'Done', epNotePh: 'Add a note (e.g. still burning today)…', reopen: 'Reopen', morning: 'Morning', midday: 'Midday', evening: 'Evening' },
   es: { today: 'Hoy', symptoms: 'Síntomas', meds: 'Medicación', asNeeded: 'Según necesidad (PRN)', secRegular: 'Pauta fija', secSupplements: 'Suplementos', secTherapies: 'Terapias',
         note: 'Nota (opcional)', notePlaceholder: 'Algo que recordar de hoy…',
         overall: 'general', taken: 'Tomado', skipped: 'Omitido', episodes: 'Episodios',
@@ -831,7 +835,7 @@ const STR = {
         overallPain: 'General', overallTap: 'Toca para registrar tu puntuación del día',
         painLevels: ['Sin dolor','Leve','Molesto','Interfiere con la actividad','Impide la actividad'],
         prevDay: 'Día anterior', nextDay: 'Día siguiente', noData: 'Sin datos.', sites: 'zonas',
-        rowNotePh: 'Añadir un detalle (opcional)…', addNote: 'Añadir nota', epNotePh: 'Añadir una nota (p. ej. sigue el ardor hoy)…', reopen: 'Reabrir', morning: 'Mañana', midday: 'Mediodía', evening: 'Noche' },
+        rowNotePh: 'Añadir un detalle (opcional)…', addNote: 'Añadir nota', done: 'Listo', epNotePh: 'Añadir una nota (p. ej. sigue el ardor hoy)…', reopen: 'Reabrir', morning: 'Mañana', midday: 'Mediodía', evening: 'Noche' },
 };
 const EP_TYPES = {
   en: { cold_flu: 'Cold / flu', infection: 'Infection', gi: 'GI', flare: 'Flare', other: 'Other' },
@@ -858,11 +862,12 @@ function symRow(state, symId, locId, label) {
   const note = DL.getSymptomNote(date, symId, locId, data);
   const key = rowKey(symId, locId);
   const expanded = (v == null) || ui.scaleOpen.has(key);
-  const noteOpen = ui.noteOpen.has(key) || !!note;
+  if (note && !ui.noteInit.has(key)) { ui.noteOpen.add(key); ui.noteInit.add(key); }
+  const noteOpen = ui.noteOpen.has(key);
   const noteBtn = (v != null) ? `<button class="noteicon${note ? ' has' : ''}${noteOpen ? ' on' : ''}" data-note="${key}" aria-label="${STR[lang].addNote}">${NOTE_SVG}</button>` : '';
   const control = expanded ? (sevSelector(symId, locId, v) + noteBtn)
     : (`<button class="sevpick sev-chip sev-${v}" data-reopen="${key}" aria-label="${esc(label)} = ${v}">${v}</button>` + noteBtn);
-  const noteArea = (v != null && noteOpen) ? `<textarea class="rownote" data-sym="${symId}"${locId ? ` data-loc="${locId}"` : ''} rows="2" placeholder="${STR[lang].rowNotePh}">${esc(note)}</textarea>` : '';
+  const noteArea = (v != null && noteOpen) ? `<div class="rownote-wrap"><textarea class="rownote" data-sym="${symId}"${locId ? ` data-loc="${locId}"` : ''} rows="2" placeholder="${STR[lang].rowNotePh}">${esc(note)}</textarea><button class="rownote-done" data-noteclose="${key}">${CHECK_SVG}<span>${STR[lang].done}</span></button></div>` : '';
   return `<div class="symrow${locId ? ' loc' : ''}">
     <span class="symrow-name as-text">${esc(label)}</span>
     <div class="symctl">${control}</div>
@@ -888,6 +893,7 @@ function burdenBandIdx(b) { if (b == null) return -1; if (b === 0) return 0; if 
 const CAL_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z"/><path d="M16 3v4"/><path d="M8 3v4"/><path d="M4 11h16"/></svg>';
 const HIST_SVG = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 4v4h4"/><path d="M12 8v4l3 2"/></svg>';
 const NOTE_SVG = '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4h8a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-8a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2z"/><path d="M9 9h6"/><path d="M9 13h6"/><path d="M9 17h4"/></svg>';
+const CHECK_SVG = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5l9 -11"/></svg>';
 function monthCal(state, data, types) {
   const lang = state.lang; const date = state.date; const tISO = todayISO();
   const monthIso = ui.calMonth || date.slice(0, 7);
@@ -1036,7 +1042,7 @@ function renderToday(state) {
 
   // Episodes active on the selected day (so past days show what was ongoing then), not just today's ongoing.
   const ongoing = (data.episodes || []).filter((e) => e.startDate && e.startDate <= date && (e.endDate == null || e.endDate > date));
-  const epNote = (e) => esc((e.note && e.note[lang]) || '');
+  const epNote = (e) => esc((e.note && (e.note.en || e.note.es)) || '');
   const ongoingHtml = ongoing.map((e) => { const live = e.endDate == null; return `<div class="ep-ongoing-block">
       <div class="ep-ongoing"><span>${esc(tx(e.name, lang) || EP_TYPES[lang][e.type])} <span class="pill">${EP_TYPES[lang][e.type] || e.type}</span> <span class="muted small">${e.startDate}→${live ? '' : ' ' + e.endDate}</span></span>${live ? `<button class="btn-sm" data-end-ep="${e.id}">${T.end}</button>` : ''}</div>
       <textarea class="epnote" data-epnote="${e.id}" rows="1" placeholder="${T.epNotePh}">${epNote(e)}</textarea>
@@ -1071,7 +1077,7 @@ async function onClick(e, state, rerender) {
   const t = e.target.closest('button, .sym-head.expandable');
   if (!t) return;
   document.querySelectorAll('.rownote').forEach((el) => DL.setSymptomNote(state.date, el.dataset.sym, el.dataset.loc || null, el.value));
-  document.querySelectorAll('.epnote').forEach((el) => DL.setEpisodeNote(el.dataset.epnote, state.lang, el.value));
+  document.querySelectorAll('.epnote').forEach((el) => DL.setEpisodeNote(el.dataset.epnote, 'en', el.value));
   if (t.dataset.medhist != null) { ui.medHist = true; rerender(); return; }
   if (t.dataset.medback != null) { ui.medHist = false; rerender(); document.getElementById('medsCard')?.scrollIntoView({ block: 'start' }); return; }
   if (t.dataset.editpick != null) { ui.editPick = ui.editPick === t.dataset.editpick ? null : t.dataset.editpick; rerender(); return; }
@@ -1082,6 +1088,7 @@ async function onClick(e, state, rerender) {
   if (t.dataset.calnav) { const base = ui.calMonth || state.date.slice(0, 7); const [yy, mm] = base.split('-').map(Number); const nd = new Date(Date.UTC(yy, mm - 1 + Number(t.dataset.calnav), 1)); ui.calMonth = nd.toISOString().slice(0, 7); rerender(); return; }
   if (t.dataset.reopen) { ui.scaleOpen.add(t.dataset.reopen); rerender(); return; }
   if (t.dataset.note) { const k = t.dataset.note; ui.noteOpen.has(k) ? ui.noteOpen.delete(k) : ui.noteOpen.add(k); rerender(); return; }
+  if (t.dataset.noteclose) { ui.noteOpen.delete(t.dataset.noteclose); DL.persist({ silent: true }); rerender(); return; }
   if (t.dataset.expand) { const id = t.dataset.expand; ui.expanded.has(id) ? ui.expanded.delete(id) : ui.expanded.add(id); rerender(); return; }
   if (t.classList.contains('sev')) { const sym = t.dataset.sym, loc = t.dataset.loc || null, sev = Number(t.dataset.sev); const cur = DL.getSeverity(state.date, sym, loc, DL.getData()); DL.setSeverity(state.date, sym, loc, cur === sev ? null : sev); ui.scaleOpen.delete(rowKey(sym, loc)); save(); rerender(); return; }
   if (t.dataset.med) { const want = t.dataset.taken === 'yes'; const cur = DL.getMedTaken(state.date, t.dataset.med, DL.getData()); DL.setMedTaken(state.date, t.dataset.med, cur === want ? null : want); save(); rerender(); return; }
@@ -1097,7 +1104,7 @@ async function onChange(e, state, rerender) { if (e.target.id === 'dateInput') {
 let _noteTimer = null;
 function onInput(e, state) {
   if (e.target.classList.contains('rownote')) { DL.setSymptomNote(state.date, e.target.dataset.sym, e.target.dataset.loc || null, e.target.value); }
-  else if (e.target.classList.contains('epnote')) { DL.setEpisodeNote(e.target.dataset.epnote, state.lang, e.target.value); }
+  else if (e.target.classList.contains('epnote')) { DL.setEpisodeNote(e.target.dataset.epnote, 'en', e.target.value); }
   else { return; }
   DL.persistLocal();
   clearTimeout(_noteTimer); _noteTimer = setTimeout(() => { DL.persist({ silent: true }); }, 600);
@@ -1896,13 +1903,13 @@ function field(f) {
   if (f.type === 'text' || f.type === 'number') return `<div class="f">${L}<input type="${f.type === 'number' ? 'number' : 'text'}" step="any" data-fkey="${f.key}" value="${esc(gv(fs, f.key) ?? '')}"></div>`;
   if (f.type === 'date') return `<div class="f">${L}<input type="date" data-fkey="${f.key}" value="${esc(gv(fs, f.key) ?? '')}"></div>`;
   if (f.type === 'checkbox') return `<div class="f f-row"><label><input type="checkbox" data-fkey="${f.key}" data-bool ${gv(fs, f.key) ? 'checked' : ''}> ${f.label}</label></div>`;
-  if (f.type === 'i18n') { const v = gv(fs, f.key) || { en: '', es: '' }; const mk = (lang) => f.textarea ? `<textarea data-fkey="${f.key}" data-lang="${lang}" rows="2">${esc(v[lang])}</textarea>` : `<input type="text" data-fkey="${f.key}" data-lang="${lang}" value="${esc(v[lang])}">`; if (f.enOnly) return `<div class="f">${L}${mk('en')}</div>`; return `<div class="f">${L}<div class="f-i18n"><span>EN</span>${mk('en')}<span>ES</span>${mk('es')}</div></div>`; }
+  if (f.type === 'i18n') { const v = gv(fs, f.key) || { en: '', es: '' }; const mk = (lang) => f.textarea ? `<textarea data-fkey="${f.key}" data-lang="${lang}" rows="2">${esc(v[lang])}</textarea>` : `<input type="text" data-fkey="${f.key}" data-lang="${lang}" value="${esc(v[lang])}">`; return `<div class="f">${L}${mk('en')}</div>`; }
   if (f.type === 'datalist') { const opts = (f.source === 'labGroups' ? DL.labGroups() : []).map((g) => `<option value="${esc(g)}"></option>`).join(''); const id = 'dl_' + f.key.replace(/\./g, '_'); return `<div class="f">${L}<input type="text" list="${id}" data-fkey="${f.key}" value="${esc(gv(fs, f.key) ?? '')}"><datalist id="${id}">${opts}</datalist></div>`; }
   if (f.type === 'select') { const cur = gv(fs, f.key); const blank = (f.required && !cur) ? '<option value="" selected disabled>— Choose —</option>' : (f.optional ? '<option value="">—</option>' : ''); const opts = f.options ? f.options.map((o) => `<option value="${o}" ${cur === o ? 'selected' : ''}>${o}</option>`).join('') : srcOptions(f.source).map((o) => `<option value="${o.v}" ${cur === o.v ? 'selected' : ''}>${esc(o.l)}</option>`).join(''); return `<div class="f">${L}<select data-fkey="${f.key}">${blank}${opts}</select></div>`; }
   if (f.type === 'multiselect') { const cur = gv(fs, f.key) || []; const boxes = srcOptions(f.source).map((o) => `<label class="f-chk"><input type="checkbox" data-fkey="${f.key}" data-msval="${o.v}" ${cur.includes(o.v) ? 'checked' : ''}> ${esc(o.l)}</label>`).join(''); return `<div class="f">${L}<div class="f-chks">${boxes}</div></div>`; }
   if (f.type === 'weekdays') { const cur = Array.isArray(gv(fs, f.key)) ? gv(fs, f.key) : []; const boxes = WD.map((d) => `<label class="f-chk"><input type="checkbox" data-fkey="${f.key}" data-wd="${d}" ${cur.includes(d) ? 'checked' : ''}> ${d}</label>`).join(''); return `<div class="f">${L}<div class="f-chks">${boxes}</div></div>`; }
-  if (f.type === 'rows') { const rows = (gv(fs, f.key) || []).map((r, i) => { const subs = f.sub.map((sf) => { if (sf.type === 'i18n') { const v = r[sf.key] || { en: '', es: '' }; return `<input type="text" placeholder="${sf.label} EN" data-row="${f.key}" data-idx="${i}" data-sub="${sf.key}" data-lang="en" value="${esc(v.en)}"><input type="text" placeholder="${sf.label} ES" data-row="${f.key}" data-idx="${i}" data-sub="${sf.key}" data-lang="es" value="${esc(v.es)}">`; } return `<input type="${sf.type === 'number' ? 'number' : (sf.type === 'date' ? 'date' : 'text')}" step="any" placeholder="${sf.label}" data-row="${f.key}" data-idx="${i}" data-sub="${sf.key}" value="${esc(r[sf.key] ?? '')}">`; }).join(''); return `<div class="f-rowitem">${subs}<button class="btn-sm" data-formaction="delrow" data-row="${f.key}" data-idx="${i}">×</button></div>`; }).join(''); return `<div class="f">${L}${rows}<button class="btn ghost" data-formaction="addrow" data-row="${f.key}">+ Add</button></div>`; }
-  if (f.type === 'locrows') { const rows = (gv(fs, f.key) || []).map((r, i) => { const v = r.name || { en: '', es: '' }; return `<div class="f-rowitem"><input type="text" placeholder="EN" data-row="${f.key}" data-idx="${i}" data-sub="name" data-lang="en" value="${esc(v.en)}"><input type="text" placeholder="ES" data-row="${f.key}" data-idx="${i}" data-sub="name" data-lang="es" value="${esc(v.es)}"><label class="f-chk"><input type="checkbox" data-row="${f.key}" data-idx="${i}" data-sub="archived" data-bool ${r.archived ? 'checked' : ''}> arch.</label></div>`; }).join(''); return `<div class="f">${L}${rows}<button class="btn ghost" data-formaction="addrow" data-row="${f.key}">+ Add location</button></div>`; }
+  if (f.type === 'rows') { const rows = (gv(fs, f.key) || []).map((r, i) => { const subs = f.sub.map((sf) => { if (sf.type === 'i18n') { const v = r[sf.key] || { en: '', es: '' }; return `<input type="text" placeholder="${sf.label}" data-row="${f.key}" data-idx="${i}" data-sub="${sf.key}" data-lang="en" value="${esc(v.en)}">`; } return `<input type="${sf.type === 'number' ? 'number' : (sf.type === 'date' ? 'date' : 'text')}" step="any" placeholder="${sf.label}" data-row="${f.key}" data-idx="${i}" data-sub="${sf.key}" value="${esc(r[sf.key] ?? '')}">`; }).join(''); return `<div class="f-rowitem">${subs}<button class="btn-sm" data-formaction="delrow" data-row="${f.key}" data-idx="${i}">×</button></div>`; }).join(''); return `<div class="f">${L}${rows}<button class="btn ghost" data-formaction="addrow" data-row="${f.key}">+ Add</button></div>`; }
+  if (f.type === 'locrows') { const rows = (gv(fs, f.key) || []).map((r, i) => { const v = r.name || { en: '', es: '' }; return `<div class="f-rowitem"><input type="text" placeholder="Location" data-row="${f.key}" data-idx="${i}" data-sub="name" data-lang="en" value="${esc(v.en)}"><label class="f-chk"><input type="checkbox" data-row="${f.key}" data-idx="${i}" data-sub="archived" data-bool ${r.archived ? 'checked' : ''}> arch.</label></div>`; }).join(''); return `<div class="f">${L}${rows}<button class="btn ghost" data-formaction="addrow" data-row="${f.key}">+ Add location</button></div>`; }
   return '';
 }
 
