@@ -189,9 +189,9 @@ ul.tight { margin: 4px 0 0; padding-left: 18px; } ul.tight li { padding: 1px 0; 
 .ds .dmeta{font-size:13px;color:var(--muted);margin-top:1px;}
 .ds .ct-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 14px;margin-top:8px;}
 .ds .ct-grid .dmeta{line-height:1.35;}
-.ds .appt-seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;padding:2px;margin:0 0 12px;}
-.ds .appt-seg button{border:0;background:none;font:inherit;font-size:12.5px;color:var(--muted);padding:5px 14px;border-radius:999px;cursor:pointer;}
-.ds .appt-seg button.on{background:var(--teal-d);color:#fff;font-weight:600;}
+.ds .appt-seg, .ds .seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;padding:2px;margin:0 0 12px;}
+.ds .appt-seg button, .ds .seg button{border:0;background:none;font:inherit;font-size:12.5px;color:var(--muted);padding:5px 14px;border-radius:999px;cursor:pointer;}
+.ds .appt-seg button.on, .ds .seg button.on{background:var(--teal-d);color:#fff;font-weight:600;}
 .ds .appt-cols{column-count:2;column-gap:16px;}
 .ds .appt-cell{break-inside:avoid;margin-bottom:14px;}
 .ds .appt-tap{display:block;width:100%;text-align:left;background:none;border:0;padding:0;font:inherit;cursor:pointer;}
@@ -1150,7 +1150,7 @@ const { tx, specialistLabel } = DL;
 
 
 
-const ui = { specialistId: null, answering: null, editPick: null, postVisit: null, qExpanded: null, apptView: 'upcoming', apptNotesOpen: new Set() };
+const ui = { specialistId: null, answering: null, editPick: null, postVisit: null, qExpanded: null, apptView: 'upcoming', apptNotesOpen: new Set(), condView: 'active' };
 
 const STR = {
   en: { dx: 'Diagnosed', conditions: 'Active conditions', activeManaged: 'Conditions', since: 'Since', currentMeds: 'Current medications',
@@ -1251,10 +1251,18 @@ function renderBig(state) {
   const editHint = lang === 'es' ? 'Elige cuál editar:' : 'Choose which to edit:';
   const pickList = (items, coll, nameFn) => `<div class="muted small" style="margin:2px 0 6px">${editHint}</div>` + (items.length ? items.map((it) => `<button class="pickrow" data-edit="${coll}:${it.id}">${esc(nameFn(it))}</button>`).join('') : `<p class="muted small">${T.none}</p>`);
   const editBtn = (coll) => `<button class="addmini" data-editpick="${coll}" aria-label="${lang === 'es' ? 'Editar' : 'Edit'}">${ui.editPick === coll ? '✕' : '✎'}</button>`;
+  // Conditions + Ruled out share one card with a toggle (single column). Row contents/tags are unchanged.
+  const condView = ui.condView || 'active';
+  const condSeg = `<div class="seg"><button class="${condView === 'active' ? 'on' : ''}" data-condview="active">${lang === 'es' ? 'Activas' : 'Active'} · ${allConds.length}</button><button class="${condView === 'ruled' ? 'on' : ''}" data-condview="ruled">${T.ruledOut} · ${bp.excluded.length}</button></div>`;
+  const condHdr = condView === 'active'
+    ? `${editBtn('conditions')}<button class="addmini" data-add="conditions" aria-label="Add condition">＋</button>`
+    : `${editBtn('excluded')}<button class="addmini" data-add="conditions" data-prefill='{"status":"excluded"}' aria-label="${lang === 'es' ? 'Añadir descartado' : 'Add ruled-out'}">＋</button>`;
+  const condBody = condView === 'active'
+    ? (ui.editPick === 'conditions' ? pickList(allConds, 'conditions', (c) => tx(c.name, lang)) : conds)
+    : (ui.editPick === 'excluded' ? pickList(bp.excluded, 'conditions', (r) => tx(r.name, lang)) : ro);
   return `<div class="ds">
-    <div class="card"><div class="card-h"><h2>${T.activeManaged}</h2><span class="hgrp">${editBtn('conditions')}<button class="addmini" data-add="conditions" aria-label="Add condition">＋</button></span></div>${ui.editPick === 'conditions' ? pickList(allConds, 'conditions', (c) => tx(c.name, lang)) : conds}</div>
+    <div class="card"><div class="card-h"><h2>${T.activeManaged}</h2><span class="hgrp">${condHdr}</span></div>${condSeg}${condBody}</div>
     <div class="card" id="medsTable"><div class="card-h"><h2>${T.currentMeds}</h2><span class="hgrp">${editBtn('medications')}<button class="addmini" data-add="medications" aria-label="Add medication">＋</button></span></div>${ui.editPick === 'medications' ? pickList(allMeds, 'medications', (m) => tx(m.name, lang)) : meds}</div>
-    <div class="card"><div class="card-h"><h2>${T.ruledOut}</h2><span class="hgrp">${editBtn('excluded')}<button class="addmini" data-add="conditions" data-prefill='{"status":"excluded"}' aria-label="${lang === 'es' ? 'Añadir descartado' : 'Add ruled-out'}">＋</button></span></div>${ui.editPick === 'excluded' ? pickList(bp.excluded, 'conditions', (r) => tx(r.name, lang)) : `<details class="ro-fold"><summary><span class="hint">${lang === 'en' ? 'tap to view' : 'toca para ver'}</span><span class="ro-caret">▶</span></summary><div class="ro-body" style="margin-top:8px">${ro}</div></details>`}</div>
   </div>`;
 }
 
@@ -1381,6 +1389,7 @@ async function onClick(e, state, rerender) {
     ui.postVisit = null; rerender(); return;
   }
   if (t.dataset.apptview != null) { ui.apptView = t.dataset.apptview; rerender(); return; }
+  if (t.dataset.condview != null) { ui.condView = t.dataset.condview; rerender(); return; }
   if (t.dataset.apptnote != null) { const id = t.dataset.apptnote; ui.apptNotesOpen = ui.apptNotesOpen || new Set(); ui.apptNotesOpen.has(id) ? ui.apptNotesOpen.delete(id) : ui.apptNotesOpen.add(id); rerender(); return; }
   if (t.dataset.qexpand != null) { const id = t.dataset.qexpand; ui.qExpanded = ui.qExpanded || new Set(); ui.qExpanded.has(id) ? ui.qExpanded.delete(id) : ui.qExpanded.add(id); rerender(); return; }
   if (t.dataset.editpick != null) { ui.editPick = ui.editPick === t.dataset.editpick ? null : t.dataset.editpick; rerender(); return; }
