@@ -1599,28 +1599,6 @@ function stackedSVG(bars, mode) {
 }
 function labHL(l) { const r = DL.latestLab(l); if (!r || typeof r.value !== 'number') return null; const rr = l.referenceRange || {}; if (l.displayMode === 'x_uln' && r.value > 1) return 'high'; if (rr.high != null && r.value > rr.high) return 'high'; if (rr.low != null && r.value < rr.low) return 'low'; return 'ok'; }
 function labPct(l) { const nums = [...(l.results || [])].filter((r) => typeof r.value === 'number').sort((a, b) => (a.date < b.date ? 1 : -1)); if (nums.length < 2 || nums[1].value === 0) return null; return Math.round((nums[0].value - nums[1].value) / Math.abs(nums[1].value) * 100); }
-// Status of a marker's most-recent result: 'bad' (out of range), 'warn' (borderline within 10% OR antibody positive), 'ok' (in range / negative), null (no data).
-function labCellStatus(l) {
-  const r = DL.latestLab(l);
-  if (!r) return null;
-  if (typeof r.value !== 'number') { const pn = DL.labPosNeg(l, r); if (!pn) return null; return pn === 'positive' ? 'warn' : 'ok'; }
-  const rr = l.referenceRange || {};
-  if (l.displayMode === 'x_uln') { if (r.value > 1) return 'bad'; if (r.value >= 0.9) return 'warn'; return 'ok'; }
-  if (rr.high != null && r.value > rr.high) return 'bad';
-  if (rr.low != null && r.value < rr.low) return 'bad';
-  const span = (rr.high != null && rr.low != null) ? (rr.high - rr.low) : (rr.high != null ? rr.high : (rr.low != null ? Math.abs(rr.low) : 0));
-  const margin = span * 0.1;
-  if (margin && rr.high != null && r.value > rr.high - margin) return 'warn';
-  if (margin && rr.low != null && r.value < rr.low + margin) return 'warn';
-  return 'ok';
-}
-// Worst-status dot for a collapsed lab group: red > orange > green > grey(no data).
-function groupDot(ls) {
-  const rank = { ok: 1, warn: 2, bad: 3 }; let worst = null;
-  (ls || []).forEach((l) => { const s = labCellStatus(l); if (s && (worst == null || rank[s] > rank[worst])) worst = s; });
-  const col = worst === 'bad' ? '#dc2626' : worst === 'warn' ? '#f59e0b' : worst === 'ok' ? '#16a34a' : '#cbd5e1';
-  return `<span class="gdot" style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${col};margin-right:7px;vertical-align:middle"></span>`;
-}
 function illnessBars(data, lang) {
   const now = new Date(); const months = [];
   for (let i = 5; i >= 0; i--) { const d = new Date(now.getFullYear(), now.getMonth() - i, 1); months.push({ y: d.getFullYear(), m: d.getMonth(), n: 0, lbl: d.toLocaleDateString(lang === 'es' ? 'es-ES' : 'en-GB', { month: 'short' }) }); }
@@ -1666,20 +1644,32 @@ function adherenceCard(state, data, days, win, TT) {
   }
   const sub = `${lang === 'es' ? 'tomadas' : 'taken'} · ${win === 'all' ? TT.allTime : `${TT.past} ${TT.period[win]}`}`;
   const streakOf = (o) => { let s = 0; for (let i = o.dots.length - 1; i >= 0; i--) { const d = o.dots[i]; if (d === 'x' || d === 'n') continue; if (d === 't') s++; else break; } return s; };
-  const blocks = Object.values(info).map((o) => {
+  // A regular med is shown with a day-strip + streak only when it's an (almost) everyday med;
+  // sparser scheduled meds (e.g. every-other-day, every-15-days) show just the taken/due ratio.
+  const isDaily = (m) => Array.isArray(m.scheduledDays) && m.scheduledDays.length >= 6;
+  const regList = Object.values(info).filter((o) => !o.isPrn);
+  const extraList = Object.values(info).filter((o) => o.isPrn);
+  const regBlocks = regList.map((o) => {
     const name = esc(tx(o.m.name, lang));
-    let line;
-    if (o.isPrn) line = `<span class="mpct" style="color:var(--muted)">${o.prn} ${lang === 'es' ? 'tomas' : 'doses'}</span>`;
-    else { const pct = o.sched ? Math.round(o.taken / o.sched * 100) : null; const col = pct == null ? 'var(--muted)' : pct >= 80 ? '#15803d' : '#854f0b'; line = `<span class="mpct" style="color:${col}">${o.sched ? `${o.taken}/${o.sched} · ${pct}%` : (lang === 'es' ? 'sin pauta' : 'none due')}</span>`; }
-    const dotsHtml = showDots ? `<div class="adh-dots">${o.dots.map((d) => `<span class="adh-dot" style="background:${DOTCOL[d]}${d === 'x' ? ';border:1px solid #eef1f3' : ''}"></span>`).join('')}</div>` : '';
+    const pct = o.sched ? Math.round(o.taken / o.sched * 100) : null;
+    const col = pct == null ? 'var(--muted)' : pct >= 80 ? '#15803d' : '#854f0b';
+    const line = `<span class="mpct" style="color:${col}">${o.sched ? `${o.taken}/${o.sched} · ${pct}%` : (lang === 'es' ? 'nada pautado' : 'none due')}</span>`;
+    const daily = isDaily(o.m);
+    const dotsHtml = (daily && showDots) ? `<div class="adh-dots">${o.dots.map((d) => `<span class="adh-dot" style="background:${DOTCOL[d]}${d === 'x' ? ';border:1px solid #eef1f3' : ''}"></span>`).join('')}</div>` : '';
     let streak = '';
-    if (o.isPrn) streak = `<div class="adh-streak">${lang === 'es' ? 'frecuencia, no cumplimiento' : 'frequency, not adherence'}</div>`;
-    else if (showDots) { const st = streakOf(o); streak = `<div class="adh-streak">${st > 0 ? `${st}-${lang === 'es' ? 'día racha' : 'day streak'}` : (lang === 'es' ? 'sin racha actual' : 'no current streak')}</div>`; }
+    if (daily && showDots) { const st = streakOf(o); streak = `<div class="adh-streak">${st > 0 ? `${st}-${lang === 'es' ? 'día racha' : 'day streak'}` : (lang === 'es' ? 'sin racha actual' : 'no current streak')}</div>`; }
     return `<div class="medblk"><div class="ml"><span class="mname">${name}</span>${line}</div>${dotsHtml}${streak}</div>`;
   }).join('');
+  const extraBlocks = extraList.map((o) => {
+    const name = esc(tx(o.m.name, lang));
+    const line = `<span class="mpct" style="color:var(--muted)">${o.prn} ${lang === 'es' ? 'tomas' : 'doses'}</span>`;
+    return `<div class="medblk"><div class="ml"><span class="mname">${name}</span>${line}</div><div class="adh-streak">${lang === 'es' ? 'según necesidad' : 'as needed'}</div></div>`;
+  }).join('');
   const head = `<div class="card-h"><h2>${lang === 'es' ? 'Cumplimiento de medicación' : 'Medication adherence'}</h2></div>`;
-  if (overall == null) return `<div class="card">${head}<p class="muted small">${lang === 'es' ? 'Sin medicación pautada en este periodo.' : 'No scheduled medication in this period.'}</p></div>`;
-  return `<div class="card">${head}<div class="adh-overall"><span class="bignum">${overall}%</span>${pill}<span class="muted small">${sub}</span></div>${blocks}</div>`;
+  const regSection = regList.length ? `<div class="subhead">${lang === 'es' ? 'Recordar mis medicamentos habituales' : 'Remembering my regular meds'}</div>${overall != null ? `<div class="adh-overall"><span class="bignum">${overall}%</span>${pill}<span class="muted small">${sub}</span></div>` : ''}${regBlocks}` : '';
+  const extraSection = extraList.length ? `<div class="subhead" style="margin-top:16px">${lang === 'es' ? 'Medicación adicional' : 'Relying on extra meds'}</div>${extraBlocks}` : '';
+  if (!regList.length && !extraList.length) return '';
+  return `<div class="card">${head}${regSection}${extraSection}</div>`;
 }
 function renderTrends(state) {
   const lang = state.lang; const TT = TSS[lang]; const data = DL.getData();
@@ -1728,7 +1718,7 @@ function renderTrends(state) {
       } else { const pn = DL.labPosNeg(l, r); const isPos = pn === 'positive'; dot = pn ? (isPos ? '#dc2626' : '#16a34a') : '#94a3b8'; val = pn ? (isPos ? TT.pos : TT.neg) : (r && r.qualitative ? esc(r.qualitative) : '—'); }
       return `<button class="lab-row" data-lab="${l.id}"><span class="bp-name"><span class="ldot" style="background:${dot}"></span>${esc(tx(l.marker, lang))}</span><span class="lab-val">${val} ${chg} ›</span></button>`;
     }).join('');
-    return `<div class="labgrp"><button class="labgrp-h" data-labgrp="${esc(g)}"><span class="gcaret">${open ? '▾' : '▸'}</span>${groupDot(ls)} ${esc(g)}</button>${open ? `<div class="labgrp-b">${rows}</div>` : ''}</div>`;
+    return `<div class="labgrp"><button class="labgrp-h" data-labgrp="${esc(g)}"><span class="gcaret">${open ? '▾' : '▸'}</span> ${esc(g)}</button>${open ? `<div class="labgrp-b">${rows}</div>` : ''}</div>`;
   }).join('');
   let adhCard = '';
   try { adhCard = adherenceCard(state, data, days, win, TT); }
