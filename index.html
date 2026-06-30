@@ -418,6 +418,9 @@ const __HT_TEMPLATE__ = {
   "dailyLogs": [], "episodes": [], "labs": [], "questions": [], "milestones": [], "appointments": []
 };
 
+function getPref(k){ try { return (typeof localStorage !== 'undefined') && localStorage.getItem('ht.pref.' + k) === '1'; } catch { return false; } }
+function setPref(k, v){ try { if (typeof localStorage !== 'undefined') localStorage.setItem('ht.pref.' + k, v ? '1' : '0'); } catch {} }
+
 const SCHEMA = (function(){
 
 const SEVERITY_MIN = 0;
@@ -1055,10 +1058,11 @@ function renderToday(state) {
   const epEditing = ui.editPick === 'episodes';
   const epPick = allEps.map((e) => `<button class="pickrow" data-edit="episodes:${e.id}">${esc(tx(e.name, lang) || EP_TYPES[lang][e.type])} <span class="muted small">${esc(e.startDate)}${e.endDate ? ' → ' + esc(e.endDate) : ''}</span></button>`).join('') || `<p class="muted small">${T.none}</p>`;
   const savedNote = ui.savedAt ? `<div class="muted small saved-tag">✓ ${T.saved} · ${ui.savedAt}</div>` : '';
+  const epCardHtml = getPref('hideEpisodes') ? '' : `<div class="card"><div class="card-h"><h2>${T.episodes}</h2><button class="addmini" data-editpick="episodes" aria-label="${lang === 'es' ? 'Editar' : 'Edit'}">${epEditing ? '✕' : '✎'}</button></div>${epEditing ? `<div class="muted small" style="margin:2px 0 6px">${lang === 'es' ? 'Elige cuál editar:' : 'Choose which to edit:'}</div>${epPick}` : `${ongoing.length ? `<div class="subhead">${T.ongoing}</div>${ongoingHtml}` : ''}${endedHtml}${epForm}`}</div>`;
   return `<div class="ds">${head}
     ${symptomsCard}
     <div class="card" id="medsCard"><div class="card-h"><h2>${T.meds}</h2><button class="linkbtn" data-goto="overview" data-scroll="medsTable">${lang === 'es' ? 'Dosis y pauta ›' : 'Doses & schedule ›'}</button></div>${medsBody}</div>
-    <div class="card"><div class="card-h"><h2>${T.episodes}</h2><button class="addmini" data-editpick="episodes" aria-label="${lang === 'es' ? 'Editar' : 'Edit'}">${epEditing ? '✕' : '✎'}</button></div>${epEditing ? `<div class="muted small" style="margin:2px 0 6px">${lang === 'es' ? 'Elige cuál editar:' : 'Choose which to edit:'}</div>${epPick}` : `${ongoing.length ? `<div class="subhead">${T.ongoing}</div>${ongoingHtml}` : ''}${endedHtml}${epForm}`}</div>
+    ${epCardHtml}
     ${savedNote}
     <div class="clearday-row"><button class="linkbtn ${ui.confirmClear?'danger':''}" data-clearday>${ui.confirmClear?T.confirmClear:T.clearDay}</button></div></div>`;
 }
@@ -1414,6 +1418,8 @@ return { ui, renderBig, renderQuestions, onClick, onChange };
 
 const Records = (function(){
 const { tx, specialistLabel } = DL;
+const { todayISO } = Today;
+function shiftDate(iso, days) { const d = new Date(iso + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() + days); return d.toISOString().slice(0, 10); }
 
 
 
@@ -1593,6 +1599,28 @@ function stackedSVG(bars, mode) {
 }
 function labHL(l) { const r = DL.latestLab(l); if (!r || typeof r.value !== 'number') return null; const rr = l.referenceRange || {}; if (l.displayMode === 'x_uln' && r.value > 1) return 'high'; if (rr.high != null && r.value > rr.high) return 'high'; if (rr.low != null && r.value < rr.low) return 'low'; return 'ok'; }
 function labPct(l) { const nums = [...(l.results || [])].filter((r) => typeof r.value === 'number').sort((a, b) => (a.date < b.date ? 1 : -1)); if (nums.length < 2 || nums[1].value === 0) return null; return Math.round((nums[0].value - nums[1].value) / Math.abs(nums[1].value) * 100); }
+// Status of a marker's most-recent result: 'bad' (out of range), 'warn' (borderline within 10% OR antibody positive), 'ok' (in range / negative), null (no data).
+function labCellStatus(l) {
+  const r = DL.latestLab(l);
+  if (!r) return null;
+  if (typeof r.value !== 'number') { const pn = DL.labPosNeg(l, r); if (!pn) return null; return pn === 'positive' ? 'warn' : 'ok'; }
+  const rr = l.referenceRange || {};
+  if (l.displayMode === 'x_uln') { if (r.value > 1) return 'bad'; if (r.value >= 0.9) return 'warn'; return 'ok'; }
+  if (rr.high != null && r.value > rr.high) return 'bad';
+  if (rr.low != null && r.value < rr.low) return 'bad';
+  const span = (rr.high != null && rr.low != null) ? (rr.high - rr.low) : (rr.high != null ? rr.high : (rr.low != null ? Math.abs(rr.low) : 0));
+  const margin = span * 0.1;
+  if (margin && rr.high != null && r.value > rr.high - margin) return 'warn';
+  if (margin && rr.low != null && r.value < rr.low + margin) return 'warn';
+  return 'ok';
+}
+// Worst-status dot for a collapsed lab group: red > orange > green > grey(no data).
+function groupDot(ls) {
+  const rank = { ok: 1, warn: 2, bad: 3 }; let worst = null;
+  (ls || []).forEach((l) => { const s = labCellStatus(l); if (s && (worst == null || rank[s] > rank[worst])) worst = s; });
+  const col = worst === 'bad' ? '#dc2626' : worst === 'warn' ? '#f59e0b' : worst === 'ok' ? '#16a34a' : '#cbd5e1';
+  return `<span class="gdot" style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${col};margin-right:7px;vertical-align:middle"></span>`;
+}
 function illnessBars(data, lang) {
   const now = new Date(); const months = [];
   for (let i = 5; i >= 0; i--) { const d = new Date(now.getFullYear(), now.getMonth() - i, 1); months.push({ y: d.getFullYear(), m: d.getMonth(), n: 0, lbl: d.toLocaleDateString(lang === 'es' ? 'es-ES' : 'en-GB', { month: 'short' }) }); }
@@ -1700,13 +1728,13 @@ function renderTrends(state) {
       } else { const pn = DL.labPosNeg(l, r); const isPos = pn === 'positive'; dot = pn ? (isPos ? '#dc2626' : '#16a34a') : '#94a3b8'; val = pn ? (isPos ? TT.pos : TT.neg) : (r && r.qualitative ? esc(r.qualitative) : '—'); }
       return `<button class="lab-row" data-lab="${l.id}"><span class="bp-name"><span class="ldot" style="background:${dot}"></span>${esc(tx(l.marker, lang))}</span><span class="lab-val">${val} ${chg} ›</span></button>`;
     }).join('');
-    return `<div class="labgrp"><button class="labgrp-h" data-labgrp="${esc(g)}"><span class="gcaret">${open ? '▾' : '▸'}</span> ${esc(g)}</button>${open ? `<div class="labgrp-b">${rows}</div>` : ''}</div>`;
+    return `<div class="labgrp"><button class="labgrp-h" data-labgrp="${esc(g)}"><span class="gcaret">${open ? '▾' : '▸'}</span>${groupDot(ls)} ${esc(g)}</button>${open ? `<div class="labgrp-b">${rows}</div>` : ''}</div>`;
   }).join('');
   let adhCard = '';
   try { adhCard = adherenceCard(state, data, days, win, TT); }
   catch (err) { console.warn('adherence card failed', err); adhCard = `<div class="card"><div class="card-h"><h2>${lang === 'es' ? 'Cumplimiento de medicación' : 'Medication adherence'}</h2></div><p class="muted small">—</p></div>`; }
   const labsCard = `<div class="card"><div class="card-h"><h2>${TT.labs}</h2><button class="addmini" data-add="labs" aria-label="Add marker">＋</button></div>${labHtml}</div>`;
-  const illCard = `<div class="card"><div class="card-h"><h2>${TT.episodes}</h2></div>${illnessBars(data, lang)}</div>`;
+  const illCard = getPref('hideEpisodes') ? '' : `<div class="card"><div class="card-h"><h2>${TT.episodes}</h2></div>${illnessBars(data, lang)}</div>`;
   return `<div class="ds">${winseg}${burdenCard}${sevCard}${promCard}${dailyCard}${adhCard}${labsCard}${illCard}</div>`;
 }
 // Progression timeline in the new design-system style (keeps filters + tap-for-detail).
@@ -2202,6 +2230,8 @@ function wireChrome() {
   screen.addEventListener('input', onEdit);
   screen.addEventListener('change', async (e) => {
     if (e.target.id === 'importFile') { const f = e.target.files[0]; if (!f) return; try { const r = await importData(await f.text()); setStatus(r.ok ? 'Imported ✓ (' + r.warnings.length + ' notes)' : 'Imported with ' + r.errors.length + ' errors', r.ok ? 'ok' : 'err'); } catch (err) { setStatus('Import failed: ' + err.message, 'err'); } render(); return; }
+    if (e.target.id === 'prefEnglishOnly') { setPref('englishOnly', e.target.checked); if (e.target.checked) setLang('en'); render(); return; }
+    if (e.target.id === 'prefHideEpisodes') { setPref('hideEpisodes', e.target.checked); render(); return; }
     if (Forms.isOpen()) { Forms.onInput(e); return; }
     if (state.showData) return;
     if (state.tab === 'today') Today.onChange(e, state, render);
@@ -2236,6 +2266,9 @@ function attachDrag(el) {
 }
 function render() {
   const titles = TAB_TITLES;
+  const englishOnly = getPref('englishOnly');
+  const langToggle = document.querySelector('.lang-toggle'); if (langToggle) langToggle.hidden = englishOnly;
+  if (englishOnly && state.lang !== 'en') { state.lang = 'en'; document.documentElement.lang = 'en'; document.querySelectorAll('.lang-btn').forEach((b) => b.classList.toggle('is-active', b.dataset.lang === 'en')); }
   document.querySelectorAll('.tab').forEach((b) => { const el = b.querySelector('.tab-label'); if (el && titles[b.dataset.tab]) el.textContent = titles[b.dataset.tab]; });
   let content;
   try {
@@ -2265,7 +2298,12 @@ function renderDataScreen() {
   const verdict = v.ok ? '<span class="badge ok">SCHEMA OK</span>' : '<span class="badge err">' + v.errors.length + ' ERRORS</span>';
   const errHtml = v.errors.length ? '<details class="msgs" open><summary>' + v.errors.length + ' error(s)</summary><ul class="msglist">' + v.errors.map((e) => '<li>✗ ' + escapeHtml(e) + '</li>').join('') + '</ul></details>' : '';
   const warnHtml = v.warnings.length ? '<details class="msgs"><summary>' + v.warnings.length + ' note(s)</summary><ul class="msglist">' + v.warnings.map((w) => '<li>! ' + escapeHtml(w) + '</li>').join('') + '</ul></details>' : '';
-  return odPanel() + '<div class="card"><h2>Parse report ' + verdict + '</h2>' +
+  return odPanel() +
+    '<div class="card"><h2>Display options</h2>' +
+    '<div class="f f-row"><label><input type="checkbox" id="prefEnglishOnly"' + (getPref('englishOnly') ? ' checked' : '') + '> English only (hide the EN/ES switch)</label></div>' +
+    '<div class="f f-row"><label><input type="checkbox" id="prefHideEpisodes"' + (getPref('hideEpisodes') ? ' checked' : '') + '> Hide episode tracking (Log &amp; Trends)</label></div>' +
+    '</div>' +
+    '<div class="card"><h2>Parse report ' + verdict + '</h2>' +
     '<div class="kv"><span class="k">Source</span><span class="v">' + escapeHtml(pr.source || '') + '</span></div>' +
     errHtml + warnHtml + '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;"><button id="exportBtn" class="btn">⤓ Export data</button><label class="btn ghost" style="cursor:pointer">⤒ Import data<input id="importFile" type="file" accept=".json,application/json" hidden></label><button id="resetSeedBtn" class="btn ghost">↺ Reset to seed</button></div><p class="muted small" style="margin-top:8px">Export saves everything to a <b>health-data.json</b> file you can keep or send to lock in your work. Import loads one back.</p></div>' +
     '<div class="card"><h2>Records parsed</h2><div class="grid">' + statsHtml + '</div></div>';
