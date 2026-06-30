@@ -187,6 +187,16 @@ ul.tight { margin: 4px 0 0; padding-left: 18px; } ul.tight li { padding: 1px 0; 
 .ds .drow:first-of-type{border-top:0;}
 .ds .dname{font-weight:600;}
 .ds .dmeta{font-size:13px;color:var(--muted);margin-top:1px;}
+.ds .ct-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 14px;margin-top:8px;}
+.ds .ct-grid .dmeta{line-height:1.35;}
+.ds .appt-seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;padding:2px;margin:0 0 12px;}
+.ds .appt-seg button{border:0;background:none;font:inherit;font-size:12.5px;color:var(--muted);padding:5px 14px;border-radius:999px;cursor:pointer;}
+.ds .appt-seg button.on{background:var(--teal-d);color:#fff;font-weight:600;}
+.ds .appt-cols{column-count:2;column-gap:16px;}
+.ds .appt-cell{break-inside:avoid;margin-bottom:14px;}
+.ds .appt-tap{display:block;width:100%;text-align:left;background:none;border:0;padding:0;font:inherit;cursor:pointer;}
+.ds .appt-notechev{color:var(--muted);font-size:10px;}
+.ds .appt-note{margin-top:4px;padding-left:2px;}
 .ds .dright{flex:none;display:flex;align-items:center;gap:8px;}
 .ds .chip{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;border-radius:999px;padding:3px 9px;white-space:nowrap;border:0;cursor:default;}
 .ds .chip.good{background:#dcfce7;color:#15803d;} .ds .chip.watch{background:#fef3c7;color:#b45309;}
@@ -1140,7 +1150,7 @@ const { tx, specialistLabel } = DL;
 
 
 
-const ui = { specialistId: null, answering: null, editPick: null, postVisit: null, qExpanded: null };
+const ui = { specialistId: null, answering: null, editPick: null, postVisit: null, qExpanded: null, apptView: 'upcoming', apptNotesOpen: new Set() };
 
 const STR = {
   en: { dx: 'Diagnosed', conditions: 'Active conditions', activeManaged: 'Conditions', since: 'Since', currentMeds: 'Current medications',
@@ -1270,11 +1280,23 @@ function renderQuestions(state) {
   const editHint = lang === 'es' ? 'Elige cuál editar:' : 'Choose which to edit:';
   const pickList = (items, coll, nameFn) => `<div class="muted small" style="margin:2px 0 6px">${editHint}</div>` + (items.length ? items.map((it) => `<button class="pickrow" data-edit="${coll}:${it.id}">${esc(nameFn(it))}</button>`).join('') : `<p class="muted small">${T.none}</p>`);
   const editBtn = (coll) => `<button class="addmini" data-editpick="${coll}" aria-label="${lang === 'es' ? 'Editar' : 'Edit'}">${ui.editPick === coll ? '✕' : '✎'}</button>`;
-  const apptRow = (a, showNote) => `<div class="drow"><div><div class="dname">${fmtDate(a.date, lang)}${a.time ? ` · ${esc(a.time)}` : ''}</div><div class="dmeta">${esc(spName(a.specialismId))}${showNote && tx(a.note, lang) ? ` — ${esc(tx(a.note, lang))}` : ''}</div></div></div>`;
   const apptName = (a) => `${fmtDate(a.date, lang)}${a.time ? ' · ' + a.time : ''} — ${spName(a.specialismId)}`;
   const restUp = upcoming.slice(1);
-  const upList = restUp.length ? restUp.map((a) => apptRow(a, false)).join('') : `<p class="muted small">${L('Nothing else scheduled', 'Nada más programado')}</p>`;
-  const apptCard = `<div class="card"><div class="card-h"><h2>${L('Upcoming', 'Próximas')}</h2><span class="hgrp">${editBtn('appointments')}<button class="addmini" data-add="appointments" aria-label="Add appointment">＋</button></span></div>${ui.editPick === 'appointments' ? pickList(upcoming.concat(past), 'appointments', apptName) : upList}</div>`;
+  // Appointment cell: date · time + specialist. Past cells with a note are tappable to reveal it inline.
+  const apptCell = (a, isPast) => {
+    const when = `${fmtDate(a.date, lang)}${a.time ? ` · ${esc(a.time)}` : ''}`;
+    const who = esc(spName(a.specialismId)); const note = tx(a.note, lang);
+    if (isPast && note) {
+      const open = ui.apptNotesOpen.has(a.id);
+      return `<div class="appt-cell"><button class="appt-tap" data-apptnote="${a.id}"><div class="dname">${when}</div><div class="dmeta">${who} <span class="appt-notechev">${open ? '▾' : '▸'}</span></div></button>${open ? `<div class="appt-note muted small">${esc(note)}</div>` : ''}</div>`;
+    }
+    return `<div class="appt-cell"><div class="dname">${when}</div><div class="dmeta">${who}</div></div>`;
+  };
+  const apptList = (items, isPast) => items.length ? `<div class="appt-cols">${items.map((a) => apptCell(a, isPast)).join('')}</div>` : `<p class="muted small">${isPast ? L('No past appointments', 'Sin citas pasadas') : L('Nothing else scheduled', 'Nada más programado')}</p>`;
+  const apptView = past.length ? (ui.apptView || 'upcoming') : 'upcoming';
+  const apptSeg = past.length ? `<div class="appt-seg"><button class="${apptView === 'upcoming' ? 'on' : ''}" data-apptview="upcoming">${L('Upcoming', 'Próximas')} · ${restUp.length}</button><button class="${apptView === 'past' ? 'on' : ''}" data-apptview="past">${L('Past', 'Pasadas')} · ${past.length}</button></div>` : '';
+  const apptBody = apptView === 'past' ? apptList(past, true) : apptList(restUp, false);
+  const apptCard = `<div class="card"><div class="card-h"><h2>${L('Appointments', 'Citas')}</h2><span class="hgrp">${editBtn('appointments')}<button class="addmini" data-add="appointments" aria-label="Add appointment">＋</button></span></div>${ui.editPick === 'appointments' ? pickList(upcoming.concat(past), 'appointments', apptName) : `${apptSeg}${apptBody}`}</div>`;
   // --- Questions: grouped by specialist, next-visit specialist first ---
   const openAll = (data.questions || []).filter((q) => q.status === 'open');
   const answeredAll = (data.questions || []).filter((q) => q.status === 'answered');
@@ -1308,11 +1330,10 @@ function renderQuestions(state) {
   const orphans = openAll.filter((q) => !specs.some((s) => s.id === q.specialismId));
   if (orphans.length) groups += qGroup('__orphans', T.other, orphans, []);
   const qCard = `<div class="card"><div class="card-h"><h2>${L('Questions to ask', 'Preguntas para preguntar')}</h2><button class="addmini" data-add="questions" aria-label="Add question">＋</button></div>${groups || `<p class="muted small">${T.noQuestionsAll}</p>`}</div>`;
-  // --- Past appointments (collapsed) ---
-  const pastCard = past.length ? `<div class="card"><details class="ro-fold"><summary><h2>${T.pastAppts}</h2><span class="hint">${L('tap to view', 'toca para ver')}</span><span class="ro-caret">▶</span></summary><div class="ro-body" style="margin-top:8px">${past.map((a) => apptRow(a, true)).join('')}</div></details></div>` : '';
-  // --- Care team (collapsed; editing folded in here) ---
-  const ct = specs.map((s) => `<div class="drow"><div><div class="dname">${esc(specialistLabel(s, lang))}</div>${s.doctor ? `<div class="dmeta">${esc(s.doctor)}</div>` : ''}</div></div>`).join('');
-  const careCard = `<div class="card"><div class="card-h"><h2>${L('Care team', 'Equipo médico')}</h2><span class="hgrp">${editBtn('specialisms')}<button class="addmini" data-add="specialisms" aria-label="Add specialist">＋</button></span></div>${ui.editPick === 'specialisms' ? pickList(specs, 'specialisms', (s) => specialistLabel(s, lang)) : `<details class="ro-fold"><summary><span class="hint">${L('tap to view', 'toca para ver')}</span><span class="ro-caret">▶</span></summary><div class="ro-body" style="margin-top:8px">${ct}</div></details>`}</div>`;
+  // --- Care team (always exposed; editing folded in here) ---
+  const ctSpecs = specs.slice().sort((a, b) => specialistLabel(a, lang).localeCompare(specialistLabel(b, lang), lang === 'es' ? 'es' : 'en'));
+  const ct = `<div class="ct-grid">${ctSpecs.map((s) => `<div class="ct-cell"><div class="dname">${esc(specialistLabel(s, lang))}</div>${s.doctor ? `<div class="dmeta">${esc(s.doctor)}</div>` : ''}</div>`).join('')}</div>`;
+  const careCard = `<div class="card"><div class="card-h"><h2>${L('Care team', 'Equipo médico')}</h2><span class="hgrp">${editBtn('specialisms')}<button class="addmini" data-add="specialisms" aria-label="Add specialist">＋</button></span></div>${ui.editPick === 'specialisms' ? pickList(ctSpecs, 'specialisms', (s) => specialistLabel(s, lang)) : ct}</div>`;
   // --- Post-visit sheet (Mark done flow) ---
   let pvModal = '';
   if (ui.postVisit) {
@@ -1335,7 +1356,7 @@ function renderQuestions(state) {
       </div></div>`;
     }
   }
-  return `<div class="ds">${hero}${apptCard}${qCard}${pastCard}${careCard}</div>${pvModal}`;
+  return `<div class="ds">${hero}${apptCard}${qCard}${careCard}</div>${pvModal}`;
 }
 
 async function onClick(e, state, rerender) {
@@ -1359,6 +1380,8 @@ async function onClick(e, state, rerender) {
     }
     ui.postVisit = null; rerender(); return;
   }
+  if (t.dataset.apptview != null) { ui.apptView = t.dataset.apptview; rerender(); return; }
+  if (t.dataset.apptnote != null) { const id = t.dataset.apptnote; ui.apptNotesOpen = ui.apptNotesOpen || new Set(); ui.apptNotesOpen.has(id) ? ui.apptNotesOpen.delete(id) : ui.apptNotesOpen.add(id); rerender(); return; }
   if (t.dataset.qexpand != null) { const id = t.dataset.qexpand; ui.qExpanded = ui.qExpanded || new Set(); ui.qExpanded.has(id) ? ui.qExpanded.delete(id) : ui.qExpanded.add(id); rerender(); return; }
   if (t.dataset.editpick != null) { ui.editPick = ui.editPick === t.dataset.editpick ? null : t.dataset.editpick; rerender(); return; }
   if (t.dataset.answer) { ui.answering = (ui.answering === t.dataset.answer) ? null : t.dataset.answer; rerender(); return; }
