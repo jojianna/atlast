@@ -347,6 +347,11 @@ ul.tight { margin: 4px 0 0; padding-left: 18px; } ul.tight li { padding: 1px 0; 
 .ds .q-answered summary::-webkit-details-marker{display:none;}
 .ds .q-answered .ro-caret{display:inline-block;transition:transform .15s;font-size:10px;}
 .ds .q-answered[open] .ro-caret{transform:rotate(90deg);}
+.ds .qg-sum{width:100%;background:none;border:0;border-top:1px solid #eef1f3;padding:11px 0;margin:6px 0 0;display:flex;align-items:center;gap:8px;cursor:pointer;font:inherit;font-size:13px;font-weight:800;color:var(--teal-d);text-align:left;}
+.ds .qg:first-of-type .qg-sum{border-top:0;margin-top:0;}
+.ds .qg-count{margin-left:auto;background:var(--chip);color:var(--muted);border-radius:999px;padding:1px 9px;font-size:11px;font-weight:700;}
+.ds .qg-caret{color:var(--muted);font-size:11px;width:10px;text-align:center;}
+.ds .qg-body{padding:2px 0 4px;}
 .ds .qrow.answered{align-items:flex-start;}
 .ds .qrow.answered .qtext{color:var(--muted);}
 .ds .qanote{margin-top:3px;color:var(--muted);font-style:italic;}
@@ -858,7 +863,7 @@ function agoLabel(n, lang) { return lang === 'es' ? (n === 1 ? 'hace 1 día' : '
 function daysBetween(aISO, bISO) { const a = new Date(aISO + 'T00:00:00Z'); const b = new Date(bISO + 'T00:00:00Z'); return Math.round((b - a) / 86400000); }
 
 // Daily burden = sum of symptom severities (located symptoms roll up by their derived overall).
-// Returns null for days with nothing logged. Bands (Anna 16 Jun): 0 clear · 1–5 light · 6–10 typical · 11–15 heavy · 16+ very heavy.
+// Returns null for days with nothing logged. Bands (Anna 30 Jun): 0 clear · 1–6 light · 7–13 typical · 14–20 heavy · 21+ very heavy.
 function dayBurden(iso, types, data) {
   const l = DL.getDailyLog(iso, data);
   if (!l || !(l.symptoms || []).some((r) => typeof r.severity === 'number')) return null;
@@ -869,7 +874,7 @@ function dayBurden(iso, types, data) {
   });
   return sum;
 }
-function burdenBandIdx(b) { if (b == null) return -1; if (b === 0) return 0; if (b <= 5) return 1; if (b <= 10) return 2; if (b <= 15) return 3; return 4; }
+function burdenBandIdx(b) { if (b == null) return -1; if (b === 0) return 0; if (b <= 6) return 1; if (b <= 13) return 2; if (b <= 20) return 3; return 4; }
 const CAL_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z"/><path d="M16 3v4"/><path d="M8 3v4"/><path d="M4 11h16"/></svg>';
 const HIST_SVG = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 4v4h4"/><path d="M12 8v4l3 2"/></svg>';
 const NOTE_SVG = '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4h8a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-8a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2z"/><path d="M9 9h6"/><path d="M9 13h6"/><path d="M9 17h4"/></svg>';
@@ -893,7 +898,7 @@ function monthCal(state, data, types) {
   }
   const canNext = monthIso < tISO.slice(0, 7);
   const lg = (cls, txt) => `<span><span class="lgsw ${cls}"></span>${txt}</span>`;
-  const legend = `<div class="callegend"><span style="color:var(--muted)">${lang === 'es' ? 'Carga:' : 'Burden:'}</span>${lg('calb1', lang === 'es' ? 'leve 1–5' : 'light 1–5')}${lg('calb2', lang === 'es' ? 'típico 6–10' : 'typical 6–10')}${lg('calb3', lang === 'es' ? 'fuerte 11–15' : 'heavy 11–15')}${lg('calb4', lang === 'es' ? 'muy fuerte 16+' : 'very heavy 16+')}${lg('calb0', lang === 'es' ? 'sin síntomas' : 'clear (0)')}</div>`;
+  const legend = `<div class="callegend"><span style="color:var(--muted)">${lang === 'es' ? 'Carga:' : 'Burden:'}</span>${lg('calb1', lang === 'es' ? 'leve 1–6' : 'light 1–6')}${lg('calb2', lang === 'es' ? 'típico 7–13' : 'typical 7–13')}${lg('calb3', lang === 'es' ? 'fuerte 14–20' : 'heavy 14–20')}${lg('calb4', lang === 'es' ? 'muy fuerte 21+' : 'very heavy 21+')}${lg('calb0', lang === 'es' ? 'sin síntomas' : 'clear (0)')}</div>`;
   const note = `<div class="calnote">${lang === 'es' ? "Color = carga del día (suma de severidades). Toca un día para abrirlo." : "Colour = that day's burden (sum of severities). Tap a day to open it."}</div>`;
   return `<div class="card"><div class="calhead"><span class="mlabel">${mlabel}</span><span class="hgrp"><button class="wknav" data-calnav="-1" aria-label="Previous month">‹</button><button class="wknav" data-calnav="1" aria-label="Next month" ${canNext ? '' : 'disabled'}>›</button><button class="wkcal on" data-calview="week" aria-label="${lang === 'es' ? 'Volver a la semana' : 'Back to week'}">${CAL_SVG}</button></span></div><div class="calgrid">${cells}</div>${legend}${note}</div>`;
 }
@@ -990,7 +995,7 @@ function renderToday(state) {
     }
     const locsArr = DL.activeLocations(s);
     const locs = locsArr.map((l) => symRow(state, s.id, l.id, tx(l.name, lang))).join('');
-    return `<div class="symrow located-head sym-head expandable" data-expand="${s.id}"><span class="symrow-name as-text">${esc(tx(s.name, lang))} <span class="muted small loc-count">${open ? '▾' : '▸'}</span></span><span class="chipgrp">${sumChip}${chip}</span></div>
+    return `<div class="symrow located-head sym-head expandable" data-expand="${s.id}"><span class="symrow-name as-text">${esc(tx(s.name, lang))} <span class="muted small loc-count">${open ? '▾' : '▸'}</span></span><span class="chipgrp">${chip}${sumChip}</span></div>
     <div class="loc-list" ${open ? '' : 'hidden'}>${locs}<button class="linkbtn" data-edit="symptomTypes:${s.id}" style="margin:6px 0 2px 4px">+ ${lang === 'es' ? 'Añadir zona' : 'Add site'}</button></div>`;
   }).join('');
   const complete = isComplete(date);
@@ -1036,7 +1041,7 @@ function renderToday(state) {
   const savedNote = ui.savedAt ? `<div class="muted small saved-tag">✓ ${T.saved} · ${ui.savedAt}</div>` : '';
   return `<div class="ds">${head}
     ${symptomsCard}
-    <div class="card" id="medsCard"><div class="card-h"><h2>${T.meds}</h2><button class="ic-btn" data-medhist aria-label="${lang === 'es' ? 'Historial de cumplimiento' : 'Adherence history'}">${HIST_SVG}</button></div>${medsBody}</div>
+    <div class="card" id="medsCard"><div class="card-h"><h2>${T.meds}</h2></div>${medsBody}</div>
     <div class="card"><div class="card-h"><h2>${T.episodes}</h2><button class="addmini" data-editpick="episodes" aria-label="${lang === 'es' ? 'Editar' : 'Edit'}">${epEditing ? '✕' : '✎'}</button></div>${epEditing ? `<div class="muted small" style="margin:2px 0 6px">${lang === 'es' ? 'Elige cuál editar:' : 'Choose which to edit:'}</div>${epPick}` : `${ongoing.length ? `<div class="subhead">${T.ongoing}</div>${ongoingHtml}` : ''}${endedHtml}${epForm}`}</div>
     ${savedNote}
     <div class="clearday-row"><button class="linkbtn ${ui.confirmClear?'danger':''}" data-clearday>${ui.confirmClear?T.confirmClear:T.clearDay}</button></div></div>`;
@@ -1135,7 +1140,7 @@ const { tx, specialistLabel } = DL;
 
 
 
-const ui = { specialistId: null, answering: null, editPick: null, postVisit: null };
+const ui = { specialistId: null, answering: null, editPick: null, postVisit: null, qExpanded: null };
 
 const STR = {
   en: { dx: 'Diagnosed', conditions: 'Active conditions', activeManaged: 'Conditions', since: 'Since', currentMeds: 'Current medications',
@@ -1283,7 +1288,14 @@ function renderQuestions(state) {
     return `<div class="qrow"><button class="qtick" data-answer="${q.id}" aria-label="${T.markAnswered}"></button><div class="qtext">${qName(q)}</div><button class="ed-btn2" data-edit="questions:${q.id}" aria-label="Edit">✎</button></div>`;
   };
   const answeredFold = (ans) => `<details class="q-answered"><summary><span class="ro-caret">▶</span> ${L('Answered', 'Respondidas')} (${ans.length})</summary><div class="q-answered-body">${ans.map((q) => `<div class="qrow answered"><div class="qtext">${qName(q)}${aNote(q) ? `<div class="qanote muted small">${esc(aNote(q))}</div>` : ''}</div><button class="ed-btn2" data-edit="questions:${q.id}" aria-label="Edit">✎</button></div>`).join('')}</div></details>`;
-  const grpHead = (id, isNext) => { const editing = ui.editPick === 'q:' + id; return `<div class="qgroup"><span class="qgroup-t">${esc(spName(id))}${isNext ? ` · ${L('next visit', 'próxima visita')}` : ''}</span><span class="hgrp"><button class="addmini" data-editpick="q:${id}" aria-label="${lang === 'es' ? 'Editar' : 'Edit'}">${editing ? '✕' : '✎'}</button><button class="addmini" data-add="questions" data-prefill='${esc(JSON.stringify({ specialismId: id }))}' aria-label="${lang === 'es' ? 'Añadir pregunta' : 'Add question'}">＋</button></span></div>`; };
+  // Questions are collapsed per specialist (tap the name to expand). Open state lives in ui.qExpanded so it survives re-renders; next-visit specialist starts open.
+  if (ui.qExpanded === null) ui.qExpanded = new Set(next ? [next.specialismId] : []);
+  const addQBtn = (id) => `<button class="linkbtn" data-add="questions" data-prefill='${esc(JSON.stringify({ specialismId: id }))}' style="margin:6px 0 2px 4px">+ ${L('Add question', 'Añadir pregunta')}</button>`;
+  const qGroup = (id, title, qs, ans) => {
+    const open = ui.qExpanded.has(id);
+    const body = open ? `<div class="qg-body">${qs.map(qRow).join('')}${ans && ans.length ? answeredFold(ans) : ''}${id === '__orphans' ? '' : addQBtn(id)}</div>` : '';
+    return `<div class="qg"><button class="qg-sum" data-qexpand="${id}"><span class="qgroup-t">${title}</span><span class="qg-count">${qs.length}</span><span class="qg-caret">${open ? '▾' : '▶'}</span></button>${body}</div>`;
+  };
   const order = next ? [next.specialismId, ...specs.map((s) => s.id).filter((id) => id !== next.specialismId)] : specs.map((s) => s.id);
   let groups = '';
   order.forEach((id) => {
@@ -1291,17 +1303,10 @@ function renderQuestions(state) {
     const ans = answeredAll.filter((q) => q.specialismId === id);
     if (!qs.length && !ans.length) return;
     const isNext = next && id === next.specialismId;
-    groups += grpHead(id, isNext);
-    if (ui.editPick === 'q:' + id) {
-      const all = qs.concat(ans);
-      groups += `<div class="muted small" style="margin:2px 0 6px">${lang === 'es' ? 'Elige cuál editar:' : 'Choose which to edit:'}</div>` + all.map((q) => `<button class="pickrow" data-edit="questions:${q.id}">${qName(q)}${q.status === 'answered' ? ` <span class="muted small">(${L('answered', 'respondida')})</span>` : ''}</button>`).join('');
-    } else {
-      groups += qs.map(qRow).join('');
-      if (ans.length) groups += answeredFold(ans);
-    }
+    groups += qGroup(id, `${esc(spName(id))}${isNext ? ` · ${L('next visit', 'próxima visita')}` : ''}`, qs, ans);
   });
   const orphans = openAll.filter((q) => !specs.some((s) => s.id === q.specialismId));
-  if (orphans.length) groups += `<div class="qgroup"><span class="qgroup-t">${T.other}</span></div>${orphans.map(qRow).join('')}`;
+  if (orphans.length) groups += qGroup('__orphans', T.other, orphans, []);
   const qCard = `<div class="card"><div class="card-h"><h2>${L('Questions to ask', 'Preguntas para preguntar')}</h2><button class="addmini" data-add="questions" aria-label="Add question">＋</button></div>${groups || `<p class="muted small">${T.noQuestionsAll}</p>`}</div>`;
   // --- Past appointments (collapsed) ---
   const pastCard = past.length ? `<div class="card"><details class="ro-fold"><summary><h2>${T.pastAppts}</h2><span class="hint">${L('tap to view', 'toca para ver')}</span><span class="ro-caret">▶</span></summary><div class="ro-body" style="margin-top:8px">${past.map((a) => apptRow(a, true)).join('')}</div></details></div>` : '';
@@ -1354,6 +1359,7 @@ async function onClick(e, state, rerender) {
     }
     ui.postVisit = null; rerender(); return;
   }
+  if (t.dataset.qexpand != null) { const id = t.dataset.qexpand; ui.qExpanded = ui.qExpanded || new Set(); ui.qExpanded.has(id) ? ui.qExpanded.delete(id) : ui.qExpanded.add(id); rerender(); return; }
   if (t.dataset.editpick != null) { ui.editPick = ui.editPick === t.dataset.editpick ? null : t.dataset.editpick; rerender(); return; }
   if (t.dataset.answer) { ui.answering = (ui.answering === t.dataset.answer) ? null : t.dataset.answer; rerender(); return; }
   if (t.dataset.continue) { const qid = t.dataset.continue; const ta = document.querySelector('.q-note[data-qnote="' + qid + '"]'); const rec = DL.getRecord('questions', qid); if (rec && ta) { rec.answerNote = rec.answerNote || { en: '', es: '' }; rec.answerNote[state.lang] = ta.value; } DL.markQuestionAnswered(qid); ui.answering = null; await DL.persist(); rerender(); return; }
@@ -1555,6 +1561,59 @@ function illnessBars(data, lang) {
   const max = Math.max(1, ...months.map((x) => x.n));
   return `<div class="bars">${months.map((x) => `<div class="b"><div class="bv">${x.n}</div><div class="bar" style="height:${Math.round(x.n / max * 64)}px"></div><div class="bl">${x.lbl}</div></div>`).join('')}</div>`;
 }
+// Medication adherence card for the Trends page. Follows the page's window (30d/3m/1y/All).
+// Overall % + change vs previous period; per-med strip+streak (dropped on long windows); PRN as dose count.
+function adherenceCard(state, data, days, win, TT) {
+  const lang = state.lang; const tISO = todayISO();
+  const meds = (data.medications || []).filter((m) => m.status !== 'stopped' && m.track !== false);
+  if (!meds.length) return '';
+  const showDots = days <= 92;
+  const DOTCOL = { t: '#1d9e75', m: '#e2e8f0', n: '#e2e8f0', x: 'transparent' };
+  const info = {}; meds.forEach((m) => { info[m.id] = { m, dots: [], sched: 0, taken: 0, prn: 0, isPrn: false }; });
+  for (let i = days - 1; i >= 0; i--) {
+    const iso = shiftDate(tISO, -i);
+    const { scheduled, prn } = DL.medsForDate(iso, data);
+    const sset = new Set(scheduled.map((x) => x.id)); const pset = new Set(prn.map((x) => x.id));
+    meds.forEach((m) => {
+      const o = info[m.id]; const tk = DL.getMedTaken(iso, m.id, data);
+      if (pset.has(m.id)) { o.isPrn = true; if (showDots) o.dots.push(tk === true ? 't' : 'n'); if (tk === true) o.prn++; }
+      else if (sset.has(m.id)) { o.sched++; const ok = tk === true; if (ok) o.taken++; if (showDots) o.dots.push(ok ? 't' : 'm'); }
+      else if (showDots) o.dots.push('x');
+    });
+  }
+  let totS = 0, totT = 0; Object.values(info).forEach((o) => { if (!o.isPrn) { totS += o.sched; totT += o.taken; } });
+  const overall = totS ? Math.round(totT / totS * 100) : null;
+  // Previous equal-length window, for the change pill.
+  let pTotS = 0, pTotT = 0;
+  for (let i = days * 2 - 1; i >= days; i--) {
+    const iso = shiftDate(tISO, -i);
+    const sset = new Set(DL.medsForDate(iso, data).scheduled.map((x) => x.id));
+    meds.forEach((m) => { if (sset.has(m.id)) { pTotS++; if (DL.getMedTaken(iso, m.id, data) === true) pTotT++; } });
+  }
+  const prevPct = pTotS ? Math.round(pTotT / pTotS * 100) : null;
+  let pill = '';
+  if (overall != null && prevPct != null) {
+    const d = overall - prevPct;
+    if (d === 0) pill = `<span class="muted small">${lang === 'es' ? 'sin cambios' : 'no change'}</span>`;
+    else { const up = d > 0; const bg = up ? '#dcfce7' : '#fef3c7'; const fg = up ? '#15803d' : '#854f0b'; const word = up ? (lang === 'es' ? 'mejor' : 'better') : (lang === 'es' ? 'peor' : 'worse'); pill = `<span style="font-size:12px;padding:2px 8px;border-radius:999px;background:${bg};color:${fg}">${up ? '↑' : '↓'} ${Math.abs(d)} pts ${word}</span>`; }
+  }
+  const sub = `${lang === 'es' ? 'tomadas' : 'taken'} · ${win === 'all' ? TT.allTime : `${TT.past} ${TT.period[win]}`}`;
+  const streakOf = (o) => { let s = 0; for (let i = o.dots.length - 1; i >= 0; i--) { const d = o.dots[i]; if (d === 'x' || d === 'n') continue; if (d === 't') s++; else break; } return s; };
+  const blocks = Object.values(info).map((o) => {
+    const name = esc(tx(o.m.name, lang));
+    let line;
+    if (o.isPrn) line = `<span class="mpct" style="color:var(--muted)">${o.prn} ${lang === 'es' ? 'tomas' : 'doses'}</span>`;
+    else { const pct = o.sched ? Math.round(o.taken / o.sched * 100) : null; const col = pct == null ? 'var(--muted)' : pct >= 80 ? '#15803d' : '#854f0b'; line = `<span class="mpct" style="color:${col}">${o.sched ? `${o.taken}/${o.sched} · ${pct}%` : (lang === 'es' ? 'sin pauta' : 'none due')}</span>`; }
+    const dotsHtml = showDots ? `<div class="adh-dots">${o.dots.map((d) => `<span class="adh-dot" style="background:${DOTCOL[d]}${d === 'x' ? ';border:1px solid #eef1f3' : ''}"></span>`).join('')}</div>` : '';
+    let streak = '';
+    if (o.isPrn) streak = `<div class="adh-streak">${lang === 'es' ? 'frecuencia, no cumplimiento' : 'frequency, not adherence'}</div>`;
+    else if (showDots) { const st = streakOf(o); streak = `<div class="adh-streak">${st > 0 ? `${st}-${lang === 'es' ? 'día racha' : 'day streak'}` : (lang === 'es' ? 'sin racha actual' : 'no current streak')}</div>`; }
+    return `<div class="medblk"><div class="ml"><span class="mname">${name}</span>${line}</div>${dotsHtml}${streak}</div>`;
+  }).join('');
+  const head = `<div class="card-h"><h2>${lang === 'es' ? 'Cumplimiento de medicación' : 'Medication adherence'}</h2></div>`;
+  if (overall == null) return `<div class="card">${head}<p class="muted small">${lang === 'es' ? 'Sin medicación pautada en este periodo.' : 'No scheduled medication in this period.'}</p></div>`;
+  return `<div class="card">${head}<div class="adh-overall"><span class="bignum">${overall}%</span>${pill}<span class="muted small">${sub}</span></div>${blocks}</div>`;
+}
 function renderTrends(state) {
   const lang = state.lang; const TT = TSS[lang]; const data = DL.getData();
   if (!data) return '<div class="card"><p class="muted">No data.</p></div>';
@@ -1604,9 +1663,10 @@ function renderTrends(state) {
     }).join('');
     return `<div class="labgrp"><button class="labgrp-h" data-labgrp="${esc(g)}"><span class="gcaret">${open ? '▾' : '▸'}</span> ${esc(g)}</button>${open ? `<div class="labgrp-b">${rows}</div>` : ''}</div>`;
   }).join('');
+  const adhCard = adherenceCard(state, data, days, win, TT);
   const labsCard = `<div class="card"><div class="card-h"><h2>${TT.labs}</h2><button class="addmini" data-add="labs" aria-label="Add marker">＋</button></div>${labHtml}</div>`;
   const illCard = `<div class="card"><div class="card-h"><h2>${TT.episodes}</h2></div>${illnessBars(data, lang)}</div>`;
-  return `<div class="ds">${winseg}${burdenCard}${sevCard}${promCard}${dailyCard}${labsCard}${illCard}</div>`;
+  return `<div class="ds">${winseg}${burdenCard}${sevCard}${promCard}${dailyCard}${adhCard}${labsCard}${illCard}</div>`;
 }
 // Progression timeline in the new design-system style (keeps filters + tap-for-detail).
 function renderProg(state) {
