@@ -1051,7 +1051,7 @@ function renderToday(state) {
   const savedNote = ui.savedAt ? `<div class="muted small saved-tag">✓ ${T.saved} · ${ui.savedAt}</div>` : '';
   return `<div class="ds">${head}
     ${symptomsCard}
-    <div class="card" id="medsCard"><div class="card-h"><h2>${T.meds}</h2></div>${medsBody}</div>
+    <div class="card" id="medsCard"><div class="card-h"><h2>${T.meds}</h2><button class="linkbtn" data-goto="overview" data-scroll="medsTable">${lang === 'es' ? 'Dosis y pauta ›' : 'Doses & schedule ›'}</button></div>${medsBody}</div>
     <div class="card"><div class="card-h"><h2>${T.episodes}</h2><button class="addmini" data-editpick="episodes" aria-label="${lang === 'es' ? 'Editar' : 'Edit'}">${epEditing ? '✕' : '✎'}</button></div>${epEditing ? `<div class="muted small" style="margin:2px 0 6px">${lang === 'es' ? 'Elige cuál editar:' : 'Choose which to edit:'}</div>${epPick}` : `${ongoing.length ? `<div class="subhead">${T.ongoing}</div>${ongoingHtml}` : ''}${endedHtml}${epForm}`}</div>
     ${savedNote}
     <div class="clearday-row"><button class="linkbtn ${ui.confirmClear?'danger':''}" data-clearday>${ui.confirmClear?T.confirmClear:T.clearDay}</button></div></div>`;
@@ -1253,7 +1253,7 @@ function renderBig(state) {
   const editBtn = (coll) => `<button class="addmini" data-editpick="${coll}" aria-label="${lang === 'es' ? 'Editar' : 'Edit'}">${ui.editPick === coll ? '✕' : '✎'}</button>`;
   return `<div class="ds">
     <div class="card"><div class="card-h"><h2>${T.activeManaged}</h2><span class="hgrp">${editBtn('conditions')}<button class="addmini" data-add="conditions" aria-label="Add condition">＋</button></span></div>${ui.editPick === 'conditions' ? pickList(allConds, 'conditions', (c) => tx(c.name, lang)) : conds}</div>
-    <div class="card"><div class="card-h"><h2>${T.currentMeds}</h2><span class="hgrp">${editBtn('medications')}<button class="addmini" data-add="medications" aria-label="Add medication">＋</button></span></div>${ui.editPick === 'medications' ? pickList(allMeds, 'medications', (m) => tx(m.name, lang)) : meds}</div>
+    <div class="card" id="medsTable"><div class="card-h"><h2>${T.currentMeds}</h2><span class="hgrp">${editBtn('medications')}<button class="addmini" data-add="medications" aria-label="Add medication">＋</button></span></div>${ui.editPick === 'medications' ? pickList(allMeds, 'medications', (m) => tx(m.name, lang)) : meds}</div>
     <div class="card"><div class="card-h"><h2>${T.ruledOut}</h2><span class="hgrp">${editBtn('excluded')}<button class="addmini" data-add="conditions" data-prefill='{"status":"excluded"}' aria-label="${lang === 'es' ? 'Añadir descartado' : 'Add ruled-out'}">＋</button></span></div>${ui.editPick === 'excluded' ? pickList(bp.excluded, 'conditions', (r) => tx(r.name, lang)) : `<details class="ro-fold"><summary><span class="hint">${lang === 'en' ? 'tap to view' : 'toca para ver'}</span><span class="ro-caret">▶</span></summary><div class="ro-body" style="margin-top:8px">${ro}</div></details>`}</div>
   </div>`;
 }
@@ -1686,7 +1686,9 @@ function renderTrends(state) {
     }).join('');
     return `<div class="labgrp"><button class="labgrp-h" data-labgrp="${esc(g)}"><span class="gcaret">${open ? '▾' : '▸'}</span> ${esc(g)}</button>${open ? `<div class="labgrp-b">${rows}</div>` : ''}</div>`;
   }).join('');
-  const adhCard = adherenceCard(state, data, days, win, TT);
+  let adhCard = '';
+  try { adhCard = adherenceCard(state, data, days, win, TT); }
+  catch (err) { console.warn('adherence card failed', err); adhCard = `<div class="card"><div class="card-h"><h2>${lang === 'es' ? 'Cumplimiento de medicación' : 'Medication adherence'}</h2></div><p class="muted small">—</p></div>`; }
   const labsCard = `<div class="card"><div class="card-h"><h2>${TT.labs}</h2><button class="addmini" data-add="labs" aria-label="Add marker">＋</button></div>${labHtml}</div>`;
   const illCard = `<div class="card"><div class="card-h"><h2>${TT.episodes}</h2></div>${illnessBars(data, lang)}</div>`;
   return `<div class="ds">${winseg}${burdenCard}${sevCard}${promCard}${dailyCard}${adhCard}${labsCard}${illCard}</div>`;
@@ -2170,6 +2172,8 @@ function wireChrome() {
     if (e.target.id === 'odSignIn') { (async () => { try { setStatus('Opening Microsoft sign-in…'); await OneDrive.signIn(); setActiveSource(OneDrive.oneDriveSource); await loadData(); setStatus('Signed in — synced ✓', 'ok'); setTimeout(() => setStatus(null), 3000); } catch (err) { setStatus('Sign-in failed: ' + err.message, 'err'); } render(); })(); return; }
     if (e.target.id === 'odSignOut') { (async () => { try { await OneDrive.signOut(); } catch {} setStatus('Signed out'); setTimeout(() => setStatus(null), 2000); render(); })(); return; }
     if (e.target.id === 'odSync') { (async () => { try { setStatus('Syncing…'); await loadData(); setStatus('Synced ✓', 'ok'); setTimeout(() => setStatus(null), 2500); } catch (err) { setStatus('Sync failed: ' + err.message, 'err'); } render(); })(); return; }
+    const goto = e.target.closest('[data-goto]');
+    if (goto) { setTab(goto.dataset.goto); const anchor = goto.dataset.scroll; if (anchor) setTimeout(() => document.getElementById(anchor)?.scrollIntoView({ block: 'start' }), 0); return; }
     if (Forms.isOpen()) { await Forms.onClick(e, render); return; }
     const ed = e.target.closest('[data-add],[data-edit]');
     if (ed) { if (ed.dataset.add) { const pf = ed.dataset.prefill ? JSON.parse(ed.dataset.prefill) : null; Forms.open(ed.dataset.add, null, pf); } else { const [c, id] = ed.dataset.edit.split(':'); Forms.open(c, id || null); } render(); return; }
@@ -2218,14 +2222,19 @@ function render() {
   const titles = TAB_TITLES;
   document.querySelectorAll('.tab').forEach((b) => { const el = b.querySelector('.tab-label'); if (el && titles[b.dataset.tab]) el.textContent = titles[b.dataset.tab]; });
   let content;
-  if (state.showData) { titleEl.textContent = 'Data'; content = renderDataScreen(); }
-  else if (state.tab === 'today') { titleEl.innerHTML = Today.headerHTML(state); content = Today.renderToday(state); }
-  else { titleEl.textContent = titles[state.tab] || '';
-    if (state.tab === 'overview') content = Appt.renderBig(state);
-    else if (state.tab === 'next') content = Appt.renderQuestions(state);
-    else if (state.tab === 'records') content = Records.renderRecords(state);
-    else if (state.tab === 'timeline') content = Records.renderTimeline(state);
-    else content = '';
+  try {
+    if (state.showData) { titleEl.textContent = 'Data'; content = renderDataScreen(); }
+    else if (state.tab === 'today') { titleEl.innerHTML = Today.headerHTML(state); content = Today.renderToday(state); }
+    else { titleEl.textContent = titles[state.tab] || '';
+      if (state.tab === 'overview') content = Appt.renderBig(state);
+      else if (state.tab === 'next') content = Appt.renderQuestions(state);
+      else if (state.tab === 'records') content = Records.renderRecords(state);
+      else if (state.tab === 'timeline') content = Records.renderTimeline(state);
+      else content = '';
+    }
+  } catch (err) {
+    console.error('render failed', err);
+    content = '<div class="card"><h2>Couldn’t load this page</h2><p class="muted small">' + escapeHtml(err && err.message ? err.message : String(err)) + '</p><p class="muted small">Try reloading. If it persists, take a screenshot of this message.</p></div>';
   }
   screen.innerHTML = content + (Forms.isOpen() ? Forms.renderForm() : '');
   const tb = document.querySelector('.topbar'); if (tb) document.documentElement.style.setProperty('--topbar-h', tb.offsetHeight + 'px');
