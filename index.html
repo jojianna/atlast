@@ -71,6 +71,11 @@ details.msgs { margin-top:8px; } details.msgs summary { cursor:pointer; font-siz
 .med-name { font-weight:600; } .med-toggle { display:flex; gap:6px; }
 .tgl { width:44px; height:40px; border:1px solid var(--line); background:#fff; border-radius:8px; font-size:15px; cursor:pointer; color:var(--muted); touch-action:manipulation; -webkit-tap-highlight-color:transparent; user-select:none; }
 .tgl.is-yes { background:var(--ok); color:#fff; border-color:transparent; } .tgl.is-no { background:var(--err); color:#fff; border-color:transparent; }
+.med-stepper { display:flex; align-items:center; gap:8px; }
+.stepbtn { width:34px; height:34px; border:1px solid var(--line); background:#fff; border-radius:8px; font-size:17px; font-weight:700; line-height:1; cursor:pointer; color:var(--teal-d); touch-action:manipulation; -webkit-tap-highlight-color:transparent; user-select:none; }
+.stepbtn.plus { background:var(--teal); color:#fff; border-color:transparent; }
+.stepbtn:disabled { opacity:.35; cursor:default; }
+.stepcount { min-width:22px; text-align:center; font-size:17px; font-weight:700; color:var(--teal-d); }
 #noteBox { width:100%; border:1px solid var(--line); border-radius:10px; padding:10px; font:inherit; resize:vertical; }
 .ep-ongoing { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:6px 0; }
 .ep-form { display:flex; flex-direction:column; gap:8px; } .ep-form input,.ep-form select { border:1px solid var(--line); border-radius:9px; padding:9px; font:inherit; }
@@ -485,7 +490,7 @@ function validate(data) {
       if(r.severity!==undefined&&r.severity!==null){ if(!isNum(r.severity)||r.severity<SEVERITY_MIN||r.severity>SEVERITY_MAX||!Number.isInteger(r.severity))E(rat+'.severity out of 0-4'); }
       if(r.note!==undefined&&!isStr(r.note))E(rat+'.note'); });
     if(d.overallPain!==undefined&&d.overallPain!==null&&!(Number.isInteger(d.overallPain)&&d.overallPain>=SEVERITY_MIN&&d.overallPain<=SEVERITY_MAX))E(at+'.overallPain out of 0-4');
-    if(!isArr(d.medsTaken))E(at+'.medsTaken'); else d.medsTaken.forEach((mt,j)=>{ if(!ids.medication.has(mt.medId))W(at+'.medsTaken['+j+'].medId unknown'); if(!isBool(mt.taken))E(at+'.medsTaken['+j+'].taken'); });
+    if(!isArr(d.medsTaken))E(at+'.medsTaken'); else d.medsTaken.forEach((mt,j)=>{ if(!ids.medication.has(mt.medId))W(at+'.medsTaken['+j+'].medId unknown'); if(!isBool(mt.taken))E(at+'.medsTaken['+j+'].taken'); if(mt.count!==undefined&&!(Number.isInteger(mt.count)&&mt.count>=0))E(at+'.medsTaken['+j+'].count'); });
   });
   (data.episodes||[]).forEach((e,i)=>{ const at='episodes['+i+'] ('+e.id+')'; if(!isStr(e.id))E(at+'.id'); if(!isI18n(e.name))E(at+'.name'); if(!ENUMS.episodeType.includes(e.type))E(at+'.type invalid'); if(!isStr(e.startDate)||!ISO_DATE.test(e.startDate))E(at+'.startDate'); if(!isNullableDate(e.endDate))E(at+'.endDate'); if(!isBool(e.showOnTimeline))E(at+'.showOnTimeline'); });
   (data.labs||[]).forEach((l,i)=>{ const at='labs['+i+'] ('+l.id+')'; if(!isStr(l.id))E(at+'.id'); if(!isI18n(l.marker))E(at+'.marker'); if(!ENUMS.labDisplayMode.includes(l.displayMode))E(at+'.displayMode'); if(l.referenceRange!==null&&!(isObj(l.referenceRange)&&('low' in l.referenceRange)&&('high' in l.referenceRange)))E(at+'.referenceRange'); if(l.referenceRange===null)W(at+'.referenceRange null'); if(l.posNeg!==undefined&&!isBool(l.posNeg))E(at+'.posNeg'); if(l.pinned!==undefined&&!isBool(l.pinned))E(at+'.pinned'); if(!isArr(l.results))E(at+'.results'); else l.results.forEach((r,j)=>{ const rat=at+'.results['+j+']'; if(!isStr(r.date)||!ISO_DATE.test(r.date))E(rat+'.date'); if(!isNum(r.value)&&!isStr(r.qualitative))E(rat+' needs value or qualitative'); }); });
@@ -692,6 +697,18 @@ function setMedTaken(date, medId, taken) {
   return log;
 }
 function getMedTaken(date, medId, data = _data) { const log = getDailyLog(date, data); const row = log?.medsTaken.find((r) => r.medId === medId); return row ? row.taken : null; }
+// PRN dose counter (e.g. "took ibuprofen 4 times today"). Stored on the same medsTaken row
+// as an optional `count`; `taken` is kept in lockstep (true whenever count>0) so existing
+// adherence code that reads getMedTaken keeps working unchanged. count<=0 removes the row,
+// matching the existing "no row = not taken" convention used by setMedTaken.
+function setMedCount(date, medId, count) {
+  const log = ensureLog(date); const i = log.medsTaken.findIndex((r) => r.medId === medId);
+  const n = Math.max(0, Math.round(count || 0));
+  if (n <= 0) { if (i >= 0) log.medsTaken.splice(i, 1); }
+  else { const row = { medId, taken: true, count: n }; if (i >= 0) log.medsTaken[i] = row; else log.medsTaken.push(row); }
+  return log;
+}
+function getMedCount(date, medId, data = _data) { const log = getDailyLog(date, data); const row = log?.medsTaken.find((r) => r.medId === medId); return row && typeof row.count === 'number' ? row.count : 0; }
 function setNote(date, lang, text) { const log = ensureLog(date); log.note = log.note || { en: '', es: '' }; log.note[lang] = text; return log; }
 function medDueOn(m, date) {
   if (m.everyNDays && m.anchorDate) { const diff = Math.round((new Date(date + 'T00:00:00Z') - new Date(m.anchorDate + 'T00:00:00Z')) / 86400000); return diff >= 0 && diff % m.everyNDays === 0; }
@@ -802,7 +819,7 @@ async function importData(text) {
   return report;
 }
 
-return { CONFIG, getData, getLoadMeta, subscribe, setActiveSource, getActiveSource, loadData, resetToSeed, saveData, t, tx, specialistLabel, derivedOverall, derivedIntensity, activeSymptomTypes, activeLocations, episodeFrequency, daysUnwell, latestLab, labWindow, activeConditions, excludedList, bigPicture, labStatus, labTrend, labPosNeg, labGroups, questionsForSpecialist, parseReport, weekdayOf, getDailyLog, setSeverity, getSeverity, setSymptomNote, getSymptomNote, setOverallPain, getOverallPain, setMedTaken, getMedTaken, setNote, medDueOn, TIME_ORDER, medTimeOfDay, medsForDate, submitSymptoms, symptomsSubmitted, startEpisode, endEpisode, reopenEpisode, setEpisodeNote, ongoingEpisodes, episodesEndedOn, persist, persistLocal, markQuestionAnswered, genId, getRecord, upsert, remove, archiveSymptomType, addSymptomType, renameSymptomType, setSymptomOverall, addLocation, renameLocation, archiveLocation, addLabResult, removeLabResult, recordDoseChange, clearDay, exportJSON, importData };
+return { CONFIG, getData, getLoadMeta, subscribe, setActiveSource, getActiveSource, loadData, resetToSeed, saveData, t, tx, specialistLabel, derivedOverall, derivedIntensity, activeSymptomTypes, activeLocations, episodeFrequency, daysUnwell, latestLab, labWindow, activeConditions, excludedList, bigPicture, labStatus, labTrend, labPosNeg, labGroups, questionsForSpecialist, parseReport, weekdayOf, getDailyLog, setSeverity, getSeverity, setSymptomNote, getSymptomNote, setOverallPain, getOverallPain, setMedTaken, getMedTaken, setMedCount, getMedCount, setNote, medDueOn, TIME_ORDER, medTimeOfDay, medsForDate, submitSymptoms, symptomsSubmitted, startEpisode, endEpisode, reopenEpisode, setEpisodeNote, ongoingEpisodes, episodesEndedOn, persist, persistLocal, markQuestionAnswered, genId, getRecord, upsert, remove, archiveSymptomType, addSymptomType, renameSymptomType, setSymptomOverall, addLocation, renameLocation, archiveLocation, addLabResult, removeLabResult, recordDoseChange, clearDay, exportJSON, importData };
 })();
 
 const Today = (function(){
@@ -933,7 +950,7 @@ function renderAdherence(state, data) {
     const sset = new Set(scheduled.map((x) => x.id)); const pset = new Set(prn.map((x) => x.id));
     meds.forEach((m) => {
       const o = info[m.id]; const tk = DL.getMedTaken(iso, m.id, data);
-      if (pset.has(m.id)) { o.isPrn = true; o.dots.push(tk === true ? 't' : 'n'); if (tk === true) o.prn++; }
+      if (pset.has(m.id)) { o.isPrn = true; o.dots.push(tk === true ? 't' : 'n'); const cnt = DL.getMedCount(iso, m.id, data); o.prn += cnt > 0 ? cnt : (tk === true ? 1 : 0); }
       else if (sset.has(m.id)) { o.sched++; const ok = tk === true; if (ok) o.taken++; o.dots.push(ok ? 't' : 'm'); }
       else o.dots.push('x');
     });
@@ -1036,12 +1053,23 @@ function renderToday(state) {
     : `<div class="card"><div class="sec-head"><h2>${T.symptoms}</h2><span class="hgrp">${headStatus}${symEditBtns}</span></div>${scaleTop}${symptomCards}</div>`;
 
   const { scheduled, prn } = DL.medsForDate(date, data);
-  const medRow = (m) => { const taken = DL.getMedTaken(date, m.id, data); return `<div class="med"><div class="med-name">${esc(tx(m.name, lang))} <span class="muted small">${esc(m.dose)}</span></div><div class="med-toggle"><button class="tgl ${taken === true ? 'is-yes' : ''}" data-med="${m.id}" data-taken="yes">✓</button><button class="tgl ${taken === false ? 'is-no' : ''}" data-med="${m.id}" data-taken="no">✗</button></div></div>`; };
-  const medSec = (label, list) => list.length ? `<div class="subsec">${label}</div>${list.map(medRow).join('')}` : '';
+  // PRN rows get a dose stepper (how many times today) instead of the yes/no toggle —
+  // scheduled/supplement/therapy rows keep the plain taken/not-taken toggle.
+  const medRow = (m, isPrn) => {
+    if (isPrn) {
+      const count = DL.getMedCount(date, m.id, data);
+      const minusLbl = lang === 'es' ? 'Quitar una dosis' : 'Remove a dose';
+      const plusLbl = lang === 'es' ? 'Añadir una dosis' : 'Add a dose';
+      return `<div class="med"><div class="med-name">${esc(tx(m.name, lang))} <span class="muted small">${esc(m.dose)}</span></div><div class="med-stepper"><button class="stepbtn minus" data-medcount="${m.id}" data-delta="-1" aria-label="${minusLbl}" ${count <= 0 ? 'disabled' : ''}>−</button><span class="stepcount">${count}</span><button class="stepbtn plus" data-medcount="${m.id}" data-delta="1" aria-label="${plusLbl}">+</button></div></div>`;
+    }
+    const taken = DL.getMedTaken(date, m.id, data);
+    return `<div class="med"><div class="med-name">${esc(tx(m.name, lang))} <span class="muted small">${esc(m.dose)}</span></div><div class="med-toggle"><button class="tgl ${taken === true ? 'is-yes' : ''}" data-med="${m.id}" data-taken="yes">✓</button><button class="tgl ${taken === false ? 'is-no' : ''}" data-med="${m.id}" data-taken="no">✗</button></div></div>`;
+  };
+  const medSec = (label, list, isPrn) => list.length ? `<div class="subsec">${label}</div>${list.map((m) => medRow(m, isPrn)).join('')}` : '';
   const regMeds = scheduled.filter((m) => m.category !== 'supplement' && m.category !== 'therapy');
   const suppMeds = scheduled.filter((m) => m.category === 'supplement');
   const therMeds = scheduled.filter((m) => m.category === 'therapy');
-  const medsBody = (medSec(T.secRegular, regMeds) + medSec(T.secSupplements, suppMeds) + medSec(T.secTherapies, therMeds) + medSec(T.asNeeded, prn)) || `<p class="muted small">${T.noMeds}</p>`;
+  const medsBody = (medSec(T.secRegular, regMeds) + medSec(T.secSupplements, suppMeds) + medSec(T.secTherapies, therMeds) + medSec(T.asNeeded, prn, true)) || `<p class="muted small">${T.noMeds}</p>`;
 
   // Episodes active on the selected day (so past days show what was ongoing then), not just today's ongoing.
   const ongoing = (data.episodes || []).filter((e) => e.startDate && e.startDate <= date && (e.endDate == null || e.endDate > date));
@@ -1096,6 +1124,7 @@ async function onClick(e, state, rerender) {
   if (t.dataset.expand) { const id = t.dataset.expand; ui.expanded.has(id) ? ui.expanded.delete(id) : ui.expanded.add(id); rerender(); return; }
   if (t.classList.contains('sev')) { const sym = t.dataset.sym, loc = t.dataset.loc || null, sev = Number(t.dataset.sev); const cur = DL.getSeverity(state.date, sym, loc, DL.getData()); DL.setSeverity(state.date, sym, loc, cur === sev ? null : sev); ui.scaleOpen.delete(rowKey(sym, loc)); save(); rerender(); return; }
   if (t.dataset.med) { const want = t.dataset.taken === 'yes'; const cur = DL.getMedTaken(state.date, t.dataset.med, DL.getData()); DL.setMedTaken(state.date, t.dataset.med, cur === want ? null : want); save(); rerender(); return; }
+  if (t.dataset.medcount) { const cur = DL.getMedCount(state.date, t.dataset.medcount, DL.getData()); DL.setMedCount(state.date, t.dataset.medcount, cur + Number(t.dataset.delta)); save(); rerender(); return; }
   if (t.id === 'markZero') { DL.submitSymptoms(state.date); save(); rerender(); return; }
   if (t.dataset.clearday !== undefined) { if (!ui.confirmClear) { ui.confirmClear = true; rerender(); return; } DL.clearDay(state.date); ui.confirmClear = false; save(); rerender(); return; }
   if (t.dataset.endEp) { DL.endEpisode(t.dataset.endEp, state.date); save(); rerender(); return; }
@@ -1621,7 +1650,7 @@ function adherenceCard(state, data, days, win, TT) {
     const sset = new Set(scheduled.map((x) => x.id)); const pset = new Set(prn.map((x) => x.id));
     meds.forEach((m) => {
       const o = info[m.id]; const tk = DL.getMedTaken(iso, m.id, data);
-      if (pset.has(m.id)) { o.isPrn = true; if (showDots) o.dots.push(tk === true ? 't' : 'n'); if (tk === true) o.prn++; }
+      if (pset.has(m.id)) { o.isPrn = true; if (showDots) o.dots.push(tk === true ? 't' : 'n'); const cnt = DL.getMedCount(iso, m.id, data); o.prn += cnt > 0 ? cnt : (tk === true ? 1 : 0); }
       else if (sset.has(m.id)) { o.sched++; const ok = tk === true; if (ok) o.taken++; if (showDots) o.dots.push(ok ? 't' : 'm'); }
       else if (showDots) o.dots.push('x');
     });
