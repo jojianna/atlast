@@ -90,10 +90,10 @@ details.msgs { margin-top:8px; } details.msgs summary { cursor:pointer; font-siz
 .ro-body { margin-top:8px; }
 .notebtn { border:1px solid var(--line); background:#fff; border-radius:8px; padding:3px 8px; font-size:13px; cursor:pointer; opacity:.55; }
 .notebtn.has { opacity:1; border-color:var(--teal); background:#ecfeff; }
-.rownote { width:100%; margin-top:8px; border:1px solid var(--line); border-radius:9px; padding:8px; font:inherit; font-size:14px; resize:vertical; }
-.rownote-wrap { margin-top:8px; }
+.rownote { width:100%; margin-top:8px; border:1px solid var(--line); border-radius:9px; padding:8px 34px 8px 8px; font:inherit; font-size:14px; resize:vertical; }
+.rownote-wrap { margin-top:8px; position:relative; }
 .rownote-wrap .rownote { margin-top:0; }
-.rownote-done { margin-top:6px; display:inline-flex; align-items:center; gap:6px; border:1px solid #0f766e; background:#0f766e; color:#fff; border-radius:8px; padding:6px 14px; font:inherit; font-size:13px; font-weight:600; cursor:pointer; touch-action:manipulation; -webkit-tap-highlight-color:transparent; }
+.rownote-done { position:absolute; top:6px; right:6px; width:24px; height:24px; display:inline-flex; align-items:center; justify-content:center; border:0; background:#0f766e; color:#fff; border-radius:50%; padding:0; cursor:pointer; touch-action:manipulation; -webkit-tap-highlight-color:transparent; }
 .rownote-done:active { opacity:.85; }
 .appt-head { display:flex; align-items:center; justify-content:space-between; gap:10px; }
 .appt-sp { font-size:18px; font-weight:700; color:var(--teal-d); }
@@ -275,8 +275,9 @@ ul.tight { margin: 4px 0 0; padding-left: 18px; } ul.tight li { padding: 1px 0; 
 .ds .symrow .symctl{display:flex;align-items:center;gap:6px;}
 .ds .sevpick,.ds .sev-chip.sevsq{display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;min-width:38px;padding:0;border:0;border-radius:9px;font-size:15px;font-weight:700;cursor:pointer;}
 .ds .chipgrp{display:flex;align-items:center;gap:6px;} .ds .sev-chip.sumsq{background:var(--teal);color:#fff;cursor:default;}
-.ds .noteicon{width:38px;height:38px;display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--line);background:#fff;border-radius:9px;cursor:pointer;color:var(--muted);touch-action:manipulation;-webkit-tap-highlight-color:transparent;}
+.ds .noteicon{width:38px;height:38px;display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--line);background:#fff;border-radius:9px;cursor:pointer;color:var(--muted);touch-action:manipulation;-webkit-tap-highlight-color:transparent;position:relative;}
 .ds .noteicon.has{color:#0f766e;}
+.ds .noteicon.has::after{content:'';position:absolute;top:-3px;right:-3px;width:10px;height:10px;border-radius:50%;background:#0f766e;border:2px solid var(--card);}
 .ds .noteicon.on{color:#0f766e;border-color:#0f766e;}
 .ds .chgpill{font-size:13px;font-weight:600;border-radius:999px;padding:2px 10px;white-space:nowrap;}
 .ds .chgpill.up{background:#fde8e8;color:#b91c1c;}
@@ -887,7 +888,7 @@ function symRow(state, symId, locId, label) {
   const noteBtn = (v != null) ? `<button class="noteicon${note ? ' has' : ''}${noteOpen ? ' on' : ''}" data-note="${key}" aria-label="${STR[lang].addNote}">${NOTE_SVG}</button>` : '';
   const control = expanded ? (sevSelector(symId, locId, v) + noteBtn)
     : (`<button class="sevpick sev-chip sev-${v}" data-reopen="${key}" aria-label="${esc(label)} = ${v}">${v}</button>` + noteBtn);
-  const noteArea = (v != null && noteOpen) ? `<div class="rownote-wrap"><textarea class="rownote" data-sym="${symId}"${locId ? ` data-loc="${locId}"` : ''} rows="2" placeholder="${STR[lang].rowNotePh}">${esc(note)}</textarea><button class="rownote-done" data-noteclose="${key}">${CHECK_SVG}<span>${STR[lang].done}</span></button></div>` : '';
+  const noteArea = (v != null && noteOpen) ? `<div class="rownote-wrap"><textarea class="rownote" data-sym="${symId}"${locId ? ` data-loc="${locId}"` : ''} rows="2" placeholder="${STR[lang].rowNotePh}">${esc(note)}</textarea><button class="rownote-done" data-noteclose="${key}" aria-label="${STR[lang].done}">${CHECK_SVG}</button></div>` : '';
   return `<div class="symrow${locId ? ' loc' : ''}">
     <span class="symrow-name as-text">${esc(label)}</span>
     <div class="symctl">${control}</div>
