@@ -1923,16 +1923,17 @@ const SPECS = {
 };
 
 let fs = null, fcol = null, fmode = null, fconfirm = false, ferr = '';
+let fdosePanel = false, fdoseDraft = null;
 function isOpen() { return fcol != null; }
 function open(collection, id, prefill) {
-  fcol = collection; fconfirm = false; ferr = '';
+  fcol = collection; fconfirm = false; ferr = ''; fdosePanel = false; fdoseDraft = null;
   const spec = SPECS[collection];
   fs = id ? JSON.parse(JSON.stringify(DL.getRecord(collection, id) || {})) : JSON.parse(JSON.stringify(spec.defaults || {}));
   fmode = id ? 'edit' : 'add';
   if (!id && prefill) Object.assign(fs, prefill);
   if (collection === 'medications') fs.cadence = fs.everyNDays != null ? 'interval' : (fs.scheduledDays === 'prn' ? 'prn' : 'weekly');
 }
-function close() { fcol = null; fs = null; fmode = null; fconfirm = false; ferr = ''; }
+function close() { fcol = null; fs = null; fmode = null; fconfirm = false; ferr = ''; fdosePanel = false; fdoseDraft = null; }
 
 function gv(o, k) { return k.split('.').reduce((a, p) => (a == null ? a : a[p]), o); }
 function sv(o, k, v) { const ps = k.split('.'); let t = o; for (let i = 0; i < ps.length - 1; i++) { t[ps[i]] = t[ps[i]] || {}; t = t[ps[i]]; } t[ps[ps.length - 1]] = v; }
@@ -1961,23 +1962,83 @@ function field(f) {
   return '';
 }
 
+function medToday() { return new Date().toISOString().slice(0, 10); }
+function medStatusBadge(st) {
+  const map = { active: ['#ecfdf3', 'var(--ok)', 'Currently taking'], stopped: ['var(--chip)', 'var(--muted)', 'Stopped · in past meds'], tapering: ['#fff8e1', 'var(--warn)', 'Tapering off'], prn: ['var(--chip)', 'var(--muted)', 'As needed'] };
+  const m = map[st] || map.active;
+  return `<div style="display:inline-block;background:${m[0]};color:${m[1]};font-size:12px;font-weight:600;padding:3px 10px;border-radius:999px;margin:0 0 12px">${m[2]}</div>`;
+}
+function medFreqControlHtml(F) {
+  const isPrn = fs.scheduledDays === 'prn' || fs.cadence === 'prn';
+  const isInterval = fs.cadence === 'interval' || fs.everyNDays != null;
+  const allDays = Array.isArray(fs.scheduledDays) && fs.scheduledDays.length === 7;
+  const cur = isPrn ? 'prn' : (isInterval ? 'custom' : (allDays ? 'daily' : 'weekly'));
+  const btn = (v, l) => `<button class="${cur === v ? 'on' : ''}" data-formaction="medfreq" data-freq="${v}">${l}</button>`;
+  const seg = `<div class="seg">${btn('daily', 'Daily')}${btn('weekly', 'Weekly')}${btn('prn', 'As needed')}</div>`;
+  const note = cur === 'custom' ? `<div class="muted small" style="margin-top:-4px">Custom schedule — set in Advanced options.</div>` : '';
+  const days = cur === 'weekly' ? field(F.scheduledDays) : '';
+  return `<div class="f"><div class="f-label">How often</div>${seg}${note}${days}</div>`;
+}
+function medFormBody(spec) {
+  const F = {}; spec.fields.forEach((f) => { F[f.key] = f; });
+  const isAdd = fmode === 'add';
+  const st = fs.status || 'active';
+  let actions = '';
+  if (!isAdd) {
+    const doseBtn = `<button class="btn ghost" data-formaction="dosepanel" style="flex:1">Change dose</button>`;
+    const stopBtn = st === 'stopped'
+      ? `<button class="btn ghost" data-formaction="medresume" style="flex:1">Resume taking</button>`
+      : `<button class="btn ghost" data-formaction="medstop" style="flex:1;color:var(--err)">Stop taking</button>`;
+    actions = `<div style="display:flex;gap:8px;margin:0 0 14px">${doseBtn}${stopBtn}</div>`;
+  }
+  let dosePanel = '';
+  if (fdosePanel) {
+    const d = fdoseDraft || {};
+    dosePanel = `<div style="background:#ecfdf3;border:1px solid #b7e4c7;border-radius:10px;padding:12px;margin:0 0 14px">
+      <div style="font-weight:600;margin-bottom:8px">Change dose</div>
+      <div class="f"><div class="f-label">New dose</div><input type="text" data-dosedraft="dose" value="${esc(d.dose || '')}"></div>
+      <div class="f"><div class="f-label">From which date</div><input type="date" data-dosedraft="date" value="${esc(d.date || '')}"></div>
+      <div style="display:flex;gap:8px"><button class="btn" data-formaction="dosesave" style="flex:1">Save dose change</button><button class="btn ghost" data-formaction="dosecancel">Cancel</button></div>
+      <div class="muted small" style="margin-top:6px">The old dose is kept in the history automatically.</div>
+    </div>`;
+  }
+  const stoppedDate = (!isAdd && st === 'stopped')
+    ? field(Object.assign({}, F.stopDate, { label: 'Stopped on' })) + `<div class="muted small" style="margin:-4px 0 10px">Set to today — tap to change it if you stopped on a different day.</div>`
+    : '';
+  const simple = [
+    field(F.name),
+    isAdd ? '' : medStatusBadge(st),
+    actions,
+    dosePanel,
+    stoppedDate,
+    field(F.dose),
+    field(Object.assign({}, F.purpose, { label: "What it's for" })),
+    medFreqControlHtml(F),
+    field(F.startDate),
+  ].join('');
+  const advKeys = ['freqLabel', 'cadence', 'everyNDays', 'anchorDate', 'timeOfDay', 'track', 'category', 'conditionIds', 'status', 'statusNote', 'lastDoseChange', 'doseHistory', 'notes'];
+  const adv = advKeys.map((k) => (F[k] ? field(F[k]) : '')).join('');
+  return simple + `<details style="margin-top:10px;border-top:1px solid var(--line);padding-top:8px"><summary style="cursor:pointer;color:var(--muted);font-size:14px">Advanced options</summary><div style="margin-top:10px">${adv}</div></details>`;
+}
+
 function renderForm() {
   if (!fcol) return '';
   const spec = SPECS[fcol];
-  const body = spec.fields.map(field).join('');
+  const body = fcol === 'medications' ? medFormBody(spec) : spec.fields.map(field).join('');
   const delLabel = fconfirm ? 'Confirm delete' : (spec.archive ? 'Archive' : 'Delete');
   const delBtn = fmode === 'edit' ? `<button class="btn ${fconfirm ? '' : 'ghost'}" data-formaction="delete" style="${fconfirm ? 'background:var(--err)' : 'color:var(--err)'}">${delLabel}</button>` : '';
   return `<div class="modal-bg" data-formaction="cancelbg"><div class="modal modal-form" role="dialog">
     <h2>${fmode === 'add' ? 'Add' : 'Edit'} ${spec.title}</h2>
     <div class="form-body">${body}</div>
     ${ferr ? `<div class="f-err" style="color:var(--err);font-size:13px;margin:4px 2px 0">${esc(ferr)}</div>` : ''}
-    <div class="form-actions">${delBtn}<span class="spacer"></span><button class="btn ghost" data-formaction="cancel">Cancel</button><button class="btn" data-formaction="save">Save</button></div>
+    <div class="form-actions">${delBtn}<span class="spacer"></span><button class="btn ghost" data-formaction="cancel">Cancel</button><button class="btn" data-formaction="save">${fcol === 'medications' && fmode === 'add' ? 'Add medication' : 'Save'}</button></div>
   </div></div>`;
 }
 
 function onInput(e) {
   if (!fcol) return;
   const el = e.target; const k = el.dataset.fkey; const rowKey = el.dataset.row;
+  if (el.dataset.dosedraft !== undefined) { fdoseDraft = fdoseDraft || {}; fdoseDraft[el.dataset.dosedraft] = el.value; return; }
   if (rowKey) {
     const idx = Number(el.dataset.idx); const sub = el.dataset.sub; const lang = el.dataset.lang;
     fs[rowKey] = fs[rowKey] || []; fs[rowKey][idx] = fs[rowKey][idx] || {};
@@ -2026,6 +2087,12 @@ async function onClick(e, rerender) {
   if (a === 'cancel' || (a === 'cancelbg' && e.target === t)) { close(); rerender(); return true; }
   if (a === 'addrow') { fs[t.dataset.row] = fs[t.dataset.row] || []; fs[t.dataset.row].push({}); rerender(); return true; }
   if (a === 'delrow') { fs[t.dataset.row].splice(Number(t.dataset.idx), 1); rerender(); return true; }
+  if (a === 'medstop') { fs.status = 'stopped'; if (!fs.stopDate) fs.stopDate = medToday(); rerender(); return true; }
+  if (a === 'medresume') { fs.status = 'active'; fs.stopDate = null; rerender(); return true; }
+  if (a === 'dosepanel') { fdosePanel = true; fdoseDraft = { dose: fs.dose || '', date: medToday() }; rerender(); return true; }
+  if (a === 'dosecancel') { fdosePanel = false; fdoseDraft = null; rerender(); return true; }
+  if (a === 'dosesave') { const d = fdoseDraft || {}; const dt = d.date || medToday(); if (!Array.isArray(fs.doseHistory)) fs.doseHistory = []; fs.doseHistory.unshift({ date: dt, dose: d.dose || '', note: '' }); if (d.dose) fs.dose = d.dose; fs.lastDoseChange = dt; fdosePanel = false; fdoseDraft = null; rerender(); return true; }
+  if (a === 'medfreq') { const v = t.dataset.freq; if (v === 'prn') { fs.cadence = 'prn'; } else if (v === 'daily') { fs.cadence = 'weekly'; fs.scheduledDays = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']; fs.everyNDays = undefined; fs.anchorDate = undefined; if (fs.status === 'prn') fs.status = 'active'; } else if (v === 'weekly') { fs.cadence = 'weekly'; if (!Array.isArray(fs.scheduledDays) || fs.scheduledDays.length === 7) fs.scheduledDays = ['mon']; fs.everyNDays = undefined; fs.anchorDate = undefined; if (fs.status === 'prn') fs.status = 'active'; } rerender(); return true; }
   if (a === 'delete') {
     if (!fconfirm) { fconfirm = true; rerender(); return true; }
     const spec = SPECS[fcol];
