@@ -129,6 +129,9 @@ ul.tight { margin: 4px 0 0; padding-left: 18px; } ul.tight li { padding: 1px 0; 
 .f-rowitem { display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin-bottom:6px; background:var(--chip); padding:6px; border-radius:8px; }
 .f-rowitem input { flex:1 1 80px; border:1px solid var(--line); border-radius:6px; padding:6px; font:inherit; }
 .form-actions { display:flex; align-items:center; gap:8px; margin-top:12px; padding-top:10px; border-top:1px solid var(--line); } .form-actions .spacer { flex:1; }
+.medseg { display:inline-flex; flex-wrap:wrap; border:1px solid var(--line); border-radius:999px; padding:2px; margin:0 0 6px; }
+.medseg button { border:0; background:none; font:inherit; font-size:13px; color:var(--muted); padding:6px 16px; border-radius:999px; cursor:pointer; -webkit-tap-highlight-color:transparent; touch-action:manipulation; }
+.medseg button.on { background:var(--teal-d); color:#fff; font-weight:600; }
 
 /* ---- feedback round 1 additions ---- */
 .badge.warn { background:#fef3c7; color:var(--warn); }
@@ -1301,9 +1304,15 @@ function renderBig(state) {
   const condBody = condView === 'active'
     ? (ui.editPick === 'conditions' ? pickList(allConds, 'conditions', (c) => tx(c.name, lang)) : conds)
     : (ui.editPick === 'excluded' ? pickList(bp.excluded, 'conditions', (r) => tx(r.name, lang)) : ro);
+  // Past (stopped) meds — hidden from the current list, surfaced here so they can be reopened / resumed.
+  const pastMeds = (data.medications || []).filter((m) => m.status === 'stopped').sort((a, b) => { const x = a.stopDate || '', y = b.stopDate || ''; return x < y ? 1 : (x > y ? -1 : 0); });
+  const pastLbl = lang === 'es' ? 'Medicamentos anteriores' : 'Past medications';
+  const stoppedLbl = lang === 'es' ? 'suspendido' : 'stopped';
+  const pastRows = pastMeds.map((m) => `<button class="pickrow" data-edit="medications:${m.id}">${esc(tx(m.name, lang))}${m.stopDate ? ` <span class="muted small">· ${stoppedLbl} ${fmtDate(m.stopDate, lang)}</span>` : ''}</button>`).join('');
+  const pastSection = pastMeds.length ? `<details class="pastmeds" style="margin-top:10px;border-top:1px solid var(--line);padding-top:8px"><summary style="cursor:pointer;color:var(--muted);font-size:13px">${pastLbl} · ${pastMeds.length}</summary><div style="margin-top:6px">${pastRows}</div></details>` : '';
   return `<div class="ds">
     <div class="card"><div class="card-h"><h2>${T.activeManaged}</h2><span class="hgrp">${condHdr}</span></div>${condSeg}${condBody}</div>
-    <div class="card" id="medsTable"><div class="card-h"><h2>${T.currentMeds}</h2><span class="hgrp">${editBtn('medications')}<button class="addmini" data-add="medications" aria-label="Add medication">＋</button></span></div>${ui.editPick === 'medications' ? pickList(allMeds, 'medications', (m) => tx(m.name, lang)) : meds}</div>
+    <div class="card" id="medsTable"><div class="card-h"><h2>${T.currentMeds}</h2><span class="hgrp">${editBtn('medications')}<button class="addmini" data-add="medications" aria-label="Add medication">＋</button></span></div>${ui.editPick === 'medications' ? pickList(allMeds, 'medications', (m) => tx(m.name, lang)) : meds}${pastSection}</div>
   </div>`;
 }
 
@@ -1974,7 +1983,7 @@ function medFreqControlHtml(F) {
   const allDays = Array.isArray(fs.scheduledDays) && fs.scheduledDays.length === 7;
   const cur = isPrn ? 'prn' : (isInterval ? 'custom' : (allDays ? 'daily' : 'weekly'));
   const btn = (v, l) => `<button class="${cur === v ? 'on' : ''}" data-formaction="medfreq" data-freq="${v}">${l}</button>`;
-  const seg = `<div class="seg">${btn('daily', 'Daily')}${btn('weekly', 'Weekly')}${btn('prn', 'As needed')}</div>`;
+  const seg = `<div class="medseg">${btn('daily', 'Daily')}${btn('weekly', 'Weekly')}${btn('prn', 'As needed')}</div>`;
   const note = cur === 'custom' ? `<div class="muted small" style="margin-top:-4px">Custom schedule — set in Advanced options.</div>` : '';
   const days = cur === 'weekly' ? field(F.scheduledDays) : '';
   return `<div class="f"><div class="f-label">How often</div>${seg}${note}${days}</div>`;
