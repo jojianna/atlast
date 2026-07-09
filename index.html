@@ -496,9 +496,9 @@ function validate(data) {
   });
   (data.symptomTypes||[]).forEach((s,i)=>{
     const at='symptomTypes['+i+'] ('+s.id+')'; if(!isStr(s.id))E(at+'.id'); if(!isI18n(s.name))E(at+'.name');
-    if(!ENUMS.trackBy.includes(s.trackBy))E(at+'.trackBy'); if(!isBool(s.archived))E(at+'.archived');
+    if(!ENUMS.trackBy.includes(s.trackBy))E(at+'.trackBy'); if(!isBool(s.archived))E(at+'.archived'); if(s.onsetDate!==undefined&&!isNullableDate(s.onsetDate))E(at+'.onsetDate');
     if(s.trackBy==='locations'){ if(!ENUMS.overall.includes(s.overall))E(at+'.overall'); if(!isArr(s.locations)||!s.locations.length)E(at+'.locations'); }
-    (s.locations||[]).forEach((l,j)=>{ const lat=at+'.locations['+j+'] ('+l.id+')'; if(!isStr(l.id))E(lat+'.id'); if(!isI18n(l.name))E(lat+'.name'); if(!isNullableDate(l.addedDate))E(lat+'.addedDate'); if(!isBool(l.archived))E(lat+'.archived'); });
+    (s.locations||[]).forEach((l,j)=>{ const lat=at+'.locations['+j+'] ('+l.id+')'; if(!isStr(l.id))E(lat+'.id'); if(!isI18n(l.name))E(lat+'.name'); if(!isNullableDate(l.addedDate))E(lat+'.addedDate'); if(l.onsetDate!==undefined&&!isNullableDate(l.onsetDate))E(lat+'.onsetDate'); if(!isBool(l.archived))E(lat+'.archived'); });
   });
   (data.dailyLogs||[]).forEach((d,i)=>{
     const at='dailyLogs['+i+'] ('+d.date+')'; if(!isStr(d.date)||!ISO_DATE.test(d.date))E(at+'.date'); if(!isArr(d.symptoms))E(at+'.symptoms');
@@ -1582,13 +1582,15 @@ const TSS = {
         burdenSub: 'average burden', sevSub: 'average severity',
         mostProm: 'Most prominent', daily: 'Daily score by severity', gran: { day: 'one bar per day', week: 'one bar per week (avg/day)', month: 'one bar per month (avg/day)' }, sevWords: ['', 'noticeable', 'distracting', 'interferes', 'prevents'],
         labs: 'Labs', episodes: 'Episodes/Month',
-        pos: 'Positive', neg: 'Negative', progression: 'Progression' },
+        pos: 'Positive', neg: 'Negative', progression: 'Progression',
+        onsetAll: 'Onset & progression', started: 'Started in the last', newBadge: 'new', catJoint: 'joint', catNerve: 'nerve', catOther: 'other', nothingNew: 'Nothing new started in this period.' },
   es: { worse: 'peor', better: 'mejor', steady: 'estable', notEnough: 'Historial insuficiente.', noData: 'Sin datos aún.',
         period: { '30d': '30 días', '3m': '3 meses', '1y': 'año' }, was: 'antes', vsPrev: 'vs', allTime: 'todo el tiempo', past: 'últimos', partial: 'parcial', mo: 'm',
         burdenSub: 'carga media', sevSub: 'gravedad media',
         mostProm: 'Más prominente', daily: 'Puntuación diaria por gravedad', gran: { day: 'una barra por día', week: 'una barra por semana (media/día)', month: 'una barra por mes (media/día)' }, sevWords: ['', 'leve', 'molesto', 'interfiere', 'impide'],
         labs: 'Analíticas', episodes: 'Episodios/Mes',
-        pos: 'Positivo', neg: 'Negativo', progression: 'Progresión' },
+        pos: 'Positivo', neg: 'Negativo', progression: 'Progresión',
+        onsetAll: 'Inicio y progresión', started: 'Empezó — últimos', newBadge: 'nuevo', catJoint: 'articular', catNerve: 'nervioso', catOther: 'otro', nothingNew: 'Nada nuevo empezó en este periodo.' },
 };
 function dayLogged(log) { return !!log && (log.symptoms || []).some((r) => typeof r.severity === 'number'); }
 const WIN_DAYS = { '30d': 30, '3m': 90, '1y': 365 };
@@ -1778,6 +1780,36 @@ function adherenceCard(state, data, days, win, TT) {
   if (!regList.length && !extraList.length) return '';
   return `<div class="card">${head}${regSection}${extraSection}</div>`;
 }
+// Onset & progression: when each symptom/site clinically started (onsetDate), independent of when it began being tracked.
+const ONSET_CAT = { sym_jointpain: 'joint', sym_nervesensation: 'nerve' };
+function collectOnsets(data) {
+  const out = [];
+  (data.symptomTypes || []).forEach((s) => {
+    if (s.archived) return;
+    const cat = ONSET_CAT[s.id] || 'other';
+    if (s.trackBy === 'locations') { (s.locations || []).forEach((l) => { if (!l.archived && l.onsetDate) out.push({ name: l.name, onset: l.onsetDate, cat }); }); }
+    else if (s.onsetDate) { out.push({ name: s.name, onset: s.onsetDate, cat }); }
+  });
+  return out.sort((a, b) => (a.onset < b.onset ? -1 : a.onset > b.onset ? 1 : 0));
+}
+// Window-aware: 'all' shows the full progression; 30d/3m/1y filter to onsets inside the window ("what's new"). Items with onset within 90 days get a "new" badge.
+function onsetCard(state, data, days, win, TT) {
+  const lang = state.lang;
+  let items = collectOnsets(data);
+  if (!items.length) return '';
+  const tISO = todayISO(); const cut90 = shiftDate(tISO, -90);
+  if (win !== 'all') { const cut = shiftDate(tISO, -days); items = items.filter((o) => o.onset >= cut); }
+  const title = win === 'all' ? TT.onsetAll : `${TT.started} ${TT.period[win]}`;
+  const C = { joint: '#0f766e', nerve: '#7c3aed', other: '#5b6b7a' };
+  const head = `<div class="card-h"><h2>${title}</h2></div>`;
+  if (!items.length) return `<div class="card">${head}<p class="muted small">${TT.nothingNew}</p></div>`;
+  const legend = [['joint', TT.catJoint], ['nerve', TT.catNerve], ['other', TT.catOther]].map(([c, lbl]) => `<span style="display:inline-flex;align-items:center;gap:5px;margin-right:12px"><span style="width:10px;height:10px;border-radius:50%;background:${C[c]}"></span>${lbl}</span>`).join('');
+  const rows = items.map((o) => {
+    const badge = o.onset >= cut90 ? ` <span style="border:1px solid #b91c1c;color:#b91c1c;border-radius:4px;padding:0 5px;font-size:10px;vertical-align:1px">${TT.newBadge}</span>` : '';
+    return `<div style="position:relative;display:flex;align-items:baseline;gap:10px;padding:5px 0"><span style="position:absolute;left:-16px;top:8px;width:10px;height:10px;border-radius:50%;background:${C[o.cat]};box-shadow:0 0 0 3px var(--card)"></span><span style="width:64px;flex:none;font-size:12px;color:var(--muted)">${fmtMonth(o.onset, lang)}</span><span style="font-size:14px;color:var(--ink)">${esc(tx(o.name, lang))}${badge}</span></div>`;
+  }).join('');
+  return `<div class="card">${head}<div class="muted small" style="margin:-2px 0 10px">${legend}</div><div style="position:relative;padding-left:16px"><span style="position:absolute;left:4px;top:4px;bottom:4px;width:2px;background:var(--line)"></span>${rows}</div></div>`;
+}
 function renderTrends(state) {
   const lang = state.lang; const TT = TSS[lang]; const data = DL.getData();
   if (!data) return '<div class="card"><p class="muted">No data.</p></div>';
@@ -1807,6 +1839,7 @@ function renderTrends(state) {
     return `<div class="promrow" data-symtrend="${x.s.id}"><span class="promname">${esc(tx(x.s.name, lang))}</span><span class="prombar"><span style="width:${(x.cur / 4 * 100).toFixed(0)}%;background:${col}"></span></span><span class="promval">${x.cur.toFixed(1)}</span><span class="tr ${dc}">${ar}${dtxt}</span></div>${line}`;
   }).join('') || `<p class="muted small">${TT.noData}</p>`;
   const promCard = `<div class="card"><div class="card-h"><h2>${TT.mostProm}</h2></div>${promRows}</div>`;
+  let onsetHtml = ''; try { onsetHtml = onsetCard(state, data, days, win, TT); } catch (err) { console.warn('onset card failed', err); }
   // Daily score by severity (recent logged days in window)
   const { bars: sevBars, mode: sevMode } = severityBars(data, types, days);
   const legend = [1, 2, 3, 4].map((lv) => `<span class="lg"><span class="lgsw" style="background:${SEVHEX[lv]}"></span>${TT.sevWords[lv]}</span>`).join('');
@@ -1832,7 +1865,7 @@ function renderTrends(state) {
   catch (err) { console.warn('adherence card failed', err); adhCard = `<div class="card"><div class="card-h"><h2>${lang === 'es' ? 'Cumplimiento de medicación' : 'Medication adherence'}</h2></div><p class="muted small">—</p></div>`; }
   const labsCard = `<div class="card"><div class="card-h"><h2>${TT.labs}</h2><button class="addmini" data-add="labs" aria-label="Add marker">＋</button></div>${labHtml}</div>`;
   const illCard = getPref('hideEpisodes') ? '' : `<div class="card"><div class="card-h"><h2>${TT.episodes}</h2></div>${illnessBars(data, lang)}</div>`;
-  return `<div class="ds">${winseg}${burdenCard}${sevCard}${promCard}${dailyCard}${adhCard}${labsCard}${illCard}</div>`;
+  return `<div class="ds">${winseg}${burdenCard}${sevCard}${promCard}${onsetHtml}${dailyCard}${adhCard}${labsCard}${illCard}</div>`;
 }
 // Progression timeline in the new design-system style (keeps filters + tap-for-detail).
 function renderProg(state) {
