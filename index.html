@@ -931,19 +931,35 @@ function symRow(state, symId, locId, label) {
 function agoLabel(n, lang) { return lang === 'es' ? (n === 1 ? 'hace 1 día' : 'hace ' + n + ' días') : (n === 1 ? '1 day ago' : n + ' days ago'); }
 function daysBetween(aISO, bISO) { const a = new Date(aISO + 'T00:00:00Z'); const b = new Date(bISO + 'T00:00:00Z'); return Math.round((b - a) / 86400000); }
 
-// Daily burden = sum of symptom severities (located symptoms roll up by their derived overall).
-// Returns null for days with nothing logged. Bands (Anna 30 Jun): 0 clear · 1–6 light · 7–13 typical · 14–20 heavy · 21+ very heavy.
-function dayBurden(iso, types, data) {
+// Breadth dial: how many OTHER symptoms at 2+ promote a day up a tier. Per-person, stored in meta; default 2.
+function burdenK(data) { const k = data && data.meta && data.meta.burdenBands && data.meta.burdenBands.k; return (typeof k === 'number' && k >= 1) ? k : 2; }
+// Per-type 0–4 intensity for a day (single = severity; located = worst-site derivedIntensity). null if nothing logged.
+function dayIntensities(iso, types, data) {
   const l = DL.getDailyLog(iso, data);
   if (!l || !(l.symptoms || []).some((r) => typeof r.severity === 'number')) return null;
-  let sum = 0;
+  const out = [];
   types.forEach((s) => {
-    if (s.trackBy === 'locations') { const d = DL.derivedOverall(s, l.symptoms || []); sum += (d || 0); }
-    else { const v = DL.getSeverity(iso, s.id, null, data); sum += (v || 0); }
+    if (s.trackBy === 'locations') { const d = DL.derivedIntensity(s, l.symptoms || []); if (d != null) out.push(d); }
+    else { const v = DL.getSeverity(iso, s.id, null, data); if (v != null) out.push(v); }
   });
-  return sum;
+  return out;
 }
-function burdenBandIdx(b) { if (b == null) return -1; if (b === 0) return 0; if (b <= 6) return 1; if (b <= 13) return 2; if (b <= 20) return 3; return 4; }
+// Day band from PEAK intensity + breadth (Anna's rule, 9 Jul 2026 — replaces the old sum-based bands):
+// 0 clear · 1 light (only 1s) · 2 typical (a 2, or a lone 3) · 3 heavy (a 3 with k+ others at 2, or one 4) · 4 very heavy (2+ at 3, or a 4 with k+ others at 2).
+function dayBandIdx(iso, types, data) {
+  const ints = dayIntensities(iso, types, data);
+  if (!ints || !ints.length) return -1;
+  const peak = Math.max(...ints);
+  if (peak <= 0) return 0;
+  if (peak <= 1) return 1;
+  const n3 = ints.filter((v) => v >= 3).length;
+  const o2 = ints.filter((v) => v === 2).length;
+  const k = burdenK(data);
+  if (n3 >= 2) return 4;
+  if (peak >= 4) return o2 >= k ? 4 : 3;
+  if (peak === 3) return o2 >= k ? 3 : 2;
+  return 2;
+}
 const CAL_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z"/><path d="M16 3v4"/><path d="M8 3v4"/><path d="M4 11h16"/></svg>';
 const HIST_SVG = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 4v4h4"/><path d="M12 8v4l3 2"/></svg>';
 const NOTE_SVG = '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4h8a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-8a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2z"/><path d="M9 9h6"/><path d="M9 13h6"/><path d="M9 17h4"/></svg>';
@@ -962,14 +978,14 @@ function monthCal(state, data, types) {
   for (let d = 1; d <= daysIn; d++) {
     const iso = `${monthIso}-${String(d).padStart(2, '0')}`;
     const fut = iso > tISO;
-    const bi = fut ? -1 : burdenBandIdx(dayBurden(iso, types, data));
+    const bi = fut ? -1 : dayBandIdx(iso, types, data);
     const cls = bi >= 0 ? ` calb${bi}` : '';
     cells += `<button class="calday${cls}${iso === date ? ' sel' : ''}${iso === tISO ? ' tod' : ''}${fut ? ' fut' : ''}" data-day="${iso}" ${fut ? 'disabled' : ''}>${d}</button>`;
   }
   const canNext = monthIso < tISO.slice(0, 7);
   const lg = (cls, txt) => `<span><span class="lgsw ${cls}"></span>${txt}</span>`;
-  const legend = `<div class="callegend"><span style="color:var(--muted)">${lang === 'es' ? 'Carga:' : 'Burden:'}</span>${lg('calb1', lang === 'es' ? 'leve 1–6' : 'light 1–6')}${lg('calb2', lang === 'es' ? 'típico 7–13' : 'typical 7–13')}${lg('calb3', lang === 'es' ? 'fuerte 14–20' : 'heavy 14–20')}${lg('calb4', lang === 'es' ? 'muy fuerte 21+' : 'very heavy 21+')}${lg('calb0', lang === 'es' ? 'sin síntomas' : 'clear (0)')}</div>`;
-  const note = `<div class="calnote">${lang === 'es' ? "Color = carga del día (suma de severidades). Toca un día para abrirlo." : "Colour = that day's burden (sum of severities). Tap a day to open it."}</div>`;
+  const legend = `<div class="callegend"><span style="color:var(--muted)">${lang === 'es' ? 'Carga:' : 'Burden:'}</span>${lg('calb1', lang === 'es' ? 'leve' : 'light')}${lg('calb2', lang === 'es' ? 'típico' : 'typical')}${lg('calb3', lang === 'es' ? 'fuerte' : 'heavy')}${lg('calb4', lang === 'es' ? 'muy fuerte' : 'very heavy')}${lg('calb0', lang === 'es' ? 'sin síntomas' : 'clear')}</div>`;
+  const note = `<div class="calnote">${lang === 'es' ? "Color = intensidad del día. Fuerte = un síntoma en 3 acompañado de otros en 2 (o uno en 4); muy fuerte = dos o más en 3. Toca un día para abrirlo." : "Colour = the day's intensity. Heavy = one symptom at 3 alongside others at 2 (or one at 4); very heavy = two or more at 3. Tap a day to open it."}</div>`;
   return `<div class="card"><div class="calhead"><span class="mlabel">${mlabel}</span><span class="hgrp"><button class="wknav" data-calnav="-1" aria-label="Previous month">‹</button><button class="wknav" data-calnav="1" aria-label="Next month" ${canNext ? '' : 'disabled'}>›</button><button class="wkcal on" data-calview="week" aria-label="${lang === 'es' ? 'Volver a la semana' : 'Back to week'}">${CAL_SVG}</button></span></div><div class="calgrid">${cells}</div>${legend}${note}</div>`;
 }
 
@@ -1078,12 +1094,11 @@ function renderToday(state) {
   const symEditing = ui.editPick === 'symptomTypes';
   const symPick = (data.symptomTypes || []).map((s) => `<div class="pickrow-wrap" data-symid="${s.id}"><span class="drag-grip" aria-hidden="true" title="${lang === 'es' ? 'Arrastra para reordenar' : 'Drag to reorder'}">⠿</span><button class="pickrow" data-edit="symptomTypes:${s.id}">${esc(tx(s.name, lang))}${s.archived ? ` <span class="muted small">(${lang === 'en' ? 'archived' : 'archivado'})</span>` : ''}</button></div>`).join('');
   const symEditBtns = `<button class="addmini" data-editpick="symptomTypes" aria-label="${lang === 'es' ? 'Editar' : 'Edit'}">${symEditing ? '✕' : '✎'}</button><button class="addmini" data-add="symptomTypes" aria-label="${lang === 'en' ? 'Add symptom' : 'Añadir síntoma'}">＋</button>`;
-  const bd = dayBurden(date, types, data);
-  const bBand = burdenBandIdx(bd);
+  const bBand = dayBandIdx(date, types, data);
   const bWords = lang === 'es' ? ['sin síntomas', 'leve', 'típico', 'fuerte', 'muy fuerte'] : ['clear', 'light', 'typical', 'heavy', 'very heavy'];
   const bCols = ['#94a3b8', '#fde047', '#f59e0b', '#f97316', '#b91c1c'];
   const bTextCols = ['#fff', '#422006', '#422006', '#fff', '#fff'];
-  const burdenChip = bd == null ? '' : `<span class="prog-chip burden-chip" style="background:${bCols[bBand]};color:${bTextCols[bBand]}">${bd} · ${bWords[bBand]}</span>`;
+  const burdenChip = bBand < 0 ? '' : `<span class="prog-chip burden-chip" style="background:${bCols[bBand]};color:${bTextCols[bBand]}">${bWords[bBand]}</span>`;
   const doneChip = `<span class="prog-chip done">✓ ${lang === 'en' ? 'Complete' : 'Completado'}</span>`;
   const headStatus = complete ? (burdenChip || doneChip) : '';
   const scaleTop = `<div class="scale-head muted">${T.scaleHint}</div>`;
@@ -2375,6 +2390,7 @@ function wireChrome() {
     if (e.target.id === 'importFile') { const f = e.target.files[0]; if (!f) return; try { const r = await importData(await f.text()); setStatus(r.ok ? 'Imported ✓ (' + r.warnings.length + ' notes)' : 'Imported with ' + r.errors.length + ' errors', r.ok ? 'ok' : 'err'); } catch (err) { setStatus('Import failed: ' + err.message, 'err'); } render(); return; }
     if (e.target.id === 'prefEnglishOnly') { setPref('englishOnly', e.target.checked); if (e.target.checked) setLang('en'); render(); return; }
     if (e.target.id === 'prefHideEpisodes') { setPref('hideEpisodes', e.target.checked); render(); return; }
+    if (e.target.id === 'burdenK') { const d = DL.getData(); if (d) { d.meta = d.meta || {}; d.meta.burdenBands = Object.assign({}, d.meta.burdenBands, { k: Number(e.target.value) }); DL.persistLocal(); DL.persist(); } render(); return; }
     if (Forms.isOpen()) { Forms.onInput(e); return; }
     if (state.showData) return;
     if (state.tab === 'today') Today.onChange(e, state, render);
@@ -2491,10 +2507,16 @@ function renderDataScreen() {
   const verdict = v.ok ? '<span class="badge ok">SCHEMA OK</span>' : '<span class="badge err">' + v.errors.length + ' ERRORS</span>';
   const errHtml = v.errors.length ? '<details class="msgs" open><summary>' + v.errors.length + ' error(s)</summary><ul class="msglist">' + v.errors.map((e) => '<li>✗ ' + escapeHtml(e) + '</li>').join('') + '</ul></details>' : '';
   const warnHtml = v.warnings.length ? '<details class="msgs"><summary>' + v.warnings.length + ' note(s)</summary><ul class="msglist">' + v.warnings.map((w) => '<li>! ' + escapeHtml(w) + '</li>').join('') + '</ul></details>' : '';
+  const curK = (data.meta && data.meta.burdenBands && typeof data.meta.burdenBands.k === 'number') ? data.meta.burdenBands.k : 2;
   return odPanel() +
     '<div class="card"><h2>Display options</h2>' +
     '<div class="f f-row"><label><input type="checkbox" id="prefEnglishOnly"' + (getPref('englishOnly') ? ' checked' : '') + '> English only (hide the EN/ES switch)</label></div>' +
     '<div class="f f-row"><label><input type="checkbox" id="prefHideEpisodes"' + (getPref('hideEpisodes') ? ' checked' : '') + '> Hide episode tracking (Log &amp; Trends)</label></div>' +
+    '</div>' +
+    '<div class="card"><h2>Burden scale</h2>' +
+    '<p class="muted small">A day is <b>heavy</b> when one symptom hits 3+ alongside a few others at 2, or one symptom hits 4. <b>Very heavy</b> = two or more symptoms at 3+. Set how many other symptoms at 2 count as “a few”.</p>' +
+    '<div class="f"><div class="f-label">Other symptoms at 2 needed for a heavy day</div><select id="burdenK">' + [1, 2, 3].map((n) => '<option value="' + n + '"' + (n === curK ? ' selected' : '') + '>' + n + '</option>').join('') + '</select></div>' +
+    '<p class="muted small">Default is 2. Tracking only a few symptoms → try 1. Tracking a lot → try 3.</p>' +
     '</div>' +
     '<div class="card"><h2>Parse report ' + verdict + '</h2>' +
     '<div class="kv"><span class="k">Source</span><span class="v">' + escapeHtml(pr.source || '') + '</span></div>' +
