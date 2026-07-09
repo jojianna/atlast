@@ -1530,7 +1530,7 @@ function shiftDate(iso, days) { const d = new Date(iso + 'T00:00:00Z'); d.setUTC
 
 
 
-const ui = { labId: null, win: '1y', scoreWin: '30d', symTrend: null, labGroups: new Set(), editPick: null };
+const ui = { labId: null, win: '1y', scoreWin: '3m', symTrend: null, labGroups: new Set(), editPick: null, adhOpen: false };
 
 const STR = {
   en: { conditions: 'Conditions', meds: 'Meds', symptoms: 'Symptoms', episodes: 'Episodes', labs: 'Labs', timeline: 'Map',
@@ -1774,11 +1774,14 @@ function adherenceCard(state, data, days, win, TT) {
     const line = `<span class="mpct" style="color:var(--muted)">${o.prn} ${lang === 'es' ? 'tomas' : 'doses'}</span>`;
     return `<div class="medblk"><div class="ml"><span class="mname">${name}</span>${line}</div><div class="adh-streak">${lang === 'es' ? 'según necesidad' : 'as needed'}</div></div>`;
   }).join('');
-  const head = `<div class="card-h"><h2>${lang === 'es' ? 'Cumplimiento de medicación' : 'Medication adherence'}</h2></div>`;
+  const adhTitle = lang === 'es' ? 'Cumplimiento de medicación' : 'Medication adherence';
+  const adhOpen = ui.adhOpen;
+  const teaser = (!adhOpen && overall != null) ? `<span class="muted small" style="margin-left:auto;font-weight:400">${overall}% ${lang === 'es' ? 'tomadas' : 'taken'}</span>` : '';
+  const head = `<button class="card-h adhtoggle" data-adhtoggle style="width:100%;background:none;border:0;padding:0;margin:0;cursor:pointer;text-align:left;display:flex;align-items:center;gap:8px"><span class="gcaret">${adhOpen ? '▾' : '▸'}</span><h2 style="margin:0">${adhTitle}</h2>${teaser}</button>`;
   const regSection = regList.length ? `<div class="subhead">${lang === 'es' ? 'Recordar mis medicamentos habituales' : 'Remembering my regular meds'}</div>${overall != null ? `<div class="adh-overall"><span class="bignum">${overall}%</span>${pill}<span class="muted small">${sub}</span></div>` : ''}${regBlocks}` : '';
   const extraSection = extraList.length ? `<div class="subhead" style="margin-top:16px">${lang === 'es' ? 'Medicación adicional' : 'Relying on extra meds'}</div>${extraBlocks}` : '';
   if (!regList.length && !extraList.length) return '';
-  return `<div class="card">${head}${regSection}${extraSection}</div>`;
+  return `<div class="card">${head}${adhOpen ? `${regSection}${extraSection}` : ''}</div>`;
 }
 // Onset & progression: when each symptom/site clinically started (onsetDate), independent of when it began being tracked.
 const ONSET_CAT = { sym_jointpain: 'joint', sym_nervesensation: 'nerve' };
@@ -1815,7 +1818,7 @@ function renderTrends(state) {
   if (!data) return '<div class="card"><p class="muted">No data.</p></div>';
   if (ui.labId) { const lab = (data.labs || []).find((l) => l.id === ui.labId); if (lab) return '<div class="ds">' + renderLabDetail(state, lab) + '</div>'; ui.labId = null; }
   const types = DL.activeSymptomTypes(data);
-  const win = ui.scoreWin || '30d';
+  const win = ui.scoreWin || '3m';
   const allDays = (() => { const ds = (data.dailyLogs || []).map((l) => l.date).filter(Boolean).sort(); if (!ds.length) return 365; return Math.round((Date.now() - new Date(ds[0] + 'T00:00:00Z').getTime()) / 86400000) + 1; })();
   const days = win === 'all' ? allDays : (WIN_DAYS[win] || 30);
   const winseg = `<div class="winseg">${[['30d', '30d'], ['3m', '3m'], ['1y', '1y'], ['all', 'All']].map(([k, lbl]) => `<button class="${win === k ? 'on' : ''}" data-scorewin="${k}">${lbl}</button>`).join('')}</div>`;
@@ -1937,6 +1940,7 @@ async function onClick(e, state, rerender) {
   if (t.dataset.editpick != null) { ui.editPick = ui.editPick === t.dataset.editpick ? null : t.dataset.editpick; rerender(); return; }
   if (t.dataset.scorewin) { ui.scoreWin = t.dataset.scorewin; rerender(); return; }
   if (t.dataset.symtrend) { ui.symTrend = (ui.symTrend === t.dataset.symtrend) ? null : t.dataset.symtrend; rerender(); return; }
+  if (t.dataset.adhtoggle != null) { ui.adhOpen = !ui.adhOpen; rerender(); return; }
   if (t.dataset.labgrp) { const g = t.dataset.labgrp; ui.labGroups.has(g) ? ui.labGroups.delete(g) : ui.labGroups.add(g); rerender(); return; }
   if (t.dataset.lab) { ui.labId = t.dataset.lab === '__back' ? null : t.dataset.lab; ui.win = '1y'; rerender(); return; }
   if (t.dataset.win) { ui.win = t.dataset.win; rerender(); return; }
