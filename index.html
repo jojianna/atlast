@@ -1100,7 +1100,9 @@ function renderToday(state) {
   const bTextCols = ['#fff', '#422006', '#422006', '#fff', '#fff'];
   const burdenChip = bBand < 0 ? '' : `<span class="prog-chip burden-chip" style="background:${bCols[bBand]};color:${bTextCols[bBand]}">${bWords[bBand]}</span>`;
   const doneChip = `<span class="prog-chip done">✓ ${lang === 'en' ? 'Complete' : 'Completado'}</span>`;
-  const headStatus = complete ? (burdenChip || doneChip) : '';
+  // Burden depends only on symptom severities, so show it once all symptoms are logged — not gated on meds (which don't affect burden).
+  const symComplete = dayTypes.length > 0 && dayTypes.every(isLogged);
+  const headStatus = symComplete ? (burdenChip || doneChip) : '';
   const scaleTop = `<div class="scale-head muted">${T.scaleHint}</div>`;
   const symptomsCard = symEditing
     ? `<div class="card"><div class="sec-head"><h2>${T.symptoms}</h2><span class="hgrp">${symEditBtns}</span></div><div class="muted small" style="margin:2px 0 6px">${lang === 'es' ? 'Toca para editar · arrastra ⠿ para reordenar' : 'Tap to edit · drag ⠿ to reorder'}</div><div id="symReorder" class="sym-reorder">${symPick}</div></div>`
