@@ -334,6 +334,11 @@ ul.tight { margin: 4px 0 0; padding-left: 18px; } ul.tight li { padding: 1px 0; 
 .ds .labgrp .lab-row .lab-val{font-size:14px;font-weight:600;}
 .ds .labgrp .lab-row .lab-val .small{font-weight:400;}
 .ds .btn-mark{border:1px solid var(--teal);background:var(--teal);color:#fff;border-radius:999px;padding:5px 14px;font-size:13px;font-weight:600;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;}
+.ds .btn-mark.wide{display:block;width:100%;padding:11px;border-radius:12px;font-size:14px;}
+.ds .daybar{text-align:center;margin:4px 0 2px;}
+.ds .daybar .daycounts{margin-bottom:8px;}
+.ds .daybar .mark-hint{margin-top:8px;}
+.ds .daybar.done{color:var(--ok);font-weight:600;padding:10px;}
 .ds .prog-chip.done{background:#dcfce7;color:#15803d;}
 .ds .loc-count{margin-left:2px;white-space:nowrap;}
 .ds .card-h h2, .sec-head h2, .ds .ro-fold>summary h2 { font-size:11.5px; font-weight:700; letter-spacing:.07em; text-transform:uppercase; color:var(--teal-d); margin:0; }
@@ -736,6 +741,14 @@ function medsForDate(date, data = _data) {
   const scheduled = active.filter((m) => !isPrn(m) && medDueOn(m, date)).sort(byTime);
   return { scheduled, prn };
 }
+// Meds completeness only kicks in from this date on, so historic days (logged before
+// meds were tracked) keep their ticks. Regular meds only — supplements, therapies and
+// PRN never block the tick.
+const MEDS_REQUIRED_SINCE = '2026-07-09';
+function requiredMedsOn(date, data = _data) {
+  if (date < MEDS_REQUIRED_SINCE) return [];
+  return medsForDate(date, data).scheduled.filter((m) => m.category !== 'supplement' && m.category !== 'therapy');
+}
 function submitSymptoms(date, data = _data) {
   const log = ensureLog(date);
   for (const s of activeSymptomTypes(data)) {
@@ -743,6 +756,7 @@ function submitSymptoms(date, data = _data) {
     if (s.trackBy === 'single') { if (getSeverity(date, s.id, null) == null) setSeverity(date, s.id, null, 0); }
     else { for (const l of activeLocations(s)) { if (getSeverity(date, s.id, l.id) == null) setSeverity(date, s.id, l.id, 0); } }
   }
+  for (const m of requiredMedsOn(date, data)) { if (getMedTaken(date, m.id) == null) setMedTaken(date, m.id, false); } // unanswered regular meds → not taken
   log.symptomsSubmittedAt = new Date().toISOString(); return log;
 }
 function symptomsSubmitted(date, data = _data) { return getDailyLog(date, data)?.symptomsSubmittedAt || null; }
@@ -841,7 +855,7 @@ async function importData(text) {
   return report;
 }
 
-return { CONFIG, getData, getLoadMeta, subscribe, setActiveSource, getActiveSource, loadData, resetToSeed, saveData, t, tx, specialistLabel, derivedOverall, derivedIntensity, activeSymptomTypes, activeLocations, episodeFrequency, daysUnwell, latestLab, labWindow, activeConditions, excludedList, bigPicture, labStatus, labTrend, labPosNeg, labGroups, questionsForSpecialist, parseReport, weekdayOf, getDailyLog, setSeverity, getSeverity, setSymptomNote, getSymptomNote, setOverallPain, getOverallPain, setMedTaken, getMedTaken, setMedCount, getMedCount, setNote, medDueOn, TIME_ORDER, medTimeOfDay, medsForDate, submitSymptoms, symptomsSubmitted, startEpisode, endEpisode, reopenEpisode, setEpisodeNote, ongoingEpisodes, episodesEndedOn, persist, persistLocal, markQuestionAnswered, genId, getRecord, upsert, remove, archiveSymptomType, addSymptomType, renameSymptomType, setSymptomOverall, addLocation, renameLocation, archiveLocation, reorderSymptomTypes, addLabResult, removeLabResult, recordDoseChange, clearDay, exportJSON, importData };
+return { CONFIG, getData, getLoadMeta, subscribe, setActiveSource, getActiveSource, loadData, resetToSeed, saveData, t, tx, specialistLabel, derivedOverall, derivedIntensity, activeSymptomTypes, activeLocations, episodeFrequency, daysUnwell, latestLab, labWindow, activeConditions, excludedList, bigPicture, labStatus, labTrend, labPosNeg, labGroups, questionsForSpecialist, parseReport, weekdayOf, getDailyLog, setSeverity, getSeverity, setSymptomNote, getSymptomNote, setOverallPain, getOverallPain, setMedTaken, getMedTaken, setMedCount, getMedCount, setNote, medDueOn, TIME_ORDER, medTimeOfDay, medsForDate, submitSymptoms, requiredMedsOn, symptomsSubmitted, startEpisode, endEpisode, reopenEpisode, setEpisodeNote, ongoingEpisodes, episodesEndedOn, persist, persistLocal, markQuestionAnswered, genId, getRecord, upsert, remove, archiveSymptomType, addSymptomType, renameSymptomType, setSymptomOverall, addLocation, renameLocation, archiveLocation, reorderSymptomTypes, addLabResult, removeLabResult, recordDoseChange, clearDay, exportJSON, importData };
 })();
 
 const Today = (function(){
@@ -859,7 +873,6 @@ const STR = {
         name: 'Short label', type: 'Type', start: 'Start date', start2: 'Start', cancel: 'Cancel',
         none: 'none', saved: 'Saved locally', noMeds: 'No medications scheduled for this day.',
         scaleHint: '0 none · 1 noticeable · 2 distracting · 3 interferes · 4 prevents', clear: 'clear',
-        markZero: 'Mark untouched symptoms as 0 (not experienced)', allZeroed: 'All symptoms logged',
         clearDay: 'Clear this day', confirmClear: 'Tap again to clear',
         overallPain: 'Overall', overallTap: 'Tap to set your score for the day',
         painLevels: ['No pain','Noticeable','Distracting','Interferes with activities','Prevents activity'],
@@ -872,7 +885,6 @@ const STR = {
         name: 'Etiqueta corta', type: 'Tipo', start: 'Fecha de inicio', start2: 'Inicio', cancel: 'Cancelar',
         none: 'ninguno', saved: 'Guardado localmente', noMeds: 'No hay medicación programada para este día.',
         scaleHint: '0 ninguno · 1 leve · 2 molesto · 3 interfiere · 4 impide', clear: 'borrar',
-        markZero: 'Marcar síntomas sin tocar como 0 (no experimentado)', allZeroed: 'Todos los síntomas registrados',
         clearDay: 'Borrar este día', confirmClear: 'Toca otra vez para borrar',
         overallPain: 'General', overallTap: 'Toca para registrar tu puntuación del día',
         painLevels: ['Sin dolor','Leve','Molesto','Interfiere con la actividad','Impide la actividad'],
@@ -1022,7 +1034,7 @@ function renderToday(state) {
   const typesOn = (iso) => types.filter((s) => !s.addedDate || s.addedDate <= iso);
   if (ui.calView === 'month') return `<div class="ds">${monthCal(state, data, types)}</div>`;
   if (ui.medHist) return renderAdherence(state, data);
-  const isComplete = (iso) => { const l = DL.getDailyLog(iso, data); if (!l) return false; if (l.symptomsSubmittedAt) return true; return typesOn(iso).every((s) => s.trackBy === 'single' ? (DL.getSeverity(iso, s.id, null, data) != null) : (DL.derivedOverall(s, l.symptoms || []) != null)); };
+  const isComplete = (iso) => { const l = DL.getDailyLog(iso, data); if (!l) return false; if (l.symptomsSubmittedAt) return true; const symOk = typesOn(iso).every((s) => s.trackBy === 'single' ? (DL.getSeverity(iso, s.id, null, data) != null) : (DL.derivedOverall(s, l.symptoms || []) != null)); const medsOk = DL.requiredMedsOn(iso, data).every((m) => DL.getMedTaken(iso, m.id, data) != null); return symOk && medsOk; };
   // Rolling 7-day window ending on the anchor (default = today, so today is the rightmost tile and there are no future/empty days).
   const anchor = (ui.weekAnchor && ui.weekAnchor <= tISO) ? ui.weekAnchor : tISO;
   const DOWL = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
@@ -1073,8 +1085,7 @@ function renderToday(state) {
   const bTextCols = ['#fff', '#422006', '#422006', '#fff', '#fff'];
   const burdenChip = bd == null ? '' : `<span class="prog-chip burden-chip" style="background:${bCols[bBand]};color:${bTextCols[bBand]}">${bd} · ${bWords[bBand]}</span>`;
   const doneChip = `<span class="prog-chip done">✓ ${lang === 'en' ? 'Complete' : 'Completado'}</span>`;
-  const markBtn = `<button class="btn-mark" id="markZero">${lang === 'en' ? 'Mark complete' : 'Marcar completo'}</button>`;
-  const headStatus = complete ? (burdenChip || doneChip) : markBtn;
+  const headStatus = complete ? (burdenChip || doneChip) : '';
   const scaleTop = `<div class="scale-head muted">${T.scaleHint}</div>`;
   const symptomsCard = symEditing
     ? `<div class="card"><div class="sec-head"><h2>${T.symptoms}</h2><span class="hgrp">${symEditBtns}</span></div><div class="muted small" style="margin:2px 0 6px">${lang === 'es' ? 'Toca para editar · arrastra ⠿ para reordenar' : 'Tap to edit · drag ⠿ to reorder'}</div><div id="symReorder" class="sym-reorder">${symPick}</div></div>`
@@ -1099,6 +1110,17 @@ function renderToday(state) {
   const therMeds = scheduled.filter((m) => m.category === 'therapy');
   const medsBody = (medSec(T.secRegular, regMeds) + medSec(T.secSupplements, suppMeds) + medSec(T.secTherapies, therMeds) + medSec(T.asNeeded, prn, true)) || `<p class="muted small">${T.noMeds}</p>`;
 
+  // Day-level footer: a symptoms/meds progress counter + the single "Mark day complete" action
+  // (fills unanswered symptoms → 0 and unanswered regular meds → not taken). Regular meds only —
+  // supplements/therapies/PRN don't count toward the tick, so they're left out of the meds tally.
+  const reqMeds = DL.requiredMedsOn(date, data);
+  const medsDone = reqMeds.filter((m) => DL.getMedTaken(date, m.id, data) != null).length;
+  const progressText = `${lang === 'en' ? 'Symptoms' : 'Síntomas'} ${doneCount}/${dayTypes.length}${reqMeds.length ? ` · ${lang === 'en' ? 'Meds' : 'Medicación'} ${medsDone}/${reqMeds.length}` : ''}`;
+  const markHint = lang === 'en' ? 'Unanswered symptoms → 0, unanswered regular meds → not taken.' : 'Síntomas sin responder → 0, medicación regular sin responder → no tomada.';
+  const completeBar = complete
+    ? `<div class="daybar done">✓ ${lang === 'en' ? 'Day complete' : 'Día completo'}</div>`
+    : `<div class="daybar"><div class="muted small daycounts">${progressText}</div><button class="btn-mark wide" id="markZero">${lang === 'en' ? 'Mark day complete' : 'Marcar día completo'}</button><div class="muted small mark-hint">${markHint}</div></div>`;
+
   // Episodes active on the selected day (so past days show what was ongoing then), not just today's ongoing.
   const ongoing = (data.episodes || []).filter((e) => e.startDate && e.startDate <= date && (e.endDate == null || e.endDate > date));
   const epNote = (e) => esc((e.note && (e.note.en || e.note.es)) || '');
@@ -1118,6 +1140,7 @@ function renderToday(state) {
   return `<div class="ds">${head}
     ${symptomsCard}
     <div class="card" id="medsCard"><div class="card-h"><h2>${T.meds}</h2><button class="linkbtn" data-goto="overview" data-scroll="medsTable">${lang === 'es' ? 'Dosis y pauta ›' : 'Doses & schedule ›'}</button></div>${medsBody}</div>
+    ${completeBar}
     ${epCardHtml}
     ${savedNote}
     <div class="clearday-row"><button class="linkbtn ${ui.confirmClear?'danger':''}" data-clearday>${ui.confirmClear?T.confirmClear:T.clearDay}</button></div></div>`;
