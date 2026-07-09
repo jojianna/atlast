@@ -2390,7 +2390,7 @@ function wireChrome() {
     if (e.target.id === 'importFile') { const f = e.target.files[0]; if (!f) return; try { const r = await importData(await f.text()); setStatus(r.ok ? 'Imported ✓ (' + r.warnings.length + ' notes)' : 'Imported with ' + r.errors.length + ' errors', r.ok ? 'ok' : 'err'); } catch (err) { setStatus('Import failed: ' + err.message, 'err'); } render(); return; }
     if (e.target.id === 'prefEnglishOnly') { setPref('englishOnly', e.target.checked); if (e.target.checked) setLang('en'); render(); return; }
     if (e.target.id === 'prefHideEpisodes') { setPref('hideEpisodes', e.target.checked); render(); return; }
-    if (e.target.id === 'burdenK') { const d = DL.getData(); if (d) { d.meta = d.meta || {}; d.meta.burdenBands = Object.assign({}, d.meta.burdenBands, { k: Number(e.target.value) }); DL.persistLocal(); DL.persist(); } render(); return; }
+    if (e.target.id === 'burdenK') { const k = Math.max(1, Math.round(Number(e.target.value) || 2)); const d = DL.getData(); if (d) { d.meta = d.meta || {}; d.meta.burdenBands = Object.assign({}, d.meta.burdenBands, { k }); DL.persistLocal(); DL.persist(); } render(); return; }
     if (Forms.isOpen()) { Forms.onInput(e); return; }
     if (state.showData) return;
     if (state.tab === 'today') Today.onChange(e, state, render);
@@ -2514,9 +2514,12 @@ function renderDataScreen() {
     '<div class="f f-row"><label><input type="checkbox" id="prefHideEpisodes"' + (getPref('hideEpisodes') ? ' checked' : '') + '> Hide episode tracking (Log &amp; Trends)</label></div>' +
     '</div>' +
     '<div class="card"><h2>Burden scale</h2>' +
-    '<p class="muted small">A day is <b>heavy</b> when one symptom hits 3+ alongside a few others at 2, or one symptom hits 4. <b>Very heavy</b> = two or more symptoms at 3+. Set how many other symptoms at 2 count as “a few”.</p>' +
-    '<div class="f"><div class="f-label">Other symptoms at 2 needed for a heavy day</div><select id="burdenK">' + [1, 2, 3].map((n) => '<option value="' + n + '"' + (n === curK ? ' selected' : '') + '>' + n + '</option>').join('') + '</select></div>' +
-    '<p class="muted small">Default is 2. Tracking only a few symptoms → try 1. Tracking a lot → try 3.</p>' +
+    '<p style="font-size:15px;line-height:2;margin:0 0 6px">' +
+      '<b style="color:#f97316">Heavy</b> = one symptom at 3 plus ' +
+      '<input type="number" id="burdenK" min="1" step="1" value="' + curK + '" style="width:60px;display:inline-block;text-align:center;vertical-align:baseline;margin:0 3px"> ' +
+      'others at 2, or any symptom at 4.</p>' +
+    '<p style="font-size:15px;margin:0"><b style="color:#b91c1c">Very heavy</b> = two or more symptoms at 3 or 4.</p>' +
+    '<p class="muted small" style="margin-top:12px">Tracking only a few symptoms → lower it; a lot → raise it.</p>' +
     '</div>' +
     '<div class="card"><h2>Parse report ' + verdict + '</h2>' +
     '<div class="kv"><span class="k">Source</span><span class="v">' + escapeHtml(pr.source || '') + '</span></div>' +
