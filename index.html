@@ -935,6 +935,8 @@ function daysBetween(aISO, bISO) { const a = new Date(aISO + 'T00:00:00Z'); cons
 function burdenK(data) { const k = data && data.meta && data.meta.burdenBands && data.meta.burdenBands.k; return (typeof k === 'number' && k >= 1) ? k : 2; }
 // Very-heavy dial: how many symptoms at 3+ make a day very heavy. Per-person, stored in meta; default 2.
 function burdenVH(data) { const v = data && data.meta && data.meta.burdenBands && data.meta.burdenBands.vhCount; return (typeof v === 'number' && v >= 2) ? v : 2; }
+// Typical dial (added 10 Jul 2026): how many symptoms at 2 (distracting) tip a day from light to typical. Per-person, stored in meta; default 2 (so a lone 2 stays light).
+function burdenT(data) { const t = data && data.meta && data.meta.burdenBands && data.meta.burdenBands.t; return (typeof t === 'number' && t >= 1) ? t : 2; }
 // Intensity list feeding the day band. Single symptoms contribute their one severity; LOCATED symptoms (joint pain, nerve sensations) contribute EACH affected region separately (changed 10 Jul 2026 — was worst-site only), so breadth reflects multi-site involvement: a widespread joint flare can reach heavy/very-heavy on its own, matching how joint count signals disease activity. null if nothing logged.
 function dayIntensities(iso, types, data) {
   const l = DL.getDailyLog(iso, data);
@@ -959,11 +961,12 @@ function dayBandIdx(iso, types, data) {
   const o2 = ints.filter((v) => v === 2).length;
   const k = burdenK(data);
   const vh = burdenVH(data);
+  const t = burdenT(data);
   if (n3 >= vh) return 4;                     // very heavy: enough symptoms at 3+
   if (n3 >= 2) return 3;                      // heavy: two-plus 3s, but below the very-heavy line
   if (peak >= 4) return 3;                    // heavy: one severe (4) symptom
   if (peak === 3) return o2 >= k ? 3 : 2;     // single 3: heavy with breadth, else typical
-  return o2 >= 2 ? 2 : 1;                      // peak 2: typical if 2+ symptoms at a 2, else light (a lone 2)
+  return o2 >= t ? 2 : 1;                      // peak 2: typical if t+ symptoms at a 2, else light
 }
 const CAL_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z"/><path d="M16 3v4"/><path d="M8 3v4"/><path d="M4 11h16"/></svg>';
 const HIST_SVG = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 4v4h4"/><path d="M12 8v4l3 2"/></svg>';
@@ -989,8 +992,8 @@ function monthCal(state, data, types) {
   }
   const canNext = monthIso < tISO.slice(0, 7);
   const lg = (cls, txt) => `<span><span class="lgsw ${cls}"></span>${txt}</span>`;
-  const legend = `<div class="callegend"><span style="color:var(--muted)">${lang === 'es' ? 'Carga:' : 'Burden:'}</span>${lg('calb1', lang === 'es' ? 'leve' : 'light')}${lg('calb2', lang === 'es' ? 'típico' : 'typical')}${lg('calb3', lang === 'es' ? 'fuerte' : 'heavy')}${lg('calb4', lang === 'es' ? 'muy fuerte' : 'very heavy')}${lg('calb0', lang === 'es' ? 'sin síntomas' : 'clear')}</div>`;
-  const note = `<div class="calnote">${lang === 'es' ? "Color = intensidad del día. Fuerte = un síntoma en 3 acompañado de otros en 2 (o uno en 4); muy fuerte = dos o más en 3. Toca un día para abrirlo." : "Colour = the day's intensity. Heavy = one symptom at 3 alongside others at 2 (or one at 4); very heavy = two or more at 3. Tap a day to open it."}</div>`;
+  const legend = `<div class="callegend"><span style="color:var(--muted)">${lang === 'es' ? 'Carga:' : 'Burden:'}</span>${lg('calb1', lang === 'es' ? 'leve' : 'light')}${lg('calb2', lang === 'es' ? 'típico' : 'typical')}${lg('calb3', lang === 'es' ? 'difícil' : 'difficult')}${lg('calb4', lang === 'es' ? 'grave' : 'severe')}${lg('calb0', lang === 'es' ? 'sin síntomas' : 'clear')}</div>`;
+  const note = `<div class="calnote">${lang === 'es' ? "Color = la carga general del día. Difícil = una o dos cosas que interfieren de verdad (o una en su peor punto); grave = tres o más a la vez — cada articulación dolorida cuenta. Toca un día para abrirlo." : "Colour = the day's overall burden. Difficult = one or two things really interfering (or one at its worst); severe = three or more interfering at once — each painful joint counts. Tap a day to open it."}</div>`;
   return `<div class="card"><div class="calhead"><span class="mlabel">${mlabel}</span><span class="hgrp"><button class="wknav" data-calnav="-1" aria-label="Previous month">‹</button><button class="wknav" data-calnav="1" aria-label="Next month" ${canNext ? '' : 'disabled'}>›</button><button class="wkcal on" data-calview="week" aria-label="${lang === 'es' ? 'Volver a la semana' : 'Back to week'}">${CAL_SVG}</button></span></div><div class="calgrid">${cells}</div>${legend}${note}</div>`;
 }
 
@@ -1100,7 +1103,7 @@ function renderToday(state) {
   const symPick = (data.symptomTypes || []).map((s) => `<div class="pickrow-wrap" data-symid="${s.id}"><span class="drag-grip" aria-hidden="true" title="${lang === 'es' ? 'Arrastra para reordenar' : 'Drag to reorder'}">⠿</span><button class="pickrow" data-edit="symptomTypes:${s.id}">${esc(tx(s.name, lang))}${s.archived ? ` <span class="muted small">(${lang === 'en' ? 'archived' : 'archivado'})</span>` : ''}</button></div>`).join('');
   const symEditBtns = `<button class="addmini" data-editpick="symptomTypes" aria-label="${lang === 'es' ? 'Editar' : 'Edit'}">${symEditing ? '✕' : '✎'}</button><button class="addmini" data-add="symptomTypes" aria-label="${lang === 'en' ? 'Add symptom' : 'Añadir síntoma'}">＋</button>`;
   const bBand = dayBandIdx(date, types, data);
-  const bWords = lang === 'es' ? ['sin síntomas', 'leve', 'típico', 'fuerte', 'muy fuerte'] : ['clear', 'light', 'typical', 'heavy', 'very heavy'];
+  const bWords = lang === 'es' ? ['sin síntomas', 'leve', 'típico', 'difícil', 'grave'] : ['clear', 'light', 'typical', 'difficult', 'severe'];
   const bCols = ['#94a3b8', '#fde047', '#f59e0b', '#f97316', '#b91c1c'];
   const bTextCols = ['#fff', '#422006', '#422006', '#fff', '#fff'];
   const burdenChip = bBand < 0 ? '' : `<span class="prog-chip burden-chip" style="background:${bCols[bBand]};color:${bTextCols[bBand]}">${bWords[bBand]}</span>`;
@@ -1580,9 +1583,9 @@ const add = (coll, label) => `<button class="btn ghost addbtn" data-add="${coll}
 const TSS = {
   en: { worse: 'worse', better: 'better', steady: 'steady', notEnough: 'Not enough history yet.', noData: 'No data yet.',
         period: { '30d': '30 days', '3m': '3 months', '1y': 'year' }, was: 'was', vsPrev: 'vs previous', allTime: 'all time', past: 'past', partial: 'partial', mo: 'mo',
-        badTitle: 'Heavy days', mixTitle: 'Day mix over time', areasTitle: 'Areas affected', loadTitle: 'Overall load',
+        mixTitle: 'Day mix over time', areasTitle: 'Areas affected', loadTitle: 'Overall load',
         dayBalanceTitle: 'Good days vs bad days', badLineTitle: 'Bad days over time',
-        heavyW: 'heavy', vheavyW: 'very heavy', ofW: 'of', daysW: 'days', heavyPlus: 'heavy or very heavy', areasUnit: 'areas', loadSub: 'severity + spread combined', bandW: ['clear', 'light', 'typical', 'heavy', 'very heavy'],
+        heavyPlus: 'difficult or severe', areasUnit: 'areas', loadSub: 'severity + spread combined', bandW: ['clear', 'light', 'typical', 'difficult', 'severe'],
         mostProm: 'Most prominent',
         labs: 'Labs', episodes: 'Episodes/Month',
         pos: 'Positive', neg: 'Negative', progression: 'Progression',
@@ -1590,9 +1593,9 @@ const TSS = {
         newJointLoc: 'New joint pain location', newNerve: 'New nerve sensation', newSymptom: 'New symptom' },
   es: { worse: 'peor', better: 'mejor', steady: 'estable', notEnough: 'Historial insuficiente.', noData: 'Sin datos aún.',
         period: { '30d': '30 días', '3m': '3 meses', '1y': 'año' }, was: 'antes', vsPrev: 'vs', allTime: 'todo el tiempo', past: 'últimos', partial: 'parcial', mo: 'm',
-        badTitle: 'Días fuertes', mixTitle: 'Distribución de días', areasTitle: 'Zonas afectadas', loadTitle: 'Carga total',
+        mixTitle: 'Distribución de días', areasTitle: 'Zonas afectadas', loadTitle: 'Carga total',
         dayBalanceTitle: 'Días buenos vs malos', badLineTitle: 'Días malos con el tiempo',
-        heavyW: 'fuerte', vheavyW: 'muy fuerte', ofW: 'de', daysW: 'días', heavyPlus: 'fuerte o muy fuerte', areasUnit: 'zonas', loadSub: 'gravedad + extensión combinadas', bandW: ['sin síntomas', 'leve', 'típico', 'fuerte', 'muy fuerte'],
+        heavyPlus: 'difícil o grave', areasUnit: 'zonas', loadSub: 'gravedad + extensión combinadas', bandW: ['sin síntomas', 'leve', 'típico', 'difícil', 'grave'],
         mostProm: 'Más prominente',
         labs: 'Analíticas', episodes: 'Episodios/Mes',
         pos: 'Positivo', neg: 'Negativo', progression: 'Progresión',
@@ -1830,12 +1833,6 @@ function trendChg(cur, prev, higherIsWorse, reliable, TT, fmt) {
   const worse = higherIsWorse ? d > 0 : d < 0;
   return `<span class="chgpill ${worse ? 'up' : 'down'}">${d > 0 ? '↑' : '↓'} ${TT.was} ${fmt(prev)}</span>`;
 }
-// #1 Heavy days — count of heavy+very-heavy days in the window + adaptive stacked bars.
-function trendBadCard(lang, TT, cur, prev, reliable, tb, days, win) {
-  const pill = trendChg(cur.bad, prev.bad, true, reliable, TT, (v) => Math.round(v));
-  const denom = win === 'all' ? cur.logged : days;
-  return `<div class="card"><div class="card-h"><h2>${TT.badTitle}</h2></div><div class="bignum">${cur.bad} <span class="muted small">${TT.ofW} ${denom} ${TT.daysW}</span>${pill ? `<span style="margin-left:auto">${pill}</span>` : ''}</div><div class="muted small bn-sub"><span style="color:#c2410c;font-weight:600">${cur.band[3]} ${TT.heavyW}</span> · <span style="color:#b91c1c;font-weight:600">${cur.band[4]} ${TT.vheavyW}</span></div>${trendStackBars(tb.buckets, [3, 4], tb.mode, false)}</div>`;
-}
 // #2 Day mix over time — share of each band per bucket (100% stacked); headline = % heavy+ for the window.
 function trendMixCard(lang, TT, cur, prev, reliable, tb) {
   const pct = cur.logged ? Math.round(cur.bad / cur.logged * 100) : 0;
@@ -1949,7 +1946,6 @@ function renderTrends(state) {
   const tb = trendBuckets(data, types, days);
   const shiftCard = trendShiftCard(lang, TT, curAgg, prevAgg, reliable, days, win);
   const badLineCard = trendBadLineCard(lang, TT, tb, win);
-  const badCard = trendBadCard(lang, TT, curAgg, prevAgg, reliable, tb, days, win);
   const mixCard = trendMixCard(lang, TT, curAgg, prevAgg, reliable, tb);
   const areasCard = trendAreasCard(state, data, days, win, TT, reliable);
   const loadCard = trendLoadCard(lang, TT, curAgg, prevAgg, reliable, tb);
@@ -1986,7 +1982,7 @@ function renderTrends(state) {
   catch (err) { console.warn('adherence card failed', err); adhCard = `<div class="card"><div class="card-h"><h2>${lang === 'es' ? 'Cumplimiento de medicación' : 'Medication adherence'}</h2></div><p class="muted small">—</p></div>`; }
   const labsCard = `<div class="card"><div class="card-h"><h2>${TT.labs}</h2><button class="addmini" data-add="labs" aria-label="Add marker">＋</button></div>${labHtml}</div>`;
   const illCard = getPref('hideEpisodes') ? '' : `<div class="card"><div class="card-h"><h2>${TT.episodes}</h2></div>${illnessBars(data, lang)}</div>`;
-  return `<div class="ds">${winseg}${shiftCard}${badLineCard}${badCard}${mixCard}${areasCard}${loadCard}${promCard}${onsetHtml}${adhCard}${labsCard}${illCard}</div>`;
+  return `<div class="ds">${winseg}${shiftCard}${badLineCard}${mixCard}${areasCard}${loadCard}${promCard}${onsetHtml}${adhCard}${labsCard}${illCard}</div>`;
 }
 // Progression timeline in the new design-system style (keeps filters + tap-for-detail).
 function renderProg(state) {
@@ -2562,6 +2558,7 @@ function wireChrome() {
     if (e.target.id === 'prefEnglishOnly') { setPref('englishOnly', e.target.checked); if (e.target.checked) setLang('en'); render(); return; }
     if (e.target.id === 'prefHideEpisodes') { setPref('hideEpisodes', e.target.checked); render(); return; }
     if (e.target.id === 'burdenK') { const k = Math.max(1, Math.round(Number(e.target.value) || 2)); const d = DL.getData(); if (d) { d.meta = d.meta || {}; d.meta.burdenBands = Object.assign({}, d.meta.burdenBands, { k }); DL.persistLocal(); DL.persist(); } render(); return; }
+    if (e.target.id === 'burdenT') { const t = Math.max(1, Math.round(Number(e.target.value) || 2)); const d = DL.getData(); if (d) { d.meta = d.meta || {}; d.meta.burdenBands = Object.assign({}, d.meta.burdenBands, { t }); DL.persistLocal(); DL.persist(); } render(); return; }
     if (e.target.id === 'burdenVH') { const vhCount = Math.max(2, Math.round(Number(e.target.value) || 2)); const d = DL.getData(); if (d) { d.meta = d.meta || {}; d.meta.burdenBands = Object.assign({}, d.meta.burdenBands, { vhCount }); DL.persistLocal(); DL.persist(); } render(); return; }
     if (Forms.isOpen()) { Forms.onInput(e); return; }
     if (state.showData) return;
@@ -2681,21 +2678,27 @@ function renderDataScreen() {
   const warnHtml = v.warnings.length ? '<details class="msgs"><summary>' + v.warnings.length + ' note(s)</summary><ul class="msglist">' + v.warnings.map((w) => '<li>! ' + escapeHtml(w) + '</li>').join('') + '</ul></details>' : '';
   const curK = (data.meta && data.meta.burdenBands && typeof data.meta.burdenBands.k === 'number') ? data.meta.burdenBands.k : 2;
   const curVH = (data.meta && data.meta.burdenBands && typeof data.meta.burdenBands.vhCount === 'number') ? data.meta.burdenBands.vhCount : 2;
+  const curT = (data.meta && data.meta.burdenBands && typeof data.meta.burdenBands.t === 'number') ? data.meta.burdenBands.t : 2;
+  const rn = (n) => '<span style="color:#8a97a3;font-size:12px">(' + n + ')</span>';
+  const bInput = (id, min, val) => '<input type="number" id="' + id + '" min="' + min + '" step="1" value="' + val + '" style="width:46px;display:inline-block;text-align:center;vertical-align:baseline;margin:0 2px">';
   return odPanel() +
     '<div class="card"><h2>Display options</h2>' +
     '<div class="f f-row"><label><input type="checkbox" id="prefEnglishOnly"' + (getPref('englishOnly') ? ' checked' : '') + '> English only (hide the EN/ES switch)</label></div>' +
     '<div class="f f-row"><label><input type="checkbox" id="prefHideEpisodes"' + (getPref('hideEpisodes') ? ' checked' : '') + '> Hide episode tracking (Log &amp; Trends)</label></div>' +
     '</div>' +
     '<div class="card"><h2>Burden scale</h2>' +
-    '<p style="font-size:15px;line-height:2;margin:0 0 6px">' +
-      '<b style="color:#b91c1c">Very heavy</b> = ' +
-      '<input type="number" id="burdenVH" min="2" step="1" value="' + curVH + '" style="width:60px;display:inline-block;text-align:center;vertical-align:baseline;margin:0 3px"> ' +
-      'or more symptoms at 3+.</p>' +
-    '<p style="font-size:15px;line-height:2;margin:0 0 6px">' +
-      '<b style="color:#f97316">Heavy</b> = you reach a 3 but stay under that — a single 3 needs ' +
-      '<input type="number" id="burdenK" min="1" step="1" value="' + curK + '" style="width:60px;display:inline-block;text-align:center;vertical-align:baseline;margin:0 3px"> ' +
-      'others at 2 to count; a 4 always counts.</p>' +
-    '<p class="muted small" style="margin-top:8px">Fewer symptoms tracked → lower these; a lot → raise them.</p>' +
+    '<p class="muted small" style="margin:0 0 12px">How each day’s level is set from your symptom ratings. The boxes are yours to adjust.</p>' +
+    '<div style="display:flex;flex-direction:column;gap:11px;font-size:15px;line-height:1.6">' +
+      '<div style="display:flex;gap:10px"><span style="flex:0 0 12px;height:12px;border-radius:3px;background:#fde047;margin-top:5px"></span>' +
+        '<span><b>Light</b> — symptoms only noticeable ' + rn(1) + ', or just one distracting ' + rn(2) + '</span></div>' +
+      '<div style="display:flex;gap:10px"><span style="flex:0 0 12px;height:12px;border-radius:3px;background:#f59e0b;margin-top:5px"></span>' +
+        '<span><b>Typical</b> — ' + bInput('burdenT', 1, curT) + ' or more distracting ' + rn(2) + ', or one interfering ' + rn(3) + ' on its own</span></div>' +
+      '<div style="display:flex;gap:10px"><span style="flex:0 0 12px;height:12px;border-radius:3px;background:#f97316;margin-top:5px"></span>' +
+        '<span><b style="color:#c2410c">Difficult</b> — one interfering ' + rn(3) + ' with ' + bInput('burdenK', 1, curK) + ' others distracting ' + rn(2) + ', two interfering ' + rn(3) + ', or one that prevents activity ' + rn(4) + '</span></div>' +
+      '<div style="display:flex;gap:10px"><span style="flex:0 0 12px;height:12px;border-radius:3px;background:#b91c1c;margin-top:5px"></span>' +
+        '<span><b style="color:#b91c1c">Severe</b> — ' + bInput('burdenVH', 2, curVH) + ' or more interfering ' + rn(3) + ' or worse, at once</span></div>' +
+    '</div>' +
+    '<p class="muted small" style="margin-top:12px">Tracking only a few symptoms? Lower the boxes. A lot? Raise them.</p>' +
     '</div>' +
     '<div class="card"><h2>Parse report ' + verdict + '</h2>' +
     '<div class="kv"><span class="k">Source</span><span class="v">' + escapeHtml(pr.source || '') + '</span></div>' +
