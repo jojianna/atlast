@@ -1530,7 +1530,7 @@ function shiftDate(iso, days) { const d = new Date(iso + 'T00:00:00Z'); d.setUTC
 
 
 
-const ui = { labId: null, win: '1y', scoreWin: '3m', symTrend: null, labGroups: new Set(), editPick: null, adhOpen: false };
+const ui = { labId: null, win: '1y', scoreWin: '3m', symTrend: null, labGroups: new Set(), editPick: null, adhOpen: false, badLines: { heavy: true, vh: true } };
 
 const STR = {
   en: { conditions: 'Conditions', meds: 'Meds', symptoms: 'Symptoms', episodes: 'Episodes', labs: 'Labs', timeline: 'Map',
@@ -1900,9 +1900,11 @@ function trendBadLineCard(lang, TT, tb, win) {
   let xl;
   if (mode === 'month') xl = bkts.map((b, i) => i % 3 !== 0 ? '' : `<text x="${X(i).toFixed(1)}" y="${h - 3}" font-size="9" fill="#94a3b8" text-anchor="middle">${MON3[+b.iso.slice(5, 7) - 1]}</text>`).join('');
   else { const f = n ? (bkts[0].isoFirst || bkts[0].iso) : '', l = n ? bkts[n - 1].iso : ''; xl = `<text x="${padL}" y="${h - 3}" font-size="9" fill="#94a3b8">${ddmm(f)}</text><text x="${w - padR}" y="${h - 3}" font-size="9" fill="#94a3b8" text-anchor="end">${ddmm(l)}</text>`; }
-  const svg = `<svg class="trend" viewBox="0 0 ${w} ${h}" role="img" style="height:auto">${grid}${line(3, SEVHEX[3])}${line(4, SEVHEX[4])}${xl}</svg>`;
-  const legend = [3, 4].map((i) => `<span class="lg"><span class="lgsw" style="background:${SEVHEX[i]}"></span>${TT.bandW[i]}</span>`).join('');
-  return `<div class="card"><div class="card-h"><h2>${TT.badLineTitle} <span class="muted small">— ${period}</span></h2></div><div class="lgrow" style="margin:2px 0 4px">${legend}</div>${svg}</div>`;
+  const show = ui.badLines || { heavy: true, vh: true };
+  const svg = `<svg class="trend" viewBox="0 0 ${w} ${h}" role="img" style="height:auto">${grid}${show.heavy ? line(3, SEVHEX[3]) : ''}${show.vh ? line(4, SEVHEX[4]) : ''}${xl}</svg>`;
+  // Clickable legend: each band toggles its line. At least one line always stays on (see onClick guard). Off = hollow swatch + muted label.
+  const legBtn = (idx, key) => { const on = show[key]; return `<button class="lg" data-badline="${key}" aria-pressed="${on}" style="border:0;background:none;padding:2px 0;cursor:pointer;font:inherit;font-size:11px;color:${on ? 'var(--ink)' : 'var(--muted)'}"><span class="lgsw" style="background:${on ? SEVHEX[idx] : 'transparent'};box-shadow:inset 0 0 0 1.5px ${SEVHEX[idx]}"></span>${TT.bandW[idx]}</button>`; };
+  return `<div class="card"><div class="card-h"><h2>${TT.badLineTitle} <span class="muted small">— ${period}</span></h2></div><div class="lgrow" style="margin:2px 0 4px">${legBtn(3, 'heavy')}${legBtn(4, 'vh')}</div>${svg}</div>`;
 }
 // #4 Areas affected — spread of ONE located symptom (default: first located type, e.g. joint pain), i.e. how many of its sites are active per day.
 // Selectable when the person tracks >1 located symptom; hidden entirely for people who track none (e.g. a single-symptom-only user like Joanna's dad).
@@ -2065,6 +2067,7 @@ async function onClick(e, state, rerender) {
   if (t.dataset.areasym) { ui.areaSym = t.dataset.areasym; rerender(); return; }
   if (t.dataset.symtrend) { ui.symTrend = (ui.symTrend === t.dataset.symtrend) ? null : t.dataset.symtrend; rerender(); return; }
   if (t.dataset.adhtoggle != null) { ui.adhOpen = !ui.adhOpen; rerender(); return; }
+  if (t.dataset.badline) { const b = t.dataset.badline, o = b === 'heavy' ? 'vh' : 'heavy'; if (ui.badLines[b] && !ui.badLines[o]) return; ui.badLines[b] = !ui.badLines[b]; rerender(); return; }
   if (t.dataset.labgrp) { const g = t.dataset.labgrp; ui.labGroups.has(g) ? ui.labGroups.delete(g) : ui.labGroups.add(g); rerender(); return; }
   if (t.dataset.lab) { ui.labId = t.dataset.lab === '__back' ? null : t.dataset.lab; ui.win = '1y'; rerender(); return; }
   if (t.dataset.win) { ui.win = t.dataset.win; rerender(); return; }
