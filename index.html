@@ -2559,6 +2559,7 @@ function wireChrome() {
     if (e.target.id === 'prefHideEpisodes') { setPref('hideEpisodes', e.target.checked); render(); return; }
     if (e.target.id === 'burdenK') { const k = Math.max(1, Math.round(Number(e.target.value) || 2)); const d = DL.getData(); if (d) { d.meta = d.meta || {}; d.meta.burdenBands = Object.assign({}, d.meta.burdenBands, { k }); DL.persistLocal(); DL.persist(); } render(); return; }
     if (e.target.id === 'burdenT') { const t = Math.max(0, Math.round(Number(e.target.value) || 1)); const d = DL.getData(); if (d) { d.meta = d.meta || {}; d.meta.burdenBands = Object.assign({}, d.meta.burdenBands, { t }); DL.persistLocal(); DL.persist(); } render(); return; }
+    if (e.target.id === 'burdenTt') { const t = Math.max(0, Math.round(Number(e.target.value) || 2) - 1); const d = DL.getData(); if (d) { d.meta = d.meta || {}; d.meta.burdenBands = Object.assign({}, d.meta.burdenBands, { t }); DL.persistLocal(); DL.persist(); } render(); return; }
     if (e.target.id === 'burdenVH') { const vhCount = Math.max(2, Math.round(Number(e.target.value) || 2)); const d = DL.getData(); if (d) { d.meta = d.meta || {}; d.meta.burdenBands = Object.assign({}, d.meta.burdenBands, { vhCount }); DL.persistLocal(); DL.persist(); } render(); return; }
     if (Forms.isOpen()) { Forms.onInput(e); return; }
     if (state.showData) return;
@@ -2692,13 +2693,12 @@ function renderDataScreen() {
       '<div style="display:flex;gap:10px"><span style="flex:0 0 12px;height:12px;border-radius:3px;background:#fde047;margin-top:5px"></span>' +
         '<span><b>Light</b> — symptoms only noticeable ' + rn(1) + ', or up to ' + bInput('burdenT', 0, curT) + ' distracting ' + rn(2) + '</span></div>' +
       '<div style="display:flex;gap:10px"><span style="flex:0 0 12px;height:12px;border-radius:3px;background:#f59e0b;margin-top:5px"></span>' +
-        '<span><b>Typical</b> — more distracting ' + rn(2) + ' than that, or one interfering ' + rn(3) + ' on its own</span></div>' +
+        '<span><b>Typical</b> — ' + bInput('burdenTt', 1, curT + 1) + ' or more distracting ' + rn(2) + ', or one interfering ' + rn(3) + ' on its own</span></div>' +
       '<div style="display:flex;gap:10px"><span style="flex:0 0 12px;height:12px;border-radius:3px;background:#f97316;margin-top:5px"></span>' +
         '<span><b>Difficult</b> — one interfering ' + rn(3) + ' with ' + bInput('burdenK', 1, curK) + ' others distracting ' + rn(2) + ', two interfering ' + rn(3) + ', or one that prevents activity ' + rn(4) + '</span></div>' +
       '<div style="display:flex;gap:10px"><span style="flex:0 0 12px;height:12px;border-radius:3px;background:#b91c1c;margin-top:5px"></span>' +
         '<span><b>Severe</b> — ' + bInput('burdenVH', 2, curVH) + ' or more interfering ' + rn(3) + ' or worse, at once</span></div>' +
     '</div>' +
-    '<p class="muted small" style="margin-top:12px">Tracking only a few symptoms? Lower the boxes. A lot? Raise them.</p>' +
     '</div>' +
     '<div class="card"><h2>Parse report ' + verdict + '</h2>' +
     '<div class="kv"><span class="k">Source</span><span class="v">' + escapeHtml(pr.source || '') + '</span></div>' +
