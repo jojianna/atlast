@@ -1215,7 +1215,7 @@ function onInput(e, state) {
   clearTimeout(_noteTimer); _noteTimer = setTimeout(() => { DL.persist({ silent: true }); }, 600);
 }
 
-return { ui, todayISO, headerHTML, renderToday, onClick, onChange, onInput };
+return { ui, todayISO, headerHTML, renderToday, onClick, onChange, onInput, dayBandIdx };
 })();
 
 // ---- Shared doctor-readable medication schedule (used by Prep + Records) ----
@@ -1777,22 +1777,33 @@ function onsetCard(state, data, days, win, TT) {
   return `<div class="card">${head}<div class="muted small" style="margin:-2px 0 10px">${legend}</div><div style="position:relative;padding-left:16px"><span style="position:absolute;left:4px;top:4px;bottom:4px;width:2px;background:var(--line)"></span>${rows}</div></div>`;
 }
 // ===== How-am-I-trending charts (window-aware; replace the old burden/severity headline pair) =====
-function dayBreadth(iso, types, data) { const a = dayIntensities(iso, types, data); return a ? a.filter((v) => v > 0).length : null; }
 function dayLoad(iso, types, data) { const l = DL.getDailyLog(iso, data); return (l && dayLogged(l)) ? daySum(l, types) : null; }
+// Count of a located symptom's sites active (severity>0) on a day — powers the "areas affected" spread view.
+function siteCount(iso, sym, data) { const l = DL.getDailyLog(iso, data); if (!l || !dayLogged(l)) return null; const rows = l.symptoms || []; let n = 0; (sym.locations || []).filter((x) => !x.archived).forEach((loc) => { if (rows.find((x) => x.symptomId === sym.id && x.locationId === loc.id && typeof x.severity === 'number' && x.severity > 0)) n++; }); return n; }
+// Mean of a per-day value over [a,b) (skips unlogged days).
+function winMean(valFn, a, b) { let s = 0, n = 0; for (let i = a; i < b; i++) { const v = valFn(isoBack(i)); if (v != null) { s += v; n++; } } return n ? s / n : null; }
+// Window-aware buckets of a per-day mean (day ≤45d / week ≤120d / month else) — for line charts.
+function bucketMeans(days, valFn) {
+  const daily = []; for (let i = days - 1; i >= 0; i--) { const iso = isoBack(i); daily.push({ iso, v: valFn(iso) }); }
+  const mode = days > 120 ? 'month' : days > 45 ? 'week' : 'day';
+  const groups = []; const idx = {};
+  daily.forEach((d, i) => { const key = mode === 'month' ? d.iso.slice(0, 7) : mode === 'week' ? 'w' + Math.floor(i / 7) : d.iso; if (!(key in idx)) { idx[key] = groups.length; groups.push({ iso: d.iso, isoFirst: d.iso, sum: 0, n: 0 }); } const g = groups[idx[key]]; g.iso = d.iso; if (d.v != null) { g.sum += d.v; g.n++; } });
+  return { buckets: groups.map((g) => ({ iso: g.iso, isoFirst: g.isoFirst, v: g.n ? g.sum / g.n : null })), mode };
+}
 // Aggregate a day-range [a,b) into band counts, bad-day total, and load/breadth means.
 function winAgg(data, types, a, b) {
-  const band = [0, 0, 0, 0, 0]; let logged = 0, loadSum = 0, brSum = 0;
-  for (let i = a; i < b; i++) { const iso = isoBack(i); const bi = dayBandIdx(iso, types, data); if (bi < 0) continue; logged++; band[bi]++; loadSum += dayLoad(iso, types, data) || 0; brSum += dayBreadth(iso, types, data) || 0; }
-  return { band, logged, bad: band[3] + band[4], loadMean: logged ? loadSum / logged : null, brMean: logged ? brSum / logged : null };
+  const band = [0, 0, 0, 0, 0]; let logged = 0, loadSum = 0;
+  for (let i = a; i < b; i++) { const iso = isoBack(i); const bi = Today.dayBandIdx(iso, types, data); if (bi < 0) continue; logged++; band[bi]++; loadSum += dayLoad(iso, types, data) || 0; }
+  return { band, logged, bad: band[3] + band[4], loadMean: logged ? loadSum / logged : null };
 }
 // Window-aware buckets: one per day (≤45d), week (≤120d) or month (else), each with band counts + load/breadth means.
 function trendBuckets(data, types, days) {
   const daily = [];
-  for (let i = days - 1; i >= 0; i--) { const iso = isoBack(i); const bi = dayBandIdx(iso, types, data); daily.push({ iso, bi, load: bi < 0 ? null : dayLoad(iso, types, data), br: bi < 0 ? null : dayBreadth(iso, types, data) }); }
+  for (let i = days - 1; i >= 0; i--) { const iso = isoBack(i); const bi = Today.dayBandIdx(iso, types, data); daily.push({ iso, bi, load: bi < 0 ? null : dayLoad(iso, types, data) }); }
   const mode = days > 120 ? 'month' : days > 45 ? 'week' : 'day';
   const groups = []; const idx = {};
-  daily.forEach((d, i) => { const key = mode === 'month' ? d.iso.slice(0, 7) : mode === 'week' ? 'w' + Math.floor(i / 7) : d.iso; if (!(key in idx)) { idx[key] = groups.length; groups.push({ iso: d.iso, isoFirst: d.iso, band: [0, 0, 0, 0, 0], logged: 0, loadSum: 0, brSum: 0 }); } const g = groups[idx[key]]; g.iso = d.iso; if (d.bi >= 0) { g.band[d.bi]++; g.logged++; g.loadSum += d.load || 0; g.brSum += d.br || 0; } });
-  return { buckets: groups.map((g) => ({ iso: g.iso, isoFirst: g.isoFirst, band: g.band, logged: g.logged, bad: g.band[3] + g.band[4], loadMean: g.logged ? g.loadSum / g.logged : null, brMean: g.logged ? g.brSum / g.logged : null })), mode };
+  daily.forEach((d, i) => { const key = mode === 'month' ? d.iso.slice(0, 7) : mode === 'week' ? 'w' + Math.floor(i / 7) : d.iso; if (!(key in idx)) { idx[key] = groups.length; groups.push({ iso: d.iso, isoFirst: d.iso, band: [0, 0, 0, 0, 0], logged: 0, loadSum: 0 }); } const g = groups[idx[key]]; g.iso = d.iso; if (d.bi >= 0) { g.band[d.bi]++; g.logged++; g.loadSum += d.load || 0; } });
+  return { buckets: groups.map((g) => ({ iso: g.iso, isoFirst: g.isoFirst, band: g.band, logged: g.logged, bad: g.band[3] + g.band[4], loadMean: g.logged ? g.loadSum / g.logged : null })), mode };
 }
 // Stacked band bars per bucket. idxs = band indices (bottom→top). normalize → each bucket to 100% of its logged days.
 function trendStackBars(buckets, idxs, mode, normalize) {
@@ -1828,12 +1839,23 @@ function trendMixCard(lang, TT, cur, prev, reliable, tb) {
   const legend = [1, 2, 3, 4].map((i) => `<span class="lg"><span class="lgsw" style="background:${SEVHEX[i]}"></span>${TT.bandW[i]}</span>`).join('');
   return `<div class="card"><div class="card-h"><h2>${TT.mixTitle}</h2></div><div class="bignum">${pct}% <span class="muted small">${TT.heavyPlus}</span>${pill ? `<span style="margin-left:auto">${pill}</span>` : ''}</div><div class="lgrow" style="margin-top:8px">${legend}</div>${trendStackBars(tb.buckets, [1, 2, 3, 4], tb.mode, true)}</div>`;
 }
-// #4 Areas affected — mean number of areas hurting per day; line over buckets.
-function trendAreasCard(lang, TT, cur, prev, reliable, tb) {
-  const pill = trendChg(cur.brMean, prev.brMean, true, reliable, TT, (v) => v.toFixed(1));
-  const series = tb.buckets.map((b) => ({ iso: b.iso, v: b.brMean }));
+// #4 Areas affected — spread of ONE located symptom (default: first located type, e.g. joint pain), i.e. how many of its sites are active per day.
+// Selectable when the person tracks >1 located symptom; hidden entirely for people who track none (e.g. a single-symptom-only user like Joanna's dad).
+function trendAreasCard(state, data, days, win, TT, reliable) {
+  const lang = state.lang;
+  const located = DL.activeSymptomTypes(data).filter((s) => s.trackBy === 'locations');
+  if (!located.length) return '';
+  const sym = located.find((s) => s.id === ui.areaSym) || located[0];
+  const valFn = (iso) => siteCount(iso, sym, data);
+  const cur = winMean(valFn, 0, days), prev = winMean(valFn, days, 2 * days);
+  const { buckets } = bucketMeans(days, valFn);
+  const series = buckets.map((b) => ({ iso: b.iso, v: b.v }));
   const max = Math.max(2, ...series.map((x) => x.v || 0));
-  return `<div class="card"><div class="card-h"><h2>${TT.areasTitle}</h2></div><div class="bignum">${cur.brMean != null ? cur.brMean.toFixed(1) : '–'} <span class="muted small">${TT.areasUnit}</span>${pill ? `<span style="margin-left:auto">${pill}</span>` : ''}</div>${trendSVG(series, max, cur.brMean)}</div>`;
+  const pill = trendChg(cur, prev, true, reliable, TT, (v) => v.toFixed(1));
+  const sel = located.length > 1
+    ? `<div class="winseg" style="margin:2px 0 10px">${located.map((s) => `<button class="${s.id === sym.id ? 'on' : ''}" data-areasym="${s.id}">${esc(tx(s.name, lang))}</button>`).join('')}</div>`
+    : `<div class="muted small" style="margin:-2px 0 8px">${esc(tx(sym.name, lang))}</div>`;
+  return `<div class="card"><div class="card-h"><h2>${TT.areasTitle}</h2></div>${sel}<div class="bignum">${cur != null ? cur.toFixed(1) : '–'} <span class="muted small">${TT.areasUnit}</span>${pill ? `<span style="margin-left:auto">${pill}</span>` : ''}</div>${trendSVG(series, max, cur)}</div>`;
 }
 // #3 Overall load — severity+spread combined (the old burden sum), mean per bucket; line.
 function trendLoadCard(lang, TT, cur, prev, reliable, tb) {
@@ -1859,7 +1881,7 @@ function renderTrends(state) {
   const tb = trendBuckets(data, types, days);
   const badCard = trendBadCard(lang, TT, curAgg, prevAgg, reliable, tb, days, win);
   const mixCard = trendMixCard(lang, TT, curAgg, prevAgg, reliable, tb);
-  const areasCard = trendAreasCard(lang, TT, curAgg, prevAgg, reliable, tb);
+  const areasCard = trendAreasCard(state, data, days, win, TT, reliable);
   const loadCard = trendLoadCard(lang, TT, curAgg, prevAgg, reliable, tb);
   // Most prominent = current level + change, tap to drill in
   const stats = symStats(data, types, days).filter((x) => x.cur > 0.05);
@@ -1965,6 +1987,7 @@ async function onClick(e, state, rerender) {
   if (!t) return;
   if (t.dataset.editpick != null) { ui.editPick = ui.editPick === t.dataset.editpick ? null : t.dataset.editpick; rerender(); return; }
   if (t.dataset.scorewin) { ui.scoreWin = t.dataset.scorewin; rerender(); return; }
+  if (t.dataset.areasym) { ui.areaSym = t.dataset.areasym; rerender(); return; }
   if (t.dataset.symtrend) { ui.symTrend = (ui.symTrend === t.dataset.symtrend) ? null : t.dataset.symtrend; rerender(); return; }
   if (t.dataset.adhtoggle != null) { ui.adhOpen = !ui.adhOpen; rerender(); return; }
   if (t.dataset.labgrp) { const g = t.dataset.labgrp; ui.labGroups.has(g) ? ui.labGroups.delete(g) : ui.labGroups.add(g); rerender(); return; }
