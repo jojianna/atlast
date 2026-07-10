@@ -935,8 +935,8 @@ function daysBetween(aISO, bISO) { const a = new Date(aISO + 'T00:00:00Z'); cons
 function burdenK(data) { const k = data && data.meta && data.meta.burdenBands && data.meta.burdenBands.k; return (typeof k === 'number' && k >= 1) ? k : 2; }
 // Very-heavy dial: how many symptoms at 3+ make a day very heavy. Per-person, stored in meta; default 2.
 function burdenVH(data) { const v = data && data.meta && data.meta.burdenBands && data.meta.burdenBands.vhCount; return (typeof v === 'number' && v >= 2) ? v : 2; }
-// Typical dial (added 10 Jul 2026): how many symptoms at 2 (distracting) tip a day from light to typical. Per-person, stored in meta; default 2 (so a lone 2 stays light).
-function burdenT(data) { const t = data && data.meta && data.meta.burdenBands && data.meta.burdenBands.t; return (typeof t === 'number' && t >= 1) ? t : 2; }
+// Light dial (added 10 Jul 2026): how many symptoms at 2 (distracting) a day can have and still count as light. Per-person, stored in meta; default 1 (a lone distracting stays light). More than this → typical.
+function burdenT(data) { const t = data && data.meta && data.meta.burdenBands && data.meta.burdenBands.t; return (typeof t === 'number' && t >= 0) ? t : 1; }
 // Intensity list feeding the day band. Single symptoms contribute their one severity; LOCATED symptoms (joint pain, nerve sensations) contribute EACH affected region separately (changed 10 Jul 2026 — was worst-site only), so breadth reflects multi-site involvement: a widespread joint flare can reach heavy/very-heavy on its own, matching how joint count signals disease activity. null if nothing logged.
 function dayIntensities(iso, types, data) {
   const l = DL.getDailyLog(iso, data);
@@ -966,7 +966,7 @@ function dayBandIdx(iso, types, data) {
   if (n3 >= 2) return 3;                      // heavy: two-plus 3s, but below the very-heavy line
   if (peak >= 4) return 3;                    // heavy: one severe (4) symptom
   if (peak === 3) return o2 >= k ? 3 : 2;     // single 3: heavy with breadth, else typical
-  return o2 >= t ? 2 : 1;                      // peak 2: typical if t+ symptoms at a 2, else light
+  return o2 > t ? 2 : 1;                       // peak 2: typical if more than t at a 2, else light (t = distracting allowed while still light)
 }
 const CAL_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z"/><path d="M16 3v4"/><path d="M8 3v4"/><path d="M4 11h16"/></svg>';
 const HIST_SVG = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 4v4h4"/><path d="M12 8v4l3 2"/></svg>';
@@ -2558,7 +2558,7 @@ function wireChrome() {
     if (e.target.id === 'prefEnglishOnly') { setPref('englishOnly', e.target.checked); if (e.target.checked) setLang('en'); render(); return; }
     if (e.target.id === 'prefHideEpisodes') { setPref('hideEpisodes', e.target.checked); render(); return; }
     if (e.target.id === 'burdenK') { const k = Math.max(1, Math.round(Number(e.target.value) || 2)); const d = DL.getData(); if (d) { d.meta = d.meta || {}; d.meta.burdenBands = Object.assign({}, d.meta.burdenBands, { k }); DL.persistLocal(); DL.persist(); } render(); return; }
-    if (e.target.id === 'burdenT') { const t = Math.max(1, Math.round(Number(e.target.value) || 2)); const d = DL.getData(); if (d) { d.meta = d.meta || {}; d.meta.burdenBands = Object.assign({}, d.meta.burdenBands, { t }); DL.persistLocal(); DL.persist(); } render(); return; }
+    if (e.target.id === 'burdenT') { const t = Math.max(0, Math.round(Number(e.target.value) || 1)); const d = DL.getData(); if (d) { d.meta = d.meta || {}; d.meta.burdenBands = Object.assign({}, d.meta.burdenBands, { t }); DL.persistLocal(); DL.persist(); } render(); return; }
     if (e.target.id === 'burdenVH') { const vhCount = Math.max(2, Math.round(Number(e.target.value) || 2)); const d = DL.getData(); if (d) { d.meta = d.meta || {}; d.meta.burdenBands = Object.assign({}, d.meta.burdenBands, { vhCount }); DL.persistLocal(); DL.persist(); } render(); return; }
     if (Forms.isOpen()) { Forms.onInput(e); return; }
     if (state.showData) return;
@@ -2678,7 +2678,7 @@ function renderDataScreen() {
   const warnHtml = v.warnings.length ? '<details class="msgs"><summary>' + v.warnings.length + ' note(s)</summary><ul class="msglist">' + v.warnings.map((w) => '<li>! ' + escapeHtml(w) + '</li>').join('') + '</ul></details>' : '';
   const curK = (data.meta && data.meta.burdenBands && typeof data.meta.burdenBands.k === 'number') ? data.meta.burdenBands.k : 2;
   const curVH = (data.meta && data.meta.burdenBands && typeof data.meta.burdenBands.vhCount === 'number') ? data.meta.burdenBands.vhCount : 2;
-  const curT = (data.meta && data.meta.burdenBands && typeof data.meta.burdenBands.t === 'number') ? data.meta.burdenBands.t : 2;
+  const curT = (data.meta && data.meta.burdenBands && typeof data.meta.burdenBands.t === 'number') ? data.meta.burdenBands.t : 1;
   const rn = (n) => '<span style="color:#8a97a3;font-size:12px">(' + n + ')</span>';
   const bInput = (id, min, val) => '<input type="number" id="' + id + '" min="' + min + '" step="1" value="' + val + '" style="width:46px;display:inline-block;text-align:center;vertical-align:baseline;margin:0 2px">';
   return odPanel() +
@@ -2690,13 +2690,13 @@ function renderDataScreen() {
     '<p class="muted small" style="margin:0 0 12px">How each day’s level is set from your symptom ratings. The boxes are yours to adjust.</p>' +
     '<div style="display:flex;flex-direction:column;gap:11px;font-size:15px;line-height:1.6">' +
       '<div style="display:flex;gap:10px"><span style="flex:0 0 12px;height:12px;border-radius:3px;background:#fde047;margin-top:5px"></span>' +
-        '<span><b>Light</b> — symptoms only noticeable ' + rn(1) + ', or just one distracting ' + rn(2) + '</span></div>' +
+        '<span><b>Light</b> — symptoms only noticeable ' + rn(1) + ', or up to ' + bInput('burdenT', 0, curT) + ' distracting ' + rn(2) + '</span></div>' +
       '<div style="display:flex;gap:10px"><span style="flex:0 0 12px;height:12px;border-radius:3px;background:#f59e0b;margin-top:5px"></span>' +
-        '<span><b>Typical</b> — ' + bInput('burdenT', 1, curT) + ' or more distracting ' + rn(2) + ', or one interfering ' + rn(3) + ' on its own</span></div>' +
+        '<span><b>Typical</b> — more distracting ' + rn(2) + ' than that, or one interfering ' + rn(3) + ' on its own</span></div>' +
       '<div style="display:flex;gap:10px"><span style="flex:0 0 12px;height:12px;border-radius:3px;background:#f97316;margin-top:5px"></span>' +
-        '<span><b style="color:#c2410c">Difficult</b> — one interfering ' + rn(3) + ' with ' + bInput('burdenK', 1, curK) + ' others distracting ' + rn(2) + ', two interfering ' + rn(3) + ', or one that prevents activity ' + rn(4) + '</span></div>' +
+        '<span><b>Difficult</b> — one interfering ' + rn(3) + ' with ' + bInput('burdenK', 1, curK) + ' others distracting ' + rn(2) + ', two interfering ' + rn(3) + ', or one that prevents activity ' + rn(4) + '</span></div>' +
       '<div style="display:flex;gap:10px"><span style="flex:0 0 12px;height:12px;border-radius:3px;background:#b91c1c;margin-top:5px"></span>' +
-        '<span><b style="color:#b91c1c">Severe</b> — ' + bInput('burdenVH', 2, curVH) + ' or more interfering ' + rn(3) + ' or worse, at once</span></div>' +
+        '<span><b>Severe</b> — ' + bInput('burdenVH', 2, curVH) + ' or more interfering ' + rn(3) + ' or worse, at once</span></div>' +
     '</div>' +
     '<p class="muted small" style="margin-top:12px">Tracking only a few symptoms? Lower the boxes. A lot? Raise them.</p>' +
     '</div>' +
