@@ -1579,15 +1579,17 @@ const add = (coll, label) => `<button class="btn ghost addbtn" data-add="${coll}
 const TSS = {
   en: { worse: 'worse', better: 'better', steady: 'steady', notEnough: 'Not enough history yet.', noData: 'No data yet.',
         period: { '30d': '30 days', '3m': '3 months', '1y': 'year' }, was: 'was', vsPrev: 'vs previous', allTime: 'all time', past: 'past', partial: 'partial', mo: 'mo',
-        burdenSub: 'average burden', sevSub: 'average severity',
-        mostProm: 'Most prominent', daily: 'Daily score by severity', gran: { day: 'one bar per day', week: 'one bar per week (avg/day)', month: 'one bar per month (avg/day)' }, sevWords: ['', 'noticeable', 'distracting', 'interferes', 'prevents'],
+        badTitle: 'Heavy days', mixTitle: 'Day mix over time', areasTitle: 'Areas affected', loadTitle: 'Overall load',
+        heavyW: 'heavy', vheavyW: 'very heavy', ofW: 'of', daysW: 'days', heavyPlus: 'heavy or very heavy', areasUnit: 'areas', loadSub: 'severity + spread combined', bandW: ['clear', 'light', 'typical', 'heavy', 'very heavy'],
+        mostProm: 'Most prominent',
         labs: 'Labs', episodes: 'Episodes/Month',
         pos: 'Positive', neg: 'Negative', progression: 'Progression',
         onsetAll: 'Onset & progression', started: 'Started in the last', newBadge: 'new', catJoint: 'joint', catNerve: 'nerve', catOther: 'other', nothingNew: 'Nothing new started in this period.' },
   es: { worse: 'peor', better: 'mejor', steady: 'estable', notEnough: 'Historial insuficiente.', noData: 'Sin datos aún.',
         period: { '30d': '30 días', '3m': '3 meses', '1y': 'año' }, was: 'antes', vsPrev: 'vs', allTime: 'todo el tiempo', past: 'últimos', partial: 'parcial', mo: 'm',
-        burdenSub: 'carga media', sevSub: 'gravedad media',
-        mostProm: 'Más prominente', daily: 'Puntuación diaria por gravedad', gran: { day: 'una barra por día', week: 'una barra por semana (media/día)', month: 'una barra por mes (media/día)' }, sevWords: ['', 'leve', 'molesto', 'interfiere', 'impide'],
+        badTitle: 'Días fuertes', mixTitle: 'Distribución de días', areasTitle: 'Zonas afectadas', loadTitle: 'Carga total',
+        heavyW: 'fuerte', vheavyW: 'muy fuerte', ofW: 'de', daysW: 'días', heavyPlus: 'fuerte o muy fuerte', areasUnit: 'zonas', loadSub: 'gravedad + extensión combinadas', bandW: ['sin síntomas', 'leve', 'típico', 'fuerte', 'muy fuerte'],
+        mostProm: 'Más prominente',
         labs: 'Analíticas', episodes: 'Episodios/Mes',
         pos: 'Positivo', neg: 'Negativo', progression: 'Progresión',
         onsetAll: 'Inicio y progresión', started: 'Empezó — últimos', newBadge: 'nuevo', catJoint: 'articular', catNerve: 'nervioso', catOther: 'otro', nothingNew: 'Nada nuevo empezó en este periodo.' },
@@ -1601,7 +1603,6 @@ function symValue(s, log) { if (s.trackBy === 'locations') { const d = DL.derive
 function symIntensity(s, log) { if (s.trackBy === 'locations') { const d = DL.derivedIntensity(s, log.symptoms || []); return d == null ? 0 : d; } const r = (log.symptoms || []).find((x) => x.symptomId === s.id && x.locationId == null); return (r && typeof r.severity === 'number') ? r.severity : 0; }
 function dayVals(log, types) { return types.map((s) => symValue(s, log)); }
 function daySum(log, types) { return dayVals(log, types).reduce((a, b) => a + b, 0); }
-function dayPresentMean(log, types) { const v = types.map((s) => symIntensity(s, log)).filter((x) => x > 0); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null; }
 function logsByDate(data) { const m = {}; (data.dailyLogs || []).forEach((l) => { if (l.date) m[l.date] = l; }); return m; }
 function isoBack(n) { const d = new Date(); d.setUTCHours(0, 0, 0, 0); d.setUTCDate(d.getUTCDate() - n); return d.toISOString().slice(0, 10); }
 function windowSeries(data, types, days, fn) {
@@ -1639,28 +1640,6 @@ function symStats(data, types, days) {
   const wavg = (s, a, b) => { const xs = []; for (let i = b - 1; i >= a; i--) { const log = by[isoBack(i)]; if (log && dayLogged(log)) xs.push(symIntensity(s, log)); } return xs.length ? xs.reduce((p, c) => p + c, 0) / xs.length : 0; };
   return types.map((s) => { const cur = wavg(s, 0, days), prev = wavg(s, days, 2 * days); return { s, cur, delta: cur - prev }; }).sort((a, b) => b.cur - a.cur);
 }
-// Window-aware severity bars. day mode (≤45d) = one bar per calendar day (null = unlogged);
-// week mode (≤120d) = one bar per 7-day bucket; month mode (>120d) = one bar per calendar month.
-// Buckets average the per-severity symptom counts across their logged days, so bar heights stay comparable across windows.
-function severityBars(data, types, days) {
-  const by = logsByDate(data); const arr = [];
-  for (let i = days - 1; i >= 0; i--) {
-    const iso = isoBack(i); const log = by[iso]; let c = null;
-    if (log && dayLogged(log)) { c = [0, 0, 0, 0, 0]; types.map((s) => symIntensity(s, log)).forEach((v) => { const r = Math.round(v); if (r >= 1 && r <= 4) c[r]++; }); }
-    arr.push({ iso, c });
-  }
-  const mode = days > 120 ? 'month' : days > 45 ? 'week' : 'day';
-  if (mode === 'day') return { bars: arr, mode };
-  const groups = []; const idx = {};
-  arr.forEach((d, i) => {
-    const key = mode === 'month' ? d.iso.slice(0, 7) : 'w' + Math.floor(i / 7);
-    if (!(key in idx)) { idx[key] = groups.length; groups.push({ first: d.iso, last: d.iso, sum: [0, 0, 0, 0, 0], n: 0 }); }
-    const g = groups[idx[key]]; g.last = d.iso;
-    if (d.c) { for (let lv = 1; lv <= 4; lv++) g.sum[lv] += d.c[lv]; g.n++; }
-  });
-  const bars = groups.map((g) => ({ iso: g.last, isoFirst: g.first, c: g.n ? [0, g.sum[1] / g.n, g.sum[2] / g.n, g.sum[3] / g.n, g.sum[4] / g.n] : null }));
-  return { bars, mode };
-}
 function ddmm(iso) { return iso ? iso.slice(8, 10) + '.' + iso.slice(5, 7) : ''; }
 function trendSVG(series, max, avg, colorByValue) {
   const w = 320, h = 124, padT = 8, padB = 18, padL = 26, padR = 6, n = series.length;
@@ -1690,22 +1669,6 @@ function trendSVG(series, max, avg, colorByValue) {
   return `<svg class="trend" viewBox="0 0 ${w} ${h}" role="img">${grid}${avgL}${polys}${xl}</svg>`;
 }
 const MON3 = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-function stackedSVG(bars, mode) {
-  const w = 320, h = 120, padT = 6, padB = 16, padL = 4, padR = 4, n = bars.length || 1;
-  const tot = (b) => b.c ? b.c[1] + b.c[2] + b.c[3] + b.c[4] : 0;
-  const maxTot = Math.max(1, ...bars.map(tot));
-  const slot = (w - padL - padR) / n, bw = Math.min(20, slot * 0.7);
-  let out = '';
-  bars.forEach((b, i) => { if (!b.c) return; const x = padL + i * slot + (slot - bw) / 2; let y = h - padB; for (let lv = 1; lv <= 4; lv++) { const c = b.c[lv]; if (!c) continue; const hh = c / maxTot * (h - padT - padB); y -= hh; out += `<rect x="${x.toFixed(1)}" y="${(y - 0.4).toFixed(1)}" width="${bw.toFixed(1)}" height="${(hh + 0.4).toFixed(1)}" fill="${SEVHEX[lv]}"/>`; } });
-  let xl;
-  if (mode === 'month') {
-    xl = bars.map((b, i) => { if (i % 3 !== 0) return ''; const x = padL + i * slot + slot / 2; return `<text x="${x.toFixed(1)}" y="${h - 3}" font-size="9" fill="#94a3b8" text-anchor="middle">${MON3[+b.iso.slice(5, 7) - 1]}</text>`; }).join('');
-  } else {
-    const f = bars.length ? (bars[0].isoFirst || bars[0].iso) : '', l = bars.length ? bars[bars.length - 1].iso : '';
-    xl = `<text x="${padL}" y="${h - 3}" font-size="9" fill="#94a3b8">${ddmm(f)}</text><text x="${w - padR}" y="${h - 3}" font-size="9" fill="#94a3b8" text-anchor="end">${ddmm(l)}</text>`;
-  }
-  return `<svg class="trend" viewBox="0 0 ${w} ${h}" role="img">${out}${xl}</svg>`;
-}
 function labHL(l) { const r = DL.latestLab(l); if (!r || typeof r.value !== 'number') return null; const rr = l.referenceRange || {}; if (l.displayMode === 'x_uln' && r.value > 1) return 'high'; if (rr.high != null && r.value > rr.high) return 'high'; if (rr.low != null && r.value < rr.low) return 'low'; return 'ok'; }
 function labPct(l) { const nums = [...(l.results || [])].filter((r) => typeof r.value === 'number').sort((a, b) => (a.date < b.date ? 1 : -1)); if (nums.length < 2 || nums[1].value === 0) return null; return Math.round((nums[0].value - nums[1].value) / Math.abs(nums[1].value) * 100); }
 function illnessBars(data, lang) {
@@ -1813,6 +1776,72 @@ function onsetCard(state, data, days, win, TT) {
   }).join('');
   return `<div class="card">${head}<div class="muted small" style="margin:-2px 0 10px">${legend}</div><div style="position:relative;padding-left:16px"><span style="position:absolute;left:4px;top:4px;bottom:4px;width:2px;background:var(--line)"></span>${rows}</div></div>`;
 }
+// ===== How-am-I-trending charts (window-aware; replace the old burden/severity headline pair) =====
+function dayBreadth(iso, types, data) { const a = dayIntensities(iso, types, data); return a ? a.filter((v) => v > 0).length : null; }
+function dayLoad(iso, types, data) { const l = DL.getDailyLog(iso, data); return (l && dayLogged(l)) ? daySum(l, types) : null; }
+// Aggregate a day-range [a,b) into band counts, bad-day total, and load/breadth means.
+function winAgg(data, types, a, b) {
+  const band = [0, 0, 0, 0, 0]; let logged = 0, loadSum = 0, brSum = 0;
+  for (let i = a; i < b; i++) { const iso = isoBack(i); const bi = dayBandIdx(iso, types, data); if (bi < 0) continue; logged++; band[bi]++; loadSum += dayLoad(iso, types, data) || 0; brSum += dayBreadth(iso, types, data) || 0; }
+  return { band, logged, bad: band[3] + band[4], loadMean: logged ? loadSum / logged : null, brMean: logged ? brSum / logged : null };
+}
+// Window-aware buckets: one per day (≤45d), week (≤120d) or month (else), each with band counts + load/breadth means.
+function trendBuckets(data, types, days) {
+  const daily = [];
+  for (let i = days - 1; i >= 0; i--) { const iso = isoBack(i); const bi = dayBandIdx(iso, types, data); daily.push({ iso, bi, load: bi < 0 ? null : dayLoad(iso, types, data), br: bi < 0 ? null : dayBreadth(iso, types, data) }); }
+  const mode = days > 120 ? 'month' : days > 45 ? 'week' : 'day';
+  const groups = []; const idx = {};
+  daily.forEach((d, i) => { const key = mode === 'month' ? d.iso.slice(0, 7) : mode === 'week' ? 'w' + Math.floor(i / 7) : d.iso; if (!(key in idx)) { idx[key] = groups.length; groups.push({ iso: d.iso, isoFirst: d.iso, band: [0, 0, 0, 0, 0], logged: 0, loadSum: 0, brSum: 0 }); } const g = groups[idx[key]]; g.iso = d.iso; if (d.bi >= 0) { g.band[d.bi]++; g.logged++; g.loadSum += d.load || 0; g.brSum += d.br || 0; } });
+  return { buckets: groups.map((g) => ({ iso: g.iso, isoFirst: g.isoFirst, band: g.band, logged: g.logged, bad: g.band[3] + g.band[4], loadMean: g.logged ? g.loadSum / g.logged : null, brMean: g.logged ? g.brSum / g.logged : null })), mode };
+}
+// Stacked band bars per bucket. idxs = band indices (bottom→top). normalize → each bucket to 100% of its logged days.
+function trendStackBars(buckets, idxs, mode, normalize) {
+  const w = 320, h = 110, padB = 16, padT = 6, padL = 6, padR = 6, n = buckets.length || 1;
+  const sumOf = (b) => idxs.reduce((a, i) => a + b.band[i], 0);
+  const maxTot = Math.max(1, ...buckets.map(sumOf));
+  const slot = (w - padL - padR) / n, bw = Math.min(22, slot * 0.72);
+  let out = '';
+  buckets.forEach((b, i) => { if (!b.logged) return; const base = normalize ? Math.max(1, b.logged) : maxTot; const x = padL + i * slot + (slot - bw) / 2; let y = h - padB; idxs.forEach((idx) => { const c = b.band[idx]; if (!c) return; const hh = c / base * (h - padT - padB); y -= hh; out += `<rect x="${x.toFixed(1)}" y="${(y - 0.3).toFixed(1)}" width="${bw.toFixed(1)}" height="${(hh + 0.3).toFixed(1)}" fill="${SEVHEX[idx]}"/>`; }); });
+  let xl;
+  if (mode === 'month') { xl = buckets.map((b, i) => i % 3 !== 0 ? '' : `<text x="${(padL + i * slot + slot / 2).toFixed(1)}" y="${h - 3}" font-size="9" fill="#94a3b8" text-anchor="middle">${MON3[+b.iso.slice(5, 7) - 1]}</text>`).join(''); }
+  else { const f = buckets.length ? (buckets[0].isoFirst || buckets[0].iso) : '', l = buckets.length ? buckets[buckets.length - 1].iso : ''; xl = `<text x="${padL}" y="${h - 3}" font-size="9" fill="#94a3b8">${ddmm(f)}</text><text x="${w - padR}" y="${h - 3}" font-size="9" fill="#94a3b8" text-anchor="end">${ddmm(l)}</text>`; }
+  return `<svg class="trend" viewBox="0 0 ${w} ${h}" role="img">${out}${xl}</svg>`;
+}
+// Change pill: shows the prior value; colour/arrow encode better vs worse (higherIsWorse = more is worse). Hidden when no reliable prior period.
+function trendChg(cur, prev, higherIsWorse, reliable, TT, fmt) {
+  if (!reliable || prev == null || cur == null) return '';
+  const d = cur - prev; if (Math.abs(d) < 0.05) return `<span class="chgpill flat">${TT.steady}</span>`;
+  const worse = higherIsWorse ? d > 0 : d < 0;
+  return `<span class="chgpill ${worse ? 'up' : 'down'}">${d > 0 ? '↑' : '↓'} ${TT.was} ${fmt(prev)}</span>`;
+}
+// #1 Heavy days — count of heavy+very-heavy days in the window + adaptive stacked bars.
+function trendBadCard(lang, TT, cur, prev, reliable, tb, days, win) {
+  const pill = trendChg(cur.bad, prev.bad, true, reliable, TT, (v) => Math.round(v));
+  const denom = win === 'all' ? cur.logged : days;
+  return `<div class="card"><div class="card-h"><h2>${TT.badTitle}</h2></div><div class="bignum">${cur.bad} <span class="muted small">${TT.ofW} ${denom} ${TT.daysW}</span>${pill ? `<span style="margin-left:auto">${pill}</span>` : ''}</div><div class="muted small bn-sub"><span style="color:#c2410c;font-weight:600">${cur.band[3]} ${TT.heavyW}</span> · <span style="color:#b91c1c;font-weight:600">${cur.band[4]} ${TT.vheavyW}</span></div>${trendStackBars(tb.buckets, [3, 4], tb.mode, false)}</div>`;
+}
+// #2 Day mix over time — share of each band per bucket (100% stacked); headline = % heavy+ for the window.
+function trendMixCard(lang, TT, cur, prev, reliable, tb) {
+  const pct = cur.logged ? Math.round(cur.bad / cur.logged * 100) : 0;
+  const prevPct = prev.logged ? Math.round(prev.bad / prev.logged * 100) : null;
+  const pill = trendChg(pct, prevPct, true, reliable, TT, (v) => Math.round(v) + '%');
+  const legend = [1, 2, 3, 4].map((i) => `<span class="lg"><span class="lgsw" style="background:${SEVHEX[i]}"></span>${TT.bandW[i]}</span>`).join('');
+  return `<div class="card"><div class="card-h"><h2>${TT.mixTitle}</h2></div><div class="bignum">${pct}% <span class="muted small">${TT.heavyPlus}</span>${pill ? `<span style="margin-left:auto">${pill}</span>` : ''}</div><div class="lgrow" style="margin-top:8px">${legend}</div>${trendStackBars(tb.buckets, [1, 2, 3, 4], tb.mode, true)}</div>`;
+}
+// #4 Areas affected — mean number of areas hurting per day; line over buckets.
+function trendAreasCard(lang, TT, cur, prev, reliable, tb) {
+  const pill = trendChg(cur.brMean, prev.brMean, true, reliable, TT, (v) => v.toFixed(1));
+  const series = tb.buckets.map((b) => ({ iso: b.iso, v: b.brMean }));
+  const max = Math.max(2, ...series.map((x) => x.v || 0));
+  return `<div class="card"><div class="card-h"><h2>${TT.areasTitle}</h2></div><div class="bignum">${cur.brMean != null ? cur.brMean.toFixed(1) : '–'} <span class="muted small">${TT.areasUnit}</span>${pill ? `<span style="margin-left:auto">${pill}</span>` : ''}</div>${trendSVG(series, max, cur.brMean)}</div>`;
+}
+// #3 Overall load — severity+spread combined (the old burden sum), mean per bucket; line.
+function trendLoadCard(lang, TT, cur, prev, reliable, tb) {
+  const pill = trendChg(cur.loadMean, prev.loadMean, true, reliable, TT, (v) => v.toFixed(1));
+  const series = tb.buckets.map((b) => ({ iso: b.iso, v: b.loadMean }));
+  const max = Math.max(4, ...series.map((x) => x.v || 0));
+  return `<div class="card"><div class="card-h"><h2>${TT.loadTitle}</h2></div><div class="bignum">${cur.loadMean != null ? cur.loadMean.toFixed(1) : '–'}${pill ? `<span style="margin-left:auto">${pill}</span>` : ''}</div><div class="muted small bn-sub">${TT.loadSub}</div>${trendSVG(series, max, cur.loadMean)}</div>`;
+}
 function renderTrends(state) {
   const lang = state.lang; const TT = TSS[lang]; const data = DL.getData();
   if (!data) return '<div class="card"><p class="muted">No data.</p></div>';
@@ -1822,15 +1851,16 @@ function renderTrends(state) {
   const allDays = (() => { const ds = (data.dailyLogs || []).map((l) => l.date).filter(Boolean).sort(); if (!ds.length) return 365; return Math.round((Date.now() - new Date(ds[0] + 'T00:00:00Z').getTime()) / 86400000) + 1; })();
   const days = win === 'all' ? allDays : (WIN_DAYS[win] || 30);
   const winseg = `<div class="winseg">${[['30d', '30d'], ['3m', '3m'], ['1y', '1y'], ['all', 'All']].map(([k, lbl]) => `<button class="${win === k ? 'on' : ''}" data-scorewin="${k}">${lbl}</button>`).join('')}</div>`;
-  const subFor = (label, ws) => (win === 'all') ? `${label} · ${TT.allTime}` : (ws.prev == null) ? `${label} · ${TT.past} ${TT.period[win]}` : ws.partial ? `${label} ${TT.vsPrev} ${TT.period[win]} · ${TT.partial} (~${ws.covMonths} ${TT.mo})` : `${label} ${TT.vsPrev} ${TT.period[win]} (${TT.was} ${ws.prev.toFixed(1)})`;
-  const arrow = (pct) => { if (pct == null) return `<span class="muted small">${TT.notEnough}</span>`; const cls = pct === 0 ? 'flat' : (pct < 0 ? 'down' : 'up'); const word = pct < 0 ? TT.better : pct > 0 ? TT.worse : TT.steady; const a = pct > 0 ? '↑' : pct < 0 ? '↓' : '→'; return `<span class="chgpill ${cls}">${a} ${Math.abs(pct)}% ${word}</span>`; };
-  // Burden = total severity across symptoms (severity × breadth)
-  const b = windowSeries(data, types, days, daySum);
-  const bMax = Math.max(4, ...b.series.map((x) => x.v || 0));
-  const burdenCard = `<div class="card"><div class="bignum">${b.cur != null ? b.cur.toFixed(1) : '–'} ${(win === 'all' || b.pct == null) ? '' : arrow(b.pct)}</div><div class="muted small bn-sub">${subFor(TT.burdenSub, b)}</div>${trendSVG(b.series, bMax, b.cur)}</div>`;
-  // Average severity = mean of symptoms that are present (0–4)
-  const sv = windowSeries(data, types, days, dayPresentMean);
-  const sevCard = `<div class="card"><div class="bignum">${sv.cur != null ? sv.cur.toFixed(1) : '–'} <span class="muted small">/ 4</span> ${(win === 'all' || sv.pct == null) ? '' : arrow(sv.pct)}</div><div class="muted small bn-sub">${subFor(TT.sevSub, sv)}</div>${trendSVG(sv.series, 4, sv.cur, true)}</div>`;
+  // How am I trending — four window-aware charts (helpers above). Comparison pills hide when the prior period predates tracking.
+  const firstLog = (data.dailyLogs || []).map((l) => l.date).filter(Boolean).sort()[0];
+  const reliable = win !== 'all' && !!firstLog && firstLog <= isoBack(2 * days - 1);
+  const curAgg = winAgg(data, types, 0, days);
+  const prevAgg = winAgg(data, types, days, 2 * days);
+  const tb = trendBuckets(data, types, days);
+  const badCard = trendBadCard(lang, TT, curAgg, prevAgg, reliable, tb, days, win);
+  const mixCard = trendMixCard(lang, TT, curAgg, prevAgg, reliable, tb);
+  const areasCard = trendAreasCard(lang, TT, curAgg, prevAgg, reliable, tb);
+  const loadCard = trendLoadCard(lang, TT, curAgg, prevAgg, reliable, tb);
   // Most prominent = current level + change, tap to drill in
   const stats = symStats(data, types, days).filter((x) => x.cur > 0.05);
   const promRows = stats.map((x) => {
@@ -1843,10 +1873,6 @@ function renderTrends(state) {
   }).join('') || `<p class="muted small">${TT.noData}</p>`;
   const promCard = `<div class="card"><div class="card-h"><h2>${TT.mostProm}</h2></div>${promRows}</div>`;
   let onsetHtml = ''; try { onsetHtml = onsetCard(state, data, days, win, TT); } catch (err) { console.warn('onset card failed', err); }
-  // Daily score by severity (recent logged days in window)
-  const { bars: sevBars, mode: sevMode } = severityBars(data, types, days);
-  const legend = [1, 2, 3, 4].map((lv) => `<span class="lg"><span class="lgsw" style="background:${SEVHEX[lv]}"></span>${TT.sevWords[lv]}</span>`).join('');
-  const dailyCard = `<div class="card"><div class="card-h"><h2>${TT.daily}</h2></div><div class="muted small" style="margin:-2px 0 8px">${TT.gran[sevMode]}</div><div class="lgrow">${legend}</div>${sevBars.some((b) => b.c) ? stackedSVG(sevBars, sevMode) : `<p class="muted small">${TT.noData}</p>`}</div>`;
   // Labs — collapsible panels
   const groups = {}; (data.labs || []).forEach((l) => { const g = l.group || 'Other'; (groups[g] = groups[g] || []).push(l); });
   const og = ui.labGroups || (ui.labGroups = new Set());
@@ -1868,7 +1894,7 @@ function renderTrends(state) {
   catch (err) { console.warn('adherence card failed', err); adhCard = `<div class="card"><div class="card-h"><h2>${lang === 'es' ? 'Cumplimiento de medicación' : 'Medication adherence'}</h2></div><p class="muted small">—</p></div>`; }
   const labsCard = `<div class="card"><div class="card-h"><h2>${TT.labs}</h2><button class="addmini" data-add="labs" aria-label="Add marker">＋</button></div>${labHtml}</div>`;
   const illCard = getPref('hideEpisodes') ? '' : `<div class="card"><div class="card-h"><h2>${TT.episodes}</h2></div>${illnessBars(data, lang)}</div>`;
-  return `<div class="ds">${winseg}${burdenCard}${sevCard}${promCard}${onsetHtml}${dailyCard}${adhCard}${labsCard}${illCard}</div>`;
+  return `<div class="ds">${winseg}${badCard}${mixCard}${areasCard}${loadCard}${promCard}${onsetHtml}${adhCard}${labsCard}${illCard}</div>`;
 }
 // Progression timeline in the new design-system style (keeps filters + tap-for-detail).
 function renderProg(state) {
