@@ -1580,7 +1580,7 @@ const TSS = {
   en: { worse: 'worse', better: 'better', steady: 'steady', notEnough: 'Not enough history yet.', noData: 'No data yet.',
         period: { '30d': '30 days', '3m': '3 months', '1y': 'year' }, was: 'was', vsPrev: 'vs previous', allTime: 'all time', past: 'past', partial: 'partial', mo: 'mo',
         badTitle: 'Heavy days', mixTitle: 'Day mix over time', areasTitle: 'Areas affected', loadTitle: 'Overall load',
-        dayBalanceTitle: 'Good days vs bad days',
+        dayBalanceTitle: 'Good days vs bad days', badLineTitle: 'Bad days over time',
         heavyW: 'heavy', vheavyW: 'very heavy', ofW: 'of', daysW: 'days', heavyPlus: 'heavy or very heavy', areasUnit: 'areas', loadSub: 'severity + spread combined', bandW: ['clear', 'light', 'typical', 'heavy', 'very heavy'],
         mostProm: 'Most prominent',
         labs: 'Labs', episodes: 'Episodes/Month',
@@ -1590,7 +1590,7 @@ const TSS = {
   es: { worse: 'peor', better: 'mejor', steady: 'estable', notEnough: 'Historial insuficiente.', noData: 'Sin datos aún.',
         period: { '30d': '30 días', '3m': '3 meses', '1y': 'año' }, was: 'antes', vsPrev: 'vs', allTime: 'todo el tiempo', past: 'últimos', partial: 'parcial', mo: 'm',
         badTitle: 'Días fuertes', mixTitle: 'Distribución de días', areasTitle: 'Zonas afectadas', loadTitle: 'Carga total',
-        dayBalanceTitle: 'Días buenos vs malos',
+        dayBalanceTitle: 'Días buenos vs malos', badLineTitle: 'Días malos con el tiempo',
         heavyW: 'fuerte', vheavyW: 'muy fuerte', ofW: 'de', daysW: 'días', heavyPlus: 'fuerte o muy fuerte', areasUnit: 'zonas', loadSub: 'gravedad + extensión combinadas', bandW: ['sin síntomas', 'leve', 'típico', 'fuerte', 'muy fuerte'],
         mostProm: 'Más prominente',
         labs: 'Analíticas', episodes: 'Episodios/Mes',
@@ -1880,6 +1880,30 @@ function trendShiftCard(lang, TT, cur, prev, reliable, days, win) {
   const legend = [1, 2, 3, 4].map((i) => `<span class="lg"><span class="lgsw" style="background:${SEVHEX[i]}"></span>${TT.bandW[i]}</span>`).join('');
   return `<div class="card"><div class="card-h"><h2>${TT.dayBalanceTitle} <span class="muted small">— ${period}</span></h2>${pill ? `<span style="margin-left:auto">${pill}</span>` : ''}</div>${row(curLabel, cur)}${row(prevLabel, prev)}<div class="lgrow" style="margin-top:10px">${legend}</div></div>`;
 }
+// #2 Bad days over time — two lines (heavy = SEVHEX[3], very heavy = SEVHEX[4]) as % of each bucket's logged days across the window. Complements the distribution card by showing direction/slope (and, here, the recent *emergence* of very-heavy days). Uses the shared window-aware buckets (day/week/month) from trendBuckets.
+function trendBadLineCard(lang, TT, tb, win) {
+  const period = win === 'all' ? TT.allTime : ((lang === 'es' ? (win === '1y' ? 'último ' : 'últimos ') : 'last ') + TT.period[win]);
+  const bkts = tb.buckets, mode = tb.mode, n = bkts.length;
+  const w = 320, h = 122, padL = 28, padR = 8, padT = 8, padB = 16;
+  const plotW = w - padL - padR, plotH = h - padT - padB;
+  const X = (i) => n <= 1 ? padL + plotW / 2 : padL + i / (n - 1) * plotW;
+  const Y = (v) => padT + (100 - v) / 100 * plotH;
+  let grid = '';
+  [0, 50, 100].forEach((g) => { const y = Y(g); grid += `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${w - padR}" y2="${y.toFixed(1)}" stroke="#eef2f4" stroke-width="1"/><text x="${(padL - 4).toFixed(1)}" y="${(y + 3).toFixed(1)}" font-size="9" fill="#94a3b8" text-anchor="end">${g}%</text>`; });
+  const line = (idx, color) => {
+    const pts = [];
+    bkts.forEach((b, i) => { if (!b.logged) return; pts.push(`${X(i).toFixed(1)},${Y(b.band[idx] / b.logged * 100).toFixed(1)}`); });
+    if (!pts.length) return '';
+    const dots = pts.map((p) => { const c = p.split(','); return `<circle cx="${c[0]}" cy="${c[1]}" r="2.2" fill="${color}"/>`; }).join('');
+    return `<polyline points="${pts.join(' ')}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>${dots}`;
+  };
+  let xl;
+  if (mode === 'month') xl = bkts.map((b, i) => i % 3 !== 0 ? '' : `<text x="${X(i).toFixed(1)}" y="${h - 3}" font-size="9" fill="#94a3b8" text-anchor="middle">${MON3[+b.iso.slice(5, 7) - 1]}</text>`).join('');
+  else { const f = n ? (bkts[0].isoFirst || bkts[0].iso) : '', l = n ? bkts[n - 1].iso : ''; xl = `<text x="${padL}" y="${h - 3}" font-size="9" fill="#94a3b8">${ddmm(f)}</text><text x="${w - padR}" y="${h - 3}" font-size="9" fill="#94a3b8" text-anchor="end">${ddmm(l)}</text>`; }
+  const svg = `<svg class="trend" viewBox="0 0 ${w} ${h}" role="img" style="height:auto">${grid}${line(3, SEVHEX[3])}${line(4, SEVHEX[4])}${xl}</svg>`;
+  const legend = [3, 4].map((i) => `<span class="lg"><span class="lgsw" style="background:${SEVHEX[i]}"></span>${TT.bandW[i]}</span>`).join('');
+  return `<div class="card"><div class="card-h"><h2>${TT.badLineTitle} <span class="muted small">— ${period}</span></h2></div><div class="lgrow" style="margin:2px 0 4px">${legend}</div>${svg}</div>`;
+}
 // #4 Areas affected — spread of ONE located symptom (default: first located type, e.g. joint pain), i.e. how many of its sites are active per day.
 // Selectable when the person tracks >1 located symptom; hidden entirely for people who track none (e.g. a single-symptom-only user like Joanna's dad).
 function trendAreasCard(state, data, days, win, TT, reliable) {
@@ -1921,6 +1945,7 @@ function renderTrends(state) {
   const prevAgg = winAgg(data, types, days, 2 * days);
   const tb = trendBuckets(data, types, days);
   const shiftCard = trendShiftCard(lang, TT, curAgg, prevAgg, reliable, days, win);
+  const badLineCard = trendBadLineCard(lang, TT, tb, win);
   const badCard = trendBadCard(lang, TT, curAgg, prevAgg, reliable, tb, days, win);
   const mixCard = trendMixCard(lang, TT, curAgg, prevAgg, reliable, tb);
   const areasCard = trendAreasCard(state, data, days, win, TT, reliable);
@@ -1958,7 +1983,7 @@ function renderTrends(state) {
   catch (err) { console.warn('adherence card failed', err); adhCard = `<div class="card"><div class="card-h"><h2>${lang === 'es' ? 'Cumplimiento de medicación' : 'Medication adherence'}</h2></div><p class="muted small">—</p></div>`; }
   const labsCard = `<div class="card"><div class="card-h"><h2>${TT.labs}</h2><button class="addmini" data-add="labs" aria-label="Add marker">＋</button></div>${labHtml}</div>`;
   const illCard = getPref('hideEpisodes') ? '' : `<div class="card"><div class="card-h"><h2>${TT.episodes}</h2></div>${illnessBars(data, lang)}</div>`;
-  return `<div class="ds">${winseg}${shiftCard}${badCard}${mixCard}${areasCard}${loadCard}${promCard}${onsetHtml}${adhCard}${labsCard}${illCard}</div>`;
+  return `<div class="ds">${winseg}${shiftCard}${badLineCard}${badCard}${mixCard}${areasCard}${loadCard}${promCard}${onsetHtml}${adhCard}${labsCard}${illCard}</div>`;
 }
 // Progression timeline in the new design-system style (keeps filters + tap-for-detail).
 function renderProg(state) {
