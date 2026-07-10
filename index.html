@@ -1846,15 +1846,21 @@ function trendMixCard(lang, TT, cur, prev, reliable, tb) {
 // #0 Symptom shift over time — two diverging bars (Current vs Previous). Light+typical extend left of a shared centre, heavy+very-heavy extend right, each as a share of that period's logged days. Anchoring both bars on the same zero makes the good→bad shift directly comparable. Window-aware: current period vs the equal prior period. Row labels + bars are HTML/CSS (not SVG) so text uses the app font and the centre stays at 50%.
 function trendShiftCard(lang, TT, cur, prev, reliable, days, win) {
   const period = win === 'all' ? TT.allTime : ((lang === 'es' ? (win === '1y' ? 'último ' : 'últimos ') : 'last ') + TT.period[win]);
-  const bar = (agg) => {
+  // Each side is a faint full-width track (the "lane") with the coloured bar filling from the centre outward, so short bars sit framed instead of floating. 12px channel splits good (left) from bad (right); a right-hand column shows that period's % heavy-or-very-heavy.
+  const lane = (agg, side) => {
     const total = Math.max(1, agg.logged);
     const seg = (idx, rad) => `<span style="width:${(agg.band[idx] / total * 100).toFixed(1)}%;height:100%;background:${SEVHEX[idx]};border-radius:${rad}"></span>`;
-    return `<div style="flex:1;display:grid;grid-template-columns:1fr 12px 1fr;height:26px">`
-      + `<div style="display:flex;justify-content:flex-end;gap:2px">${seg(1, '5px 0 0 5px')}${seg(2, '0 5px 5px 0')}</div>`
-      + `<div></div>`
-      + `<div style="display:flex;justify-content:flex-start;gap:2px">${seg(3, '5px 0 0 5px')}${seg(4, '0 5px 5px 0')}</div></div>`;
+    return side === 'left'
+      ? `<div style="flex:1;height:26px;background:var(--chip);border-radius:6px;overflow:hidden;display:flex;justify-content:flex-end;gap:2px">${seg(1, '6px 0 0 6px')}${seg(2, '0')}</div>`
+      : `<div style="flex:1;height:26px;background:var(--chip);border-radius:6px;overflow:hidden;display:flex;justify-content:flex-start;gap:2px">${seg(3, '0')}${seg(4, '0 6px 6px 0')}</div>`;
   };
-  const row = (label, agg) => `<div style="display:flex;align-items:center;gap:12px;margin:8px 0"><span style="flex:0 0 66px;text-align:right;font-size:15px;font-weight:500;color:var(--ink)">${label}</span>${bar(agg)}</div>`;
+  const row = (label, agg) => {
+    const worse = agg.logged ? Math.round(agg.bad / agg.logged * 100) : 0;
+    return `<div style="display:flex;align-items:center;gap:10px;margin:9px 0">`
+      + `<span style="flex:0 0 72px;text-align:right;font-size:14px;font-weight:600;color:var(--ink)">${label}</span>`
+      + `${lane(agg, 'left')}<div style="flex:0 0 12px"></div>${lane(agg, 'right')}`
+      + `<span style="flex:0 0 42px;text-align:left;font-size:13px;font-weight:600;color:var(--ink)">${worse}%</span></div>`;
+  };
   const pct = cur.logged ? Math.round(cur.bad / cur.logged * 100) : 0;
   const prevPct = prev.logged ? Math.round(prev.bad / prev.logged * 100) : null;
   let pill = '';
