@@ -1854,12 +1854,14 @@ function trendShiftCard(lang, TT, cur, prev, reliable, days, win) {
       ? `<div style="flex:1;height:26px;background:var(--chip);border-radius:6px;overflow:hidden;display:flex;justify-content:flex-end;gap:2px">${seg(1, '6px 0 0 6px')}${seg(2, '0')}</div>`
       : `<div style="flex:1;height:26px;background:var(--chip);border-radius:6px;overflow:hidden;display:flex;justify-content:flex-start;gap:2px">${seg(3, '0')}${seg(4, '0 6px 6px 0')}</div>`;
   };
+  // Label column width adapts to the window's date-string length (3m = short "Apr–Jul"; 30d/1y/All = longer) so both rows stay aligned while keeping the 3m view tight. No row `gap` — it was also spacing the centre channel, ballooning the middle gap; spacing is set explicitly via margins + a 4px channel.
+  const labelW = win === '3m' ? 64 : 92;
   const row = (label, agg) => {
     const worse = agg.logged ? Math.round(agg.bad / agg.logged * 100) : 0;
-    return `<div style="display:flex;align-items:center;gap:10px;margin:9px 0">`
-      + `<span style="flex:0 0 108px;text-align:left;font-size:13px;font-weight:600;color:var(--ink)">${label}</span>`
-      + `${lane(agg, 'left')}<div style="flex:0 0 12px"></div>${lane(agg, 'right')}`
-      + `<span style="flex:0 0 42px;text-align:left;font-size:13px;font-weight:600;color:var(--ink)">${worse}%</span></div>`;
+    return `<div style="display:flex;align-items:center;margin:9px 0">`
+      + `<span style="flex:0 0 ${labelW}px;font-size:13px;font-weight:600;color:var(--ink);white-space:nowrap;margin-right:10px">${label}</span>`
+      + `${lane(agg, 'left')}<div style="flex:0 0 4px"></div>${lane(agg, 'right')}`
+      + `<span style="flex:0 0 34px;text-align:right;font-size:13px;font-weight:600;color:var(--ink);margin-left:8px">${worse}%</span></div>`;
   };
   // Row labels = the actual date range each bar covers, adapting to the window: day+month for 30d, month for 3m, month+year for 1y/All. Previous shows '—' when there's no prior data (e.g. All).
   const loc = lang === 'es' ? 'es-ES' : 'en-GB';
