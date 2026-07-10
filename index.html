@@ -1584,7 +1584,8 @@ const TSS = {
         mostProm: 'Most prominent',
         labs: 'Labs', episodes: 'Episodes/Month',
         pos: 'Positive', neg: 'Negative', progression: 'Progression',
-        onsetAll: 'Onset & progression', started: 'Started in the last', newBadge: 'new', catJoint: 'joint', catNerve: 'nerve', catOther: 'other', nothingNew: 'Nothing new started in this period.' },
+        onsetAll: 'Onset & progression', started: 'Started in the last', newBadge: 'new', catJoint: 'joint', catNerve: 'nerve', catOther: 'other', nothingNew: 'Nothing new started in this period.',
+        newJointLoc: 'New joint pain location', newNerve: 'New nerve sensation', newSymptom: 'New symptom' },
   es: { worse: 'peor', better: 'mejor', steady: 'estable', notEnough: 'Historial insuficiente.', noData: 'Sin datos aún.',
         period: { '30d': '30 días', '3m': '3 meses', '1y': 'año' }, was: 'antes', vsPrev: 'vs', allTime: 'todo el tiempo', past: 'últimos', partial: 'parcial', mo: 'm',
         badTitle: 'Días fuertes', mixTitle: 'Distribución de días', areasTitle: 'Zonas afectadas', loadTitle: 'Carga total',
@@ -1592,7 +1593,8 @@ const TSS = {
         mostProm: 'Más prominente',
         labs: 'Analíticas', episodes: 'Episodios/Mes',
         pos: 'Positivo', neg: 'Negativo', progression: 'Progresión',
-        onsetAll: 'Inicio y progresión', started: 'Empezó — últimos', newBadge: 'nuevo', catJoint: 'articular', catNerve: 'nervioso', catOther: 'otro', nothingNew: 'Nada nuevo empezó en este periodo.' },
+        onsetAll: 'Inicio y progresión', started: 'Empezó — últimos', newBadge: 'nuevo', catJoint: 'articular', catNerve: 'nervioso', catOther: 'otro', nothingNew: 'Nada nuevo empezó en este periodo.',
+        newJointLoc: 'Nueva zona de dolor articular', newNerve: 'Nueva sensación nerviosa', newSymptom: 'Nuevo síntoma' },
 };
 function dayLogged(log) { return !!log && (log.symptoms || []).some((r) => typeof r.severity === 'number'); }
 const WIN_DAYS = { '30d': 30, '3m': 90, '1y': 365 };
@@ -1924,10 +1926,18 @@ function renderProg(state) {
   const RM = STR[lang].msTypes;
   const legendTypes = ['new_symptom', 'diagnosis', 'medication'];
   const legend = legendTypes.map((ty) => { const [, color] = MS_TYPE[ty]; const ic = MS_ICON[ty] || MS_ICON.milestone; return `<span><span class="plegk" style="color:${color}">${ic}</span>${RM[ty]}</span>`; }).join('');
-  const ms = (data.milestones || []).slice().sort((a, b) => (a.date < b.date ? 1 : -1));
+  // Timeline = symptom onsets DERIVED from each symptom's onsetDate (single source of truth — no drift) + curated non-onset milestones (diagnoses, medications, events). Onset rows are read-only; the rest stay editable.
+  const onsetLabel = (o) => `${o.cat === 'joint' ? TT.newJointLoc : o.cat === 'nerve' ? TT.newNerve : TT.newSymptom} — ${tx(o.name, lang)}`;
+  const onsetRows = collectOnsets(data).map((o) => ({ date: o.onset, label: onsetLabel(o), type: 'new_symptom', derived: true }));
+  // If this data set has onsetDate-derived onsets (e.g. Joanna), the hand-curated symptom-onset milestones are redundant → drop them.
+  // If it has NONE (e.g. Joanna's dad — his symptoms carry no onsetDate), keep ALL milestones so his hand-entered onsets still show.
+  const derived = onsetRows.length > 0;
+  const curated = derived ? (data.milestones || []).filter((m) => m.type !== 'new_symptom') : (data.milestones || []).slice();
+  const ms = [...onsetRows, ...curated].sort((a, b) => (a.date < b.date ? 1 : -1));
   let body = '';
   if (ui.editPick === 'milestones') {
-    body = `<div class="muted small" style="margin:2px 0 6px">${lang === 'es' ? 'Elige cuál editar:' : 'Choose which to edit:'}</div>` + (ms.length ? ms.map((m) => `<button class="pickrow" data-edit="milestones:${m.id}">${fmtMonth(m.date, lang)} — ${esc(tx(m.label, lang))}</button>`).join('') : `<p class="muted small">${STR[lang].noData}</p>`);
+    const editable = curated.slice().sort((a, b) => (a.date < b.date ? 1 : -1));
+    body = `<div class="muted small" style="margin:2px 0 6px">${lang === 'es' ? 'Elige cuál editar:' : 'Choose which to edit:'}</div>` + (editable.length ? editable.map((m) => `<button class="pickrow" data-edit="milestones:${m.id}">${fmtMonth(m.date, lang)} — ${esc(tx(m.label, lang))}</button>`).join('') : `<p class="muted small">${STR[lang].noData}</p>`) + (derived ? `<p class="muted small" style="margin-top:8px">${lang === 'es' ? 'Los inicios de síntomas se derivan de la fecha de inicio de cada síntoma.' : 'Symptom onsets are derived from each symptom’s onset date.'}</p>` : '');
   } else {
     let curYear = null;
     ms.forEach((m) => {
