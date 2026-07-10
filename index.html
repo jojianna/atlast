@@ -1580,6 +1580,7 @@ const TSS = {
   en: { worse: 'worse', better: 'better', steady: 'steady', notEnough: 'Not enough history yet.', noData: 'No data yet.',
         period: { '30d': '30 days', '3m': '3 months', '1y': 'year' }, was: 'was', vsPrev: 'vs previous', allTime: 'all time', past: 'past', partial: 'partial', mo: 'mo',
         badTitle: 'Heavy days', mixTitle: 'Day mix over time', areasTitle: 'Areas affected', loadTitle: 'Overall load',
+        shiftTitle: 'Symptom shift over time', currentW: 'Current', previousW: 'Previous', betterW: 'better days', worseW: 'worse days',
         heavyW: 'heavy', vheavyW: 'very heavy', ofW: 'of', daysW: 'days', heavyPlus: 'heavy or very heavy', areasUnit: 'areas', loadSub: 'severity + spread combined', bandW: ['clear', 'light', 'typical', 'heavy', 'very heavy'],
         mostProm: 'Most prominent',
         labs: 'Labs', episodes: 'Episodes/Month',
@@ -1589,6 +1590,7 @@ const TSS = {
   es: { worse: 'peor', better: 'mejor', steady: 'estable', notEnough: 'Historial insuficiente.', noData: 'Sin datos aún.',
         period: { '30d': '30 días', '3m': '3 meses', '1y': 'año' }, was: 'antes', vsPrev: 'vs', allTime: 'todo el tiempo', past: 'últimos', partial: 'parcial', mo: 'm',
         badTitle: 'Días fuertes', mixTitle: 'Distribución de días', areasTitle: 'Zonas afectadas', loadTitle: 'Carga total',
+        shiftTitle: 'Cambio de síntomas', currentW: 'Actual', previousW: 'Anterior', betterW: 'días mejores', worseW: 'días peores',
         heavyW: 'fuerte', vheavyW: 'muy fuerte', ofW: 'de', daysW: 'días', heavyPlus: 'fuerte o muy fuerte', areasUnit: 'zonas', loadSub: 'gravedad + extensión combinadas', bandW: ['sin síntomas', 'leve', 'típico', 'fuerte', 'muy fuerte'],
         mostProm: 'Más prominente',
         labs: 'Analíticas', episodes: 'Episodios/Mes',
@@ -1841,6 +1843,32 @@ function trendMixCard(lang, TT, cur, prev, reliable, tb) {
   const legend = [1, 2, 3, 4].map((i) => `<span class="lg"><span class="lgsw" style="background:${SEVHEX[i]}"></span>${TT.bandW[i]}</span>`).join('');
   return `<div class="card"><div class="card-h"><h2>${TT.mixTitle}</h2></div><div class="bignum">${pct}% <span class="muted small">${TT.heavyPlus}</span>${pill ? `<span style="margin-left:auto">${pill}</span>` : ''}</div><div class="lgrow" style="margin-top:8px">${legend}</div>${trendStackBars(tb.buckets, [1, 2, 3, 4], tb.mode, true)}</div>`;
 }
+// #0 Symptom shift over time — two diverging bars (Current vs Previous). Light+typical extend left of a shared centre, heavy+very-heavy extend right, each as a share of that period's logged days. Anchoring both bars on the same zero makes the good→bad shift directly comparable. Window-aware: current period vs the equal prior period.
+function trendShiftCard(lang, TT, cur, prev, reliable, days, win) {
+  const period = win === 'all' ? TT.allTime : ((lang === 'es' ? (win === '1y' ? 'último ' : 'últimos ') : 'last ') + TT.period[win]);
+  const rows = [[TT.currentW, cur], [TT.previousW, prev]];
+  const W = 320, rowH = 30, gap = 16, padL = 62, padR = 10, padT = 6;
+  const H = padT + rows.length * rowH + (rows.length - 1) * gap + 4;
+  const halfW = (W - padL - padR) / 2, cx = padL + halfW;
+  let bars = '';
+  rows.forEach(([label, agg], ri) => {
+    const total = Math.max(1, agg.logged);
+    const yTop = padT + ri * (rowH + gap), yc = yTop + rowH / 2;
+    bars += `<text x="${(padL - 8).toFixed(1)}" y="${(yc + 4).toFixed(1)}" font-size="11" fill="#475569" text-anchor="end">${label}</text>`;
+    let x = cx;
+    [2, 1].forEach((idx) => { const w = agg.band[idx] / total * halfW; if (w <= 0) return; x -= w; bars += `<rect x="${x.toFixed(1)}" y="${yTop}" width="${(w + 0.3).toFixed(1)}" height="${rowH}" fill="${SEVHEX[idx]}"/>`; });
+    x = cx;
+    [3, 4].forEach((idx) => { const w = agg.band[idx] / total * halfW; if (w <= 0) return; bars += `<rect x="${x.toFixed(1)}" y="${yTop}" width="${(w + 0.3).toFixed(1)}" height="${rowH}" fill="${SEVHEX[idx]}"/>`; x += w; });
+  });
+  bars += `<line x1="${cx.toFixed(1)}" y1="${(padT - 2).toFixed(1)}" x2="${cx.toFixed(1)}" y2="${(H - 4).toFixed(1)}" stroke="#334155" stroke-width="1.5"/>`;
+  const svg = `<svg class="trend" viewBox="0 0 ${W} ${H}" role="img" style="height:auto">${bars}</svg>`;
+  const pct = cur.logged ? Math.round(cur.bad / cur.logged * 100) : 0;
+  const prevPct = prev.logged ? Math.round(prev.bad / prev.logged * 100) : null;
+  const pill = trendChg(pct, prevPct, true, reliable, TT, (v) => Math.round(v) + '%');
+  const ends = `<div style="display:flex;justify-content:space-between;font-size:11px;color:#94a3b8;margin:4px 2px 0"><span>← ${TT.betterW}</span><span>${TT.worseW} →</span></div>`;
+  const legend = [1, 2, 3, 4].map((i) => `<span class="lg"><span class="lgsw" style="background:${SEVHEX[i]}"></span>${TT.bandW[i]}</span>`).join('');
+  return `<div class="card"><div class="card-h"><h2>${TT.shiftTitle} <span class="muted small">— ${period}</span></h2>${pill ? `<span style="margin-left:auto">${pill}</span>` : ''}</div>${svg}${ends}<div class="lgrow" style="margin-top:8px">${legend}</div></div>`;
+}
 // #4 Areas affected — spread of ONE located symptom (default: first located type, e.g. joint pain), i.e. how many of its sites are active per day.
 // Selectable when the person tracks >1 located symptom; hidden entirely for people who track none (e.g. a single-symptom-only user like Joanna's dad).
 function trendAreasCard(state, data, days, win, TT, reliable) {
@@ -1881,6 +1909,7 @@ function renderTrends(state) {
   const curAgg = winAgg(data, types, 0, days);
   const prevAgg = winAgg(data, types, days, 2 * days);
   const tb = trendBuckets(data, types, days);
+  const shiftCard = trendShiftCard(lang, TT, curAgg, prevAgg, reliable, days, win);
   const badCard = trendBadCard(lang, TT, curAgg, prevAgg, reliable, tb, days, win);
   const mixCard = trendMixCard(lang, TT, curAgg, prevAgg, reliable, tb);
   const areasCard = trendAreasCard(state, data, days, win, TT, reliable);
@@ -1918,7 +1947,7 @@ function renderTrends(state) {
   catch (err) { console.warn('adherence card failed', err); adhCard = `<div class="card"><div class="card-h"><h2>${lang === 'es' ? 'Cumplimiento de medicación' : 'Medication adherence'}</h2></div><p class="muted small">—</p></div>`; }
   const labsCard = `<div class="card"><div class="card-h"><h2>${TT.labs}</h2><button class="addmini" data-add="labs" aria-label="Add marker">＋</button></div>${labHtml}</div>`;
   const illCard = getPref('hideEpisodes') ? '' : `<div class="card"><div class="card-h"><h2>${TT.episodes}</h2></div>${illnessBars(data, lang)}</div>`;
-  return `<div class="ds">${winseg}${badCard}${mixCard}${areasCard}${loadCard}${promCard}${onsetHtml}${adhCard}${labsCard}${illCard}</div>`;
+  return `<div class="ds">${winseg}${shiftCard}${badCard}${mixCard}${areasCard}${loadCard}${promCard}${onsetHtml}${adhCard}${labsCard}${illCard}</div>`;
 }
 // Progression timeline in the new design-system style (keeps filters + tap-for-detail).
 function renderProg(state) {
