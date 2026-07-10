@@ -935,19 +935,20 @@ function daysBetween(aISO, bISO) { const a = new Date(aISO + 'T00:00:00Z'); cons
 function burdenK(data) { const k = data && data.meta && data.meta.burdenBands && data.meta.burdenBands.k; return (typeof k === 'number' && k >= 1) ? k : 2; }
 // Very-heavy dial: how many symptoms at 3+ make a day very heavy. Per-person, stored in meta; default 2.
 function burdenVH(data) { const v = data && data.meta && data.meta.burdenBands && data.meta.burdenBands.vhCount; return (typeof v === 'number' && v >= 2) ? v : 2; }
-// Per-type 0–4 intensity for a day (single = severity; located = worst-site derivedIntensity). null if nothing logged.
+// Intensity list feeding the day band. Single symptoms contribute their one severity; LOCATED symptoms (joint pain, nerve sensations) contribute EACH affected region separately (changed 10 Jul 2026 — was worst-site only), so breadth reflects multi-site involvement: a widespread joint flare can reach heavy/very-heavy on its own, matching how joint count signals disease activity. null if nothing logged.
 function dayIntensities(iso, types, data) {
   const l = DL.getDailyLog(iso, data);
   if (!l || !(l.symptoms || []).some((r) => typeof r.severity === 'number')) return null;
   const out = [];
+  const rows = l.symptoms || [];
   types.forEach((s) => {
-    if (s.trackBy === 'locations') { const d = DL.derivedIntensity(s, l.symptoms || []); if (d != null) out.push(d); }
+    if (s.trackBy === 'locations') { rows.forEach((r) => { if (r.symptomId === s.id && r.locationId != null && typeof r.severity === 'number') out.push(r.severity); }); }
     else { const v = DL.getSeverity(iso, s.id, null, data); if (v != null) out.push(v); }
   });
   return out;
 }
 // Day band from PEAK intensity + breadth (Anna's rule, 9 Jul 2026 — replaces the old sum-based bands):
-// 0 clear · 1 light (only 1s, or a lone 2) · 2 typical (2+ symptoms at 2, or a lone 3 without breadth) · 3 heavy (a single 3 with k+ others at 2, two-plus 3s below the very-heavy line, or any single 4) · 4 very heavy (vh+ symptoms at 3+). k and vh are per-person dials.
+// 0 clear · 1 light (only 1s, or a lone 2) · 2 typical (2+ symptoms at 2, or a lone 3 without breadth) · 3 heavy (a single 3 with k+ others at 2, two-plus 3s below the very-heavy line, or any single 4) · 4 very heavy (vh+ symptoms at 3+). k and vh are per-person dials. NB "symptoms" here = intensity entries from dayIntensities, where located symptoms (joint pain, nerve) count EACH affected region — so multiple severe joints add to breadth.
 function dayBandIdx(iso, types, data) {
   const ints = dayIntensities(iso, types, data);
   if (!ints || !ints.length) return -1;
