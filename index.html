@@ -947,7 +947,7 @@ function dayIntensities(iso, types, data) {
   return out;
 }
 // Day band from PEAK intensity + breadth (Anna's rule, 9 Jul 2026 — replaces the old sum-based bands):
-// 0 clear · 1 light (only 1s) · 2 typical (a 2, or a lone 3 without breadth) · 3 heavy (a single 3 with k+ others at 2, two-plus 3s below the very-heavy line, or any single 4) · 4 very heavy (vh+ symptoms at 3+). k and vh are per-person dials.
+// 0 clear · 1 light (only 1s, or a lone 2) · 2 typical (2+ symptoms at 2, or a lone 3 without breadth) · 3 heavy (a single 3 with k+ others at 2, two-plus 3s below the very-heavy line, or any single 4) · 4 very heavy (vh+ symptoms at 3+). k and vh are per-person dials.
 function dayBandIdx(iso, types, data) {
   const ints = dayIntensities(iso, types, data);
   if (!ints || !ints.length) return -1;
@@ -962,7 +962,7 @@ function dayBandIdx(iso, types, data) {
   if (n3 >= 2) return 3;                      // heavy: two-plus 3s, but below the very-heavy line
   if (peak >= 4) return 3;                    // heavy: one severe (4) symptom
   if (peak === 3) return o2 >= k ? 3 : 2;     // single 3: heavy with breadth, else typical
-  return 2;                                   // peak 2
+  return o2 >= 2 ? 2 : 1;                      // peak 2: typical if 2+ symptoms at a 2, else light (a lone 2)
 }
 const CAL_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z"/><path d="M16 3v4"/><path d="M8 3v4"/><path d="M4 11h16"/></svg>';
 const HIST_SVG = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 4v4h4"/><path d="M12 8v4l3 2"/></svg>';
