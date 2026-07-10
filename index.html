@@ -1590,7 +1590,11 @@ const TSS = {
         labs: 'Labs', episodes: 'Episodes/Month',
         pos: 'Positive', neg: 'Negative', progression: 'Progression',
         onsetAll: 'Onset & progression', started: 'Started in the last', newBadge: 'new', catJoint: 'joint', catNerve: 'nerve', catOther: 'other', nothingNew: 'Nothing new started in this period.',
-        newJointLoc: 'New joint pain location', newNerve: 'New nerve sensation', newSymptom: 'New symptom' },
+        newJointLoc: 'New joint pain location', newNerve: 'New nerve sensation', newSymptom: 'New symptom',
+        funcTitle: 'How much it limits me', symImpTitle: 'What limits me most',
+        fiInterfered: 'Interfered with activities', fiPrevented: 'Prevented an activity',
+        fiInterferedShort: 'interfered', fiPreventedShort: 'prevented', fiDays: 'days',
+        fiNone: 'No day a symptom interfered with or prevented an activity in this period.' },
   es: { worse: 'peor', better: 'mejor', steady: 'estable', notEnough: 'Historial insuficiente.', noData: 'Sin datos aún.',
         period: { '30d': '30 días', '3m': '3 meses', '1y': 'año' }, was: 'antes', vsPrev: 'vs', allTime: 'todo el tiempo', past: 'últimos', partial: 'parcial', mo: 'm',
         mixTitle: 'Distribución de días', areasTitle: 'Zonas afectadas', loadTitle: 'Carga total',
@@ -1600,7 +1604,11 @@ const TSS = {
         labs: 'Analíticas', episodes: 'Episodios/Mes',
         pos: 'Positivo', neg: 'Negativo', progression: 'Progresión',
         onsetAll: 'Inicio y progresión', started: 'Empezó — últimos', newBadge: 'nuevo', catJoint: 'articular', catNerve: 'nervioso', catOther: 'otro', nothingNew: 'Nada nuevo empezó en este periodo.',
-        newJointLoc: 'Nueva zona de dolor articular', newNerve: 'Nueva sensación nerviosa', newSymptom: 'Nuevo síntoma' },
+        newJointLoc: 'Nueva zona de dolor articular', newNerve: 'Nueva sensación nerviosa', newSymptom: 'Nuevo síntoma',
+        funcTitle: 'Cuánto me limita', symImpTitle: 'Qué me limita más',
+        fiInterfered: 'Interfirió con mis actividades', fiPrevented: 'Me impidió una actividad',
+        fiInterferedShort: 'interfirió', fiPreventedShort: 'impidió', fiDays: 'días',
+        fiNone: 'Ningún día un síntoma interfirió o impidió una actividad en este periodo.' },
 };
 function dayLogged(log) { return !!log && (log.symptoms || []).some((r) => typeof r.severity === 'number'); }
 const WIN_DAYS = { '30d': 30, '3m': 90, '1y': 365 };
@@ -1841,6 +1849,61 @@ function trendMixCard(lang, TT, cur, prev, reliable, tb) {
   const legend = [1, 2, 3, 4].map((i) => `<span class="lg"><span class="lgsw" style="background:${SEVHEX[i]}"></span>${TT.bandW[i]}</span>`).join('');
   return `<div class="card"><div class="card-h"><h2>${TT.mixTitle}</h2></div><div class="bignum">${pct}% <span class="muted small">${TT.heavyPlus}</span>${pill ? `<span style="margin-left:auto">${pill}</span>` : ''}</div><div class="lgrow" style="margin-top:8px">${legend}</div>${trendStackBars(tb.buckets, [1, 2, 3, 4], tb.mode, true)}</div>`;
 }
+// ===== Functional impact (interfere / prevent) — uses the scale's own semantics: a day's PEAK symptom intensity of 3 = "interfered with activities", 4 = "prevented an activity". Deliberately NOT dayBandIdx (that's the composite burden band); this reads the 0–4 scale literally so it's doctor-legible.
+// Per-day peak intensity across all tracked symptoms (0–4); null on unlogged days.
+function dayPeakIntensity(log, types) { if (!log || !dayLogged(log)) return null; let peak = 0; types.forEach((s) => { const v = symIntensity(s, log); if (v > peak) peak = v; }); return peak; }
+// Day-level counts over [a,b): logged days, days a symptom interfered (peak===3) vs prevented (peak===4). affected = either.
+function funcImpactAgg(data, types, a, b) {
+  const by = logsByDate(data);
+  let logged = 0, interfered = 0, prevented = 0;
+  for (let i = a; i < b; i++) { const peak = dayPeakIntensity(by[isoBack(i)], types); if (peak == null) continue; logged++; if (peak >= 4) prevented++; else if (peak >= 3) interfered++; }
+  return { logged, interfered, prevented, affected: interfered + prevented };
+}
+// Per-symptom counts over the window: on each logged day, each symptom that reached 3 (interfered) or 4 (prevented). Sorted by total affected days desc; empties dropped.
+function symImpact(data, types, days) {
+  const by = logsByDate(data);
+  let logged = 0;
+  const rows = types.map((s) => ({ s, interfered: 0, prevented: 0 }));
+  for (let i = days - 1; i >= 0; i--) { const log = by[isoBack(i)]; if (!log || !dayLogged(log)) continue; logged++; rows.forEach((r) => { const v = symIntensity(r.s, log); if (v >= 4) r.prevented++; else if (v >= 3) r.interfered++; }); }
+  return { logged, rows: rows.map((r) => ({ ...r, total: r.interfered + r.prevented })).filter((r) => r.total > 0).sort((a, b) => b.total - a.total) };
+}
+// "out of the last 3 months" (etc.) — grammar-correct per language, mirrors the period phrasing used by the other cards.
+function periodPhrase(lang, win, TT) {
+  if (win === 'all') return lang === 'es' ? 'de todo el registro' : 'out of the whole record';
+  if (lang === 'es') return win === '1y' ? 'del último año' : 'de los últimos ' + TT.period[win];
+  return 'out of the last ' + TT.period[win];
+}
+// Option 1 — Functional impact headline. Big % of logged days a symptom limited me, "N days out of the last …" subline, change pill vs the equal prior period, then two tiers (interfered / prevented) as share-of-logged-days bars.
+function trendFuncImpactCard(lang, TT, data, types, days, win, reliable) {
+  const period = win === 'all' ? TT.allTime : ((lang === 'es' ? (win === '1y' ? 'último ' : 'últimos ') : 'last ') + TT.period[win]);
+  const head = `<div class="card-h"><h2>${TT.funcTitle} <span class="muted small">— ${period}</span></h2></div>`;
+  const cur = funcImpactAgg(data, types, 0, days);
+  if (!cur.logged) return `<div class="card">${head}<p class="muted small">${TT.noData}</p></div>`;
+  const prev = funcImpactAgg(data, types, days, 2 * days);
+  const pct = Math.round(cur.affected / cur.logged * 100);
+  const prevPct = prev.logged ? Math.round(prev.affected / prev.logged * 100) : null;
+  const pill = trendChg(pct, prevPct, true, reliable, TT, (v) => Math.round(v) + '%');
+  const sub = `${cur.affected} ${TT.fiDays} ${periodPhrase(lang, win, TT)}`;
+  const tier = (n, label, idx) => {
+    const p = Math.round(n / cur.logged * 100);
+    return `<div style="margin-top:10px"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px"><span>${label}</span><span class="muted">${n} ${TT.fiDays} · ${p}%</span></div><div style="height:9px;background:var(--chip);border-radius:999px;overflow:hidden"><div style="width:${p}%;height:100%;background:${SEVHEX[idx]}"></div></div></div>`;
+  };
+  return `<div class="card">${head}<div class="bignum">${pct}%${pill ? `<span style="margin-left:auto">${pill}</span>` : ''}</div><div class="muted small bn-sub">${sub}</div>${tier(cur.interfered, TT.fiInterfered, 3)}${tier(cur.prevented, TT.fiPrevented, 4)}</div>`;
+}
+// Option 2 — What limits me most. Per-symptom split bar (interfered + prevented) as a share of logged days, ranked. Answers WHICH symptom costs function — the aggregate bad-days cards can't.
+function trendSymImpactCard(lang, TT, data, types, days, win) {
+  const period = win === 'all' ? TT.allTime : ((lang === 'es' ? (win === '1y' ? 'último ' : 'últimos ') : 'last ') + TT.period[win]);
+  const head = `<div class="card-h"><h2>${TT.symImpTitle} <span class="muted small">— ${period}</span></h2></div>`;
+  const si = symImpact(data, types, days);
+  if (!si.rows.length) return `<div class="card">${head}<p class="muted small">${TT.fiNone}</p></div>`;
+  const denom = Math.max(1, si.logged);
+  const rows = si.rows.map((r) => {
+    const wi = (r.interfered / denom * 100).toFixed(1), wp = (r.prevented / denom * 100).toFixed(1);
+    return `<div style="margin:11px 0"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px"><span style="font-weight:600">${esc(tx(r.s.name, lang))}</span><span class="muted">${r.interfered} / ${r.prevented} ${TT.fiDays}</span></div><div style="display:flex;height:10px;border-radius:999px;overflow:hidden;background:var(--chip)"><div style="width:${wi}%;background:${SEVHEX[3]}"></div><div style="width:${wp}%;background:${SEVHEX[4]}"></div></div></div>`;
+  }).join('');
+  const legend = `<div class="lgrow" style="margin-top:10px"><span class="lg"><span class="lgsw" style="background:${SEVHEX[3]}"></span>${TT.fiInterferedShort}</span><span class="lg"><span class="lgsw" style="background:${SEVHEX[4]}"></span>${TT.fiPreventedShort}</span></div>`;
+  return `<div class="card">${head}${rows}${legend}</div>`;
+}
 // #0 Symptom shift over time — two diverging bars (Current vs Previous). Light+typical extend left of a shared centre, heavy+very-heavy extend right, each as a share of that period's logged days. Anchoring both bars on the same zero makes the good→bad shift directly comparable. Window-aware: current period vs the equal prior period. Row labels + bars are HTML/CSS (not SVG) so text uses the app font and the centre stays at 50%.
 function trendShiftCard(lang, TT, cur, prev, reliable, days, win) {
   const period = win === 'all' ? TT.allTime : ((lang === 'es' ? (win === '1y' ? 'último ' : 'últimos ') : 'last ') + TT.period[win]);
@@ -1946,6 +2009,8 @@ function renderTrends(state) {
   const tb = trendBuckets(data, types, days);
   const shiftCard = trendShiftCard(lang, TT, curAgg, prevAgg, reliable, days, win);
   const badLineCard = trendBadLineCard(lang, TT, tb, win);
+  const funcCard = trendFuncImpactCard(lang, TT, data, types, days, win, reliable);
+  const symImpCard = trendSymImpactCard(lang, TT, data, types, days, win);
   const mixCard = trendMixCard(lang, TT, curAgg, prevAgg, reliable, tb);
   const areasCard = trendAreasCard(state, data, days, win, TT, reliable);
   const loadCard = trendLoadCard(lang, TT, curAgg, prevAgg, reliable, tb);
@@ -1982,7 +2047,7 @@ function renderTrends(state) {
   catch (err) { console.warn('adherence card failed', err); adhCard = `<div class="card"><div class="card-h"><h2>${lang === 'es' ? 'Cumplimiento de medicación' : 'Medication adherence'}</h2></div><p class="muted small">—</p></div>`; }
   const labsCard = `<div class="card"><div class="card-h"><h2>${TT.labs}</h2><button class="addmini" data-add="labs" aria-label="Add marker">＋</button></div>${labHtml}</div>`;
   const illCard = getPref('hideEpisodes') ? '' : `<div class="card"><div class="card-h"><h2>${TT.episodes}</h2></div>${illnessBars(data, lang)}</div>`;
-  return `<div class="ds">${winseg}${shiftCard}${badLineCard}${mixCard}${areasCard}${loadCard}${promCard}${onsetHtml}${adhCard}${labsCard}${illCard}</div>`;
+  return `<div class="ds">${winseg}${shiftCard}${badLineCard}${funcCard}${symImpCard}${mixCard}${areasCard}${loadCard}${promCard}${onsetHtml}${adhCard}${labsCard}${illCard}</div>`;
 }
 // Progression timeline in the new design-system style (keeps filters + tap-for-detail).
 function renderProg(state) {
