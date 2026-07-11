@@ -401,6 +401,30 @@ ul.tight { margin: 4px 0 0; padding-left: 18px; } ul.tight li { padding: 1px 0; 
 .ds .daynav.slim .navbtn{width:30px;height:30px;font-size:18px;}
 .ds .daynav.slim .dayname input[type=date]{font-size:15px;}
 .ds .daynav.slim.past{background:#fff8e1;border-radius:10px;padding:6px 10px;}
+/* Summary → Print / Save PDF button */
+.ds .printbtn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;margin-top:4px;padding:12px;border:0;border-radius:12px;background:var(--teal);color:#fff;font-size:15px;font-weight:600;cursor:pointer;}
+.ds .printbtn svg{width:19px;height:19px;}
+.ds .printbtn:active{opacity:.9;}
+/* Doctor print sheet — hidden on screen, revealed only when printing */
+#printSheet{display:none;}
+.ps-head{display:flex;justify-content:space-between;align-items:baseline;border-bottom:2px solid #1a1a1a;padding-bottom:10px;margin-bottom:16px;}
+.ps-title{font-size:19px;font-weight:600;}
+.ps-date{font-size:11px;color:#555;}
+.ps-h{font-size:13px;font-weight:600;color:#0f6e56;margin:0 0 6px;}
+.ps-legend{font-size:10.5px;color:#888;margin-bottom:6px;}
+.ps-tbl{width:100%;border-collapse:collapse;font-size:12.5px;margin-bottom:20px;}
+.ps-tbl td,.ps-tbl th{padding:4px 8px 4px 0;text-align:left;vertical-align:top;border-bottom:0.5px solid #eee;}
+.ps-tbl td.ps-right{text-align:right;color:#555;white-space:nowrap;}
+.ps-meds th{border-bottom:1.5px solid #1a1a1a;font-weight:600;}
+.ps-meds td:nth-child(2),.ps-meds th:nth-child(2){width:24%;}
+.ps-meds td:nth-child(3),.ps-meds th:nth-child(3){width:30%;color:#555;}
+.ps-sub td{padding-top:9px;font-size:11px;font-weight:600;color:#888;border-bottom:0;}
+@media print{
+  .topbar,.tabbar,#statusStrip,#screen{display:none !important;}
+  #printSheet{display:block !important;padding:0;color:#1a1a1a;font-family:var(--sans,system-ui,sans-serif);}
+  html,body{background:#fff !important;}
+  @page{margin:14mm;}
+}
 </style>
   <title>Atlast</title>
 </head>
@@ -424,6 +448,7 @@ ul.tight { margin: 4px 0 0; padding-left: 18px; } ul.tight li { padding: 1px 0; 
     <button class="tab" data-tab="next"><span class="tab-ico" aria-hidden="true">🗓</span><span class="tab-label">Visits</span></button>
     <button class="tab" data-tab="timeline"><span class="tab-ico" aria-hidden="true">🕓</span><span class="tab-label">Timeline</span></button>
   </nav>
+  <div id="printSheet" aria-hidden="true"></div>
   <script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@3/lib/msal-browser.min.js"></script>
   <script>
 /* AUTO-GENERATED — Atlast (hosted; blank template; OneDrive sync) */
@@ -1261,6 +1286,49 @@ function medSchedule(m, lang) {
 }
 function medScheduleStr(m, lang) { const s = medSchedule(m, lang); return [s.xxx, s.freq].filter(Boolean).join(' · '); }
 
+// Doctor-facing print sheet — a clean one-pager (conditions + medications) built
+// from current data, in the current language. Rendered into #printSheet, then
+// window.print() (native "Save as PDF"/print). Mirrors the Summary tab's own
+// condition labels + med grouping so it never drifts from what the app shows.
+function buildDoctorSheet(lang) {
+  const data = DL.getData(); if (!data) return '';
+  const T = STR[lang]; const bp = DL.bigPicture(data, lang);
+  const L = (en, es) => lang === 'es' ? es : en;
+  const name = (data.meta && data.meta.patient && data.meta.patient.name) || '';
+  const title = (name ? esc(name) + ' — ' : '') + L('health summary', 'resumen de salud');
+  const prepared = L('Prepared', 'Preparado') + ' ' + fmtDate(Today.todayISO(), lang);
+  // --- Active conditions (same status text the Summary chips use) ---
+  const byDateDesc = (a, b) => { const da = a.statusDate || '', db = b.statusDate || ''; if (da === db) return 0; if (!da) return 1; if (!db) return -1; return da < db ? 1 : -1; };
+  const condStatus = (c) => c.status === 'investigating'
+    ? STATUS[lang].investigating
+    : (c.control && c.control !== 'no_treatment' && T.control && T.control[c.control] ? T.control[c.control] : '');
+  const condRows = bp.conditions.slice().sort(byDateDesc).map((c) => {
+    const meta = [c.statusDate ? `${T.since} ${c.statusDate.slice(0, 4)}` : '', condStatus(c)].filter(Boolean).join(' · ');
+    return `<tr><td>${esc(tx(c.name, lang))}</td><td class="ps-right">${esc(meta)}</td></tr>`;
+  }).join('') || `<tr><td colspan="2">${T.none}</td></tr>`;
+  // --- Medications, grouped like the Summary tab (Regular / Supplements / Therapies / PRN) ---
+  const isPrnMed = (m) => m.scheduledDays === 'prn' || (m.status === 'prn' && m.everyNDays == null);
+  const TOD_ORDER = { morning: 0, midday: 1, evening: 2, bedtime: 2, prn: 3 };
+  const byTimeOfDay = (a, b) => ((TOD_ORDER[a.timeOfDay] != null ? TOD_ORDER[a.timeOfDay] : 1) - (TOD_ORDER[b.timeOfDay] != null ? TOD_ORDER[b.timeOfDay] : 1));
+  const all = bp.medications;
+  const prn = all.filter(isPrnMed);
+  const supp = all.filter((m) => !isPrnMed(m) && m.category === 'supplement').sort(byTimeOfDay);
+  const reg = all.filter((m) => !isPrnMed(m) && m.category !== 'supplement' && m.category !== 'therapy').sort(byTimeOfDay);
+  const ther = all.filter((m) => !isPrnMed(m) && m.category === 'therapy').sort(byTimeOfDay);
+  const medRow = (m) => {
+    const s = medSchedule(m, lang); const sched = [s.xxx, s.freq].filter(Boolean).join(' · ');
+    return `<tr><td>${esc(tx(m.name, lang))}</td><td>${m.dose ? esc(m.dose) : '—'}</td><td>${esc(sched || '—')}</td></tr>`;
+  };
+  const medGroup = (label, list) => list.length ? `<tr class="ps-sub"><td colspan="3">${esc(label)}</td></tr>${list.map(medRow).join('')}` : '';
+  const medBody = (medGroup(T.secRegular, reg) + medGroup(T.secSupplements, supp) + medGroup(T.secTherapies, ther) + medGroup(T.secPrn, prn)) || `<tr><td colspan="3">${T.none}</td></tr>`;
+  return `<div class="ps-head"><div class="ps-title">${title}</div><div class="ps-date">${esc(prepared)}</div></div>
+    <div class="ps-h">${L('Active conditions', 'Condiciones activas')}</div>
+    <table class="ps-tbl">${condRows}</table>
+    <div class="ps-h">${T.currentMeds}</div>
+    <div class="ps-legend">${L('Schedule X-X-X = morning · midday · evening', 'Pauta X-X-X = mañana · mediodía · noche')}</div>
+    <table class="ps-tbl ps-meds"><thead><tr><th>${L('Medication', 'Medicamento')}</th><th>${L('Dose', 'Dosis')}</th><th>${L('Schedule', 'Pauta')}</th></tr></thead><tbody>${medBody}</tbody></table>`;
+}
+
 const Appt = (function(){
 const { tx, specialistLabel } = DL;
 
@@ -1385,6 +1453,7 @@ function renderBig(state) {
   return `<div class="ds">
     <div class="card"><div class="card-h"><h2>${T.activeManaged}</h2><span class="hgrp">${condHdr}</span></div>${condSeg}${condBody}</div>
     <div class="card" id="medsTable"><div class="card-h"><h2>${T.currentMeds}</h2><span class="hgrp">${editBtn('medications')}<button class="addmini" data-add="medications" aria-label="Add medication">＋</button></span></div>${ui.editPick === 'medications' ? pickList(allMeds, 'medications', (m) => tx(m.name, lang)) : meds}${pastSection}</div>
+    <button class="printbtn" data-print><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>${lang === 'es' ? 'Imprimir / Guardar PDF' : 'Print / Save PDF'}</button>
   </div>`;
 }
 
@@ -1494,6 +1563,7 @@ async function onClick(e, state, rerender) {
   if (bg && e.target === bg) { ui.postVisit = null; rerender(); return; }
   const t = e.target.closest('button');
   if (!t) return;
+  if (t.dataset.print != null) { const el = document.getElementById('printSheet'); if (el) { el.innerHTML = buildDoctorSheet(state.lang); window.print(); } return; }
   if (t.dataset.pvopen != null) { ui.postVisit = t.dataset.pvopen; rerender(); return; }
   if (t.dataset.pvcancel != null) { ui.postVisit = null; rerender(); return; }
   if (t.dataset.pvsave != null) {
