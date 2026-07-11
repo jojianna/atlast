@@ -1,7 +1,7 @@
 {
   "name": "Atlast",
   "short_name": "Atlast",
-  "description": "Joanna's health tracker — conditions, labs, symptoms, medications and visits.",
+  "description": "Turn scattered symptoms, meds, and test results into one clear map of your health - so you and your doctors can see what's actually working.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
