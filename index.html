@@ -2219,10 +2219,11 @@ const SPECS = {
   symptomTypes: { title: 'Symptom', archive: true, fields: [
     { key: 'name', type: 'i18n', label: 'Name' },
     { key: 'trackBy', type: 'select', label: 'Track by', options: ['single', 'locations'] },
+    { key: 'onsetDate', type: 'date', label: 'Start date (when it began — for the timeline)', showIf: (s) => s.trackBy === 'single' },
     { key: 'overall', type: 'select', label: 'Overall (located)', options: ['max', 'mean'], showIf: (s) => s.trackBy === 'locations' },
     { key: 'locations', type: 'locrows', label: 'Locations', showIf: (s) => s.trackBy === 'locations' },
     { key: 'archived', type: 'checkbox', label: 'Archived (hidden from daily log)' },
-  ], defaults: { name: { en: '', es: '' }, trackBy: 'single', archived: false, locations: [] } },
+  ], defaults: { name: { en: '', es: '' }, trackBy: 'single', onsetDate: null, archived: false, locations: [] } },
 };
 
 let fs = null, fcol = null, fmode = null, fconfirm = false, ferr = '';
@@ -2234,6 +2235,8 @@ function open(collection, id, prefill) {
   fs = id ? JSON.parse(JSON.stringify(DL.getRecord(collection, id) || {})) : JSON.parse(JSON.stringify(spec.defaults || {}));
   fmode = id ? 'edit' : 'add';
   if (!id && prefill) Object.assign(fs, prefill);
+  // New symptom: default the start date to today (user can back-date it in the form).
+  if (!id && collection === 'symptomTypes' && fs.onsetDate == null) fs.onsetDate = new Date().toISOString().slice(0, 10);
   if (collection === 'medications') fs.cadence = fs.everyNDays != null ? 'interval' : (fs.scheduledDays === 'prn' ? 'prn' : 'weekly');
 }
 function close() { fcol = null; fs = null; fmode = null; fconfirm = false; ferr = ''; fdosePanel = false; fdoseDraft = null; }
@@ -2381,6 +2384,7 @@ function postprocess() {
     // Without it, typesOn()/isComplete() treat the symptom as always-present and retroactively un-complete every past day.
     // Gate on !fs.id (creation only) so intentionally addedDate-less seed symptoms aren't stamped when merely edited.
     if (!fs.id && fs.addedDate === undefined) fs.addedDate = new Date().toISOString().slice(0, 10);
+    if (fs.onsetDate === '') fs.onsetDate = null; // empty start-date field → null (schema wants a nullable date)
     (fs.locations || []).forEach((l) => { if (!l.id) l.id = DL.genId('loc'); if (!l.name) l.name = { en: '', es: '' }; if (l.addedDate === undefined) l.addedDate = new Date().toISOString().slice(0, 10); l.archived = !!l.archived; });
     if (fs.trackBy === 'single') fs.locations = fs.locations || [];
   }
