@@ -2377,6 +2377,10 @@ function postprocess() {
     (fs.results || []).forEach((r) => { if (r.value === '' || r.value === undefined) r.value = null; else if (r.value != null) r.value = Number(r.value); if (!r.qualitative) r.qualitative = null; });
   }
   if (fcol === 'symptomTypes') {
+    // New symptoms created via this generic editor must carry an addedDate, same as addSymptomType() does.
+    // Without it, typesOn()/isComplete() treat the symptom as always-present and retroactively un-complete every past day.
+    // Gate on !fs.id (creation only) so intentionally addedDate-less seed symptoms aren't stamped when merely edited.
+    if (!fs.id && fs.addedDate === undefined) fs.addedDate = new Date().toISOString().slice(0, 10);
     (fs.locations || []).forEach((l) => { if (!l.id) l.id = DL.genId('loc'); if (!l.name) l.name = { en: '', es: '' }; if (l.addedDate === undefined) l.addedDate = new Date().toISOString().slice(0, 10); l.archived = !!l.archived; });
     if (fs.trackBy === 'single') fs.locations = fs.locations || [];
   }
