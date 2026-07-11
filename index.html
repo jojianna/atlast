@@ -1329,6 +1329,44 @@ function buildDoctorSheet(lang) {
     <table class="ps-tbl ps-meds"><thead><tr><th>${L('Medication', 'Medicamento')}</th><th>${L('Dose', 'Dosis')}</th><th>${L('Schedule', 'Pauta')}</th></tr></thead><tbody>${medBody}</tbody></table>`;
 }
 
+// Self-contained CSS for the print sheet, so the pop-out window (which doesn't
+// share the app's <style>) renders correctly on its own.
+const PRINT_SHEET_CSS = `body{font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;color:#1a1a1a;margin:14mm;}
+.ps-head{display:flex;justify-content:space-between;align-items:baseline;border-bottom:2px solid #1a1a1a;padding-bottom:10px;margin-bottom:16px;}
+.ps-title{font-size:19px;font-weight:600;}
+.ps-date{font-size:11px;color:#555;}
+.ps-h{font-size:13px;font-weight:600;color:#0f6e56;margin:0 0 6px;}
+.ps-legend{font-size:10.5px;color:#888;margin-bottom:6px;}
+.ps-tbl{width:100%;border-collapse:collapse;font-size:12.5px;margin-bottom:20px;}
+.ps-tbl td,.ps-tbl th{padding:4px 8px 4px 0;text-align:left;vertical-align:top;border-bottom:0.5px solid #eee;}
+.ps-tbl td.ps-right{text-align:right;color:#555;white-space:nowrap;}
+.ps-meds th{border-bottom:1.5px solid #1a1a1a;font-weight:600;}
+.ps-meds td:nth-child(2),.ps-meds th:nth-child(2){width:24%;}
+.ps-meds td:nth-child(3),.ps-meds th:nth-child(3){width:30%;color:#555;}
+.ps-sub td{padding-top:9px;font-size:11px;font-weight:600;color:#888;border-bottom:0;}
+.ps-print-btn{display:block;margin:26px auto 0;padding:11px 22px;border:0;border-radius:10px;background:#0f766e;color:#fff;font-size:15px;font-weight:600;cursor:pointer;}
+@media print{.ps-print-btn{display:none;}body{margin:0;}@page{margin:14mm;}}`;
+
+// Open the doctor one-pager. Primary path: a real browser window with its own
+// Print button — works on desktop AND when Atlast runs as an installed PWA
+// (where window.print() on the app document silently no-ops). Fallback: the
+// hidden in-app #printSheet + window.print() if the pop-out is blocked.
+function printDoctorSheet(lang) {
+  let body = '';
+  try { body = buildDoctorSheet(lang); } catch (err) { setStatus('Could not build the summary: ' + err.message, 'err'); return; }
+  if (!body) { setStatus('No data to print yet.', 'err'); return; }
+  const title = lang === 'es' ? 'Resumen de salud' : 'Health summary';
+  const btn = lang === 'es' ? 'Imprimir / Guardar PDF' : 'Print / Save PDF';
+  const doc = `<!doctype html><html lang="${lang}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(title)}</title><style>${PRINT_SHEET_CSS}</style></head><body>${body}<button class="ps-print-btn" onclick="window.print()">${esc(btn)}</button><script>window.addEventListener('load',function(){setTimeout(function(){try{window.print();}catch(e){}},350);});<\/script></body></html>`;
+  let w = null;
+  try { w = window.open('', '_blank'); } catch (e) { w = null; }
+  if (w && w.document) { w.document.open(); w.document.write(doc); w.document.close(); w.focus(); return; }
+  // Fallback — pop-out blocked (some installed PWAs): print via the hidden sheet.
+  const el = document.getElementById('printSheet');
+  if (el) { el.innerHTML = body; try { window.print(); } catch (e) {} }
+  else { setStatus('Please allow pop-ups to print.', 'err'); }
+}
+
 const Appt = (function(){
 const { tx, specialistLabel } = DL;
 
@@ -1563,7 +1601,7 @@ async function onClick(e, state, rerender) {
   if (bg && e.target === bg) { ui.postVisit = null; rerender(); return; }
   const t = e.target.closest('button');
   if (!t) return;
-  if (t.dataset.print != null) { const el = document.getElementById('printSheet'); if (el) { el.innerHTML = buildDoctorSheet(state.lang); window.print(); } return; }
+  if (t.dataset.print != null) { printDoctorSheet(state.lang); return; }
   if (t.dataset.pvopen != null) { ui.postVisit = t.dataset.pvopen; rerender(); return; }
   if (t.dataset.pvcancel != null) { ui.postVisit = null; rerender(); return; }
   if (t.dataset.pvsave != null) {
