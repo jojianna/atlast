@@ -32,7 +32,7 @@ body { font:16px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helveti
 .status-strip { font-size:13px; padding:8px 14px; background:#fff8e1; color:var(--warn); border-bottom:1px solid var(--line); }
 .status-strip.ok { background:#ecfdf3; color:var(--ok); }
 .status-strip.err { background:#fef2f2; color:var(--err); }
-.screen { padding:14px; max-width:720px; margin:0 auto; }
+.screen { padding:14px 14px 0; max-width:720px; margin:0 auto; }
 .card { background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:14px; margin-bottom:12px; }
 .card h2 { font-size:15px; margin:0 0 10px; }
 .muted { color:var(--muted); } .small { font-size:13px; }
@@ -283,7 +283,7 @@ ul.tight { margin: 4px 0 0; padding-left: 18px; } ul.tight li { padding: 1px 0; 
 .ds .wksub{text-align:center;margin-bottom:10px;}
 .ds .symrow .symctl{display:flex;align-items:center;gap:6px;}
 .ds .sevpick,.ds .sev-chip.sevsq{display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;min-width:38px;padding:0;border:0;border-radius:9px;font-size:15px;font-weight:700;cursor:pointer;}
-.ds .sevpick.sevlabel{width:auto;min-width:0;height:38px;padding:0 13px;gap:7px;} .ds .sevpick.sevlabel .sevword{font-size:13px;font-weight:500;}
+.ds .sevpick.sevlabel,.ds .sev-chip.sevsq.sevlabel{width:auto;min-width:0;height:38px;padding:0 13px;gap:7px;} .ds .sevpick.sevlabel .sevword,.ds .sev-chip.sevsq.sevlabel .sevword{font-size:13px;font-weight:500;}
 .ds .chipgrp{display:flex;align-items:center;gap:6px;} .ds .sev-chip.sumsq{background:var(--teal);color:#fff;cursor:default;}
 .ds .noteicon{width:38px;height:38px;display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--line);background:#fff;border-radius:9px;cursor:pointer;color:var(--muted);touch-action:manipulation;-webkit-tap-highlight-color:transparent;position:relative;}
 .ds .noteicon.has{color:#0f766e;}
@@ -1118,7 +1118,9 @@ function renderToday(state) {
     const submitted = !!(dayLog && dayLog.symptomsSubmittedAt);
     const ov = DL.derivedIntensity(s, (dayLog?.symptoms) || []);
     const overall = (ov == null && submitted) ? 0 : ov;
-    const chip = overall != null ? `<span class="sev-chip sevsq sev-${overall}">${overall}</span>` : '<span class="muted small">—</span>';
+    // Worst-area chip carries the same functional-scale word as single symptoms (0 shows just the number).
+    const ovWord = (overall != null && overall > 0) ? ((SEV_WORDS[lang] || SEV_WORDS.en)[overall] || '') : '';
+    const chip = overall != null ? `<span class="sev-chip sevsq sev-${overall}${ovWord ? ' sevlabel' : ''}" title="${lang === 'es' ? 'Peor zona' : 'Worst area'}">${overall}${ovWord ? `<span class="sevword">${ovWord}</span>` : ''}</span>` : '<span class="muted small">—</span>';
     // Sum-rollup symptoms (joint pain) also show their total burden (severity × breadth) as a teal chip beside the worst-site square.
     let sumChip = '';
     if (s.overall === 'sum') {
@@ -2310,12 +2312,14 @@ const SPECS = {
     { key: 'doctor', type: 'text', label: 'Doctor name' },
   ], defaults: { specialism: '', es: '', doctor: '' } },
   symptomTypes: { title: 'Symptom', archive: true, fields: [
+    // Track-by is only shown when adding (a symptom's kind is fixed once created). Add mode uses a
+    // custom body (symFormBody) for the group picker; these generic fields drive Edit mode.
     { key: 'name', type: 'i18n', label: 'Name' },
-    { key: 'trackBy', type: 'seg', label: 'Track by', options: [{ v: 'single', l: 'Single' }, { v: 'locations', l: 'Group' }] },
+    { key: 'trackBy', type: 'seg', label: 'Track by', options: [{ v: 'single', l: 'Single' }, { v: 'locations', l: 'Group' }], showIf: () => fmode === 'add' },
     { key: 'onsetDate', type: 'date', label: 'Start date (when it began — for the timeline)', showIf: (s) => s.trackBy === 'single' },
-    { key: 'overall', type: 'select', label: 'Overall (group)', options: ['max', 'mean'], showIf: (s) => s.trackBy === 'locations' },
-    { key: 'locations', type: 'locrows', label: 'Group', showIf: (s) => s.trackBy === 'locations' },
-    { key: 'archived', type: 'checkbox', label: 'Archived (hidden from daily log)' },
+    { key: 'overall', type: 'select', label: 'Group score (how members combine)', options: ['max', 'mean', 'sum'], showIf: (s) => s.trackBy === 'locations' },
+    { key: 'locations', type: 'locrows', label: 'Members', showIf: (s) => s.trackBy === 'locations' },
+    { key: 'archived', type: 'checkbox', label: 'Archived (hidden from daily log)', showIf: () => fmode === 'edit' },
   ], defaults: { name: { en: '', es: '' }, trackBy: 'single', onsetDate: null, archived: false, locations: [] } },
 };
 
@@ -2356,7 +2360,7 @@ function field(f) {
   if (f.type === 'multiselect') { const cur = gv(fs, f.key) || []; const boxes = srcOptions(f.source).map((o) => `<label class="f-chk"><input type="checkbox" data-fkey="${f.key}" data-msval="${o.v}" ${cur.includes(o.v) ? 'checked' : ''}> ${esc(o.l)}</label>`).join(''); return `<div class="f">${L}<div class="f-chks">${boxes}</div></div>`; }
   if (f.type === 'weekdays') { const cur = Array.isArray(gv(fs, f.key)) ? gv(fs, f.key) : []; const boxes = WD.map((d) => `<label class="f-chk"><input type="checkbox" data-fkey="${f.key}" data-wd="${d}" ${cur.includes(d) ? 'checked' : ''}> ${d}</label>`).join(''); return `<div class="f">${L}<div class="f-chks">${boxes}</div></div>`; }
   if (f.type === 'rows') { const rows = (gv(fs, f.key) || []).map((r, i) => { const subs = f.sub.map((sf) => { if (sf.type === 'i18n') { const v = r[sf.key] || { en: '', es: '' }; return `<input type="text" placeholder="${sf.label}" data-row="${f.key}" data-idx="${i}" data-sub="${sf.key}" data-lang="en" value="${esc(v.en)}">`; } return `<input type="${sf.type === 'number' ? 'number' : (sf.type === 'date' ? 'date' : 'text')}" step="any" placeholder="${sf.label}" data-row="${f.key}" data-idx="${i}" data-sub="${sf.key}" value="${esc(r[sf.key] ?? '')}">`; }).join(''); return `<div class="f-rowitem">${subs}<button class="btn-sm" data-formaction="delrow" data-row="${f.key}" data-idx="${i}">×</button></div>`; }).join(''); return `<div class="f">${L}${rows}<button class="btn ghost" data-formaction="addrow" data-row="${f.key}">+ Add</button></div>`; }
-  if (f.type === 'locrows') { const rows = (gv(fs, f.key) || []).map((r, i) => { const v = r.name || { en: '', es: '' }; return `<div class="f-rowitem"><input type="text" placeholder="Location" data-row="${f.key}" data-idx="${i}" data-sub="name" data-lang="en" value="${esc(v.en)}"><label class="f-chk"><input type="checkbox" data-row="${f.key}" data-idx="${i}" data-sub="archived" data-bool ${r.archived ? 'checked' : ''}> arch.</label></div>`; }).join(''); return `<div class="f">${L}${rows}<button class="btn ghost" data-formaction="addrow" data-row="${f.key}">+ Add location</button></div>`; }
+  if (f.type === 'locrows') { const rows = (gv(fs, f.key) || []).map((r, i) => { const v = r.name || { en: '', es: '' }; return `<div class="f-rowitem"><input type="text" placeholder="Member name" data-row="${f.key}" data-idx="${i}" data-sub="name" data-lang="en" value="${esc(v.en)}"><input type="date" title="Start date" data-row="${f.key}" data-idx="${i}" data-sub="onsetDate" value="${esc(r.onsetDate ?? '')}"><label class="f-chk"><input type="checkbox" data-row="${f.key}" data-idx="${i}" data-sub="archived" data-bool ${r.archived ? 'checked' : ''}> arch.</label></div>`; }).join(''); return `<div class="f">${L}${rows}<button class="btn ghost" data-formaction="addrow" data-row="${f.key}">+ Add member</button></div>`; }
   return '';
 }
 
@@ -2427,10 +2431,36 @@ function medFormBody(spec) {
   return simple + `<details style="margin-top:10px;border-top:1px solid var(--line);padding-top:8px"><summary style="cursor:pointer;color:var(--muted);font-size:14px">Advanced options</summary><div style="margin-top:10px">${adv}</div></details>`;
 }
 
+// Add-symptom body: always "add a symptom", with an optional group. If Group is chosen, pick an
+// existing group or create a new one; the symptom being added becomes a member of that group. Start
+// date is always shown (it's the symptom's / member's onset). Archive is intentionally omitted here —
+// archiving is an Edit action. Storage stays nested (group.locations[]); save() does the routing.
+function symFormBody(spec) {
+  const F = {}; spec.fields.forEach((f) => { F[f.key] = f; });
+  const grouped = fs.trackBy === 'locations';
+  const nameField = field(Object.assign({}, F.name, { label: grouped ? "Symptom name (the member you're adding)" : 'Name' }));
+  const trackField = field(Object.assign({}, F.trackBy, { showIf: null }));
+  let groupBlock = '';
+  if (grouped) {
+    const groups = DL.activeSymptomTypes().filter((s) => s.trackBy === 'locations');
+    const cur = fs._groupId || '';
+    const gopts = groups.map((g) => `<option value="${g.id}" ${cur === g.id ? 'selected' : ''}>${esc(g.name.en)}</option>`).join('');
+    groupBlock = `<div class="f"><div class="f-label">Group</div><select data-fkey="_groupId" data-rerender><option value="" ${cur === '' ? 'selected' : ''} disabled>— Choose a group —</option>${gopts}<option value="__new__" ${cur === '__new__' ? 'selected' : ''}>+ New group…</option></select></div>`;
+    if (cur === '__new__') {
+      groupBlock += `<div class="f"><div class="f-label">New group name</div><input type="text" data-fkey="_newGroup" value="${esc(fs._newGroup || '')}" placeholder="e.g. Joint pain"></div>`;
+      groupBlock += field({ key: '_newGroupOverall', type: 'select', label: 'Group score (how members combine)', options: ['max', 'mean', 'sum'] });
+    }
+  }
+  const startField = field(Object.assign({}, F.onsetDate, { showIf: null }));
+  return [nameField, trackField, groupBlock, startField].join('');
+}
+
 function renderForm() {
   if (!fcol) return '';
   const spec = SPECS[fcol];
-  const body = fcol === 'medications' ? medFormBody(spec) : spec.fields.map(field).join('');
+  const body = fcol === 'medications' ? medFormBody(spec)
+    : (fcol === 'symptomTypes' && fmode === 'add') ? symFormBody(spec)
+    : spec.fields.map(field).join('');
   const delLabel = fconfirm ? 'Confirm delete' : (spec.archive ? 'Archive' : 'Delete');
   const delBtn = fmode === 'edit' ? `<button class="btn ${fconfirm ? '' : 'ghost'}" data-formaction="delete" style="${fconfirm ? 'background:var(--err)' : 'color:var(--err)'}">${delLabel}</button>` : '';
   return `<div class="modal-bg" data-formaction="cancelbg"><div class="modal modal-form" role="dialog">
@@ -2484,7 +2514,7 @@ function postprocess() {
     // Gate on !fs.id (creation only) so intentionally addedDate-less seed symptoms aren't stamped when merely edited.
     if (!fs.id && fs.addedDate === undefined) fs.addedDate = new Date().toISOString().slice(0, 10);
     if (fs.onsetDate === '') fs.onsetDate = null; // empty start-date field → null (schema wants a nullable date)
-    (fs.locations || []).forEach((l) => { if (!l.id) l.id = DL.genId('loc'); if (!l.name) l.name = { en: '', es: '' }; if (l.addedDate === undefined) l.addedDate = new Date().toISOString().slice(0, 10); l.archived = !!l.archived; });
+    (fs.locations || []).forEach((l) => { if (!l.id) l.id = DL.genId('loc'); if (!l.name) l.name = { en: '', es: '' }; if (l.addedDate === undefined) l.addedDate = new Date().toISOString().slice(0, 10); if (l.onsetDate === '') l.onsetDate = null; l.archived = !!l.archived; });
     if (fs.trackBy === 'single') fs.locations = fs.locations || [];
   }
 }
@@ -2518,6 +2548,33 @@ async function onClick(e, rerender) {
     await DL.persist(); close(); rerender(); return true;
   }
   if (a === 'save') {
+    // Add-symptom: route into nested storage. Single → new symptom; Group → new member appended to an
+    // existing or brand-new group. Transient _group* fields on fs are never persisted.
+    if (fcol === 'symptomTypes' && fmode === 'add') {
+      const enName = ((fs.name && fs.name.en) || '').trim();
+      if (!enName) { ferr = 'Please enter a name.'; rerender(); return true; }
+      const onset = (fs.onsetDate === '' || fs.onsetDate == null) ? null : fs.onsetDate;
+      const today = new Date().toISOString().slice(0, 10);
+      if (fs.trackBy === 'locations') {
+        const sel = fs._groupId;
+        if (!sel) { ferr = 'Please choose a group, or create a new one.'; rerender(); return true; }
+        let grp;
+        if (sel === '__new__') {
+          const gName = (fs._newGroup || '').trim();
+          if (!gName) { ferr = 'Please name the new group.'; rerender(); return true; }
+          grp = DL.addSymptomType({ en: gName, trackBy: 'locations' });
+          grp.overall = fs._newGroupOverall || 'max';
+        } else {
+          grp = DL.getRecord('symptomTypes', sel);
+          if (!grp) { ferr = 'That group no longer exists.'; rerender(); return true; }
+        }
+        grp.locations = grp.locations || [];
+        grp.locations.push({ id: DL.genId('loc'), name: { en: enName, es: '' }, addedDate: today, onsetDate: onset, archived: false });
+      } else {
+        DL.upsert('symptomTypes', { name: { en: enName, es: '' }, trackBy: 'single', onsetDate: onset, archived: false, locations: [], addedDate: today });
+      }
+      ferr = ''; await DL.persist(); close(); rerender(); return true;
+    }
     const spec = SPECS[fcol];
     const missing = (spec.fields || []).filter((f) => f.required && (!f.showIf || f.showIf(fs)) && !gv(fs, f.key));
     if (missing.length) { ferr = (missing.length === 1 ? 'Please choose a ' : 'Please complete: ') + missing.map((f) => f.label.toLowerCase()).join(', ') + '.'; rerender(); return true; }
@@ -2739,7 +2796,7 @@ function wireChrome() {
     if (e.target.id === 'burdenT') { const t = Math.max(0, Math.round(Number(e.target.value) || 1)); const d = DL.getData(); if (d) { d.meta = d.meta || {}; d.meta.burdenBands = Object.assign({}, d.meta.burdenBands, { t }); DL.persistLocal(); DL.persist(); } render(); return; }
     if (e.target.id === 'burdenTt') { const t = Math.max(0, Math.round(Number(e.target.value) || 2) - 1); const d = DL.getData(); if (d) { d.meta = d.meta || {}; d.meta.burdenBands = Object.assign({}, d.meta.burdenBands, { t }); DL.persistLocal(); DL.persist(); } render(); return; }
     if (e.target.id === 'burdenVH') { const vhCount = Math.max(2, Math.round(Number(e.target.value) || 2)); const d = DL.getData(); if (d) { d.meta = d.meta || {}; d.meta.burdenBands = Object.assign({}, d.meta.burdenBands, { vhCount }); DL.persistLocal(); DL.persist(); } render(); return; }
-    if (Forms.isOpen()) { Forms.onInput(e); return; }
+    if (Forms.isOpen()) { Forms.onInput(e); if (e.target && e.target.dataset && e.target.dataset.rerender !== undefined) render(); return; }
   });
 }
 function setLang(lang) { state.lang = lang; document.documentElement.lang = lang; document.querySelectorAll('.lang-btn').forEach((b) => b.classList.toggle('is-active', b.dataset.lang === lang)); render(); }
