@@ -118,7 +118,6 @@ ul.tight { margin: 4px 0 0; padding-left: 18px; } ul.tight li { padding: 1px 0; 
 .addbtn { width:100%; margin-bottom:12px; }
 .linkbtn { background:none; border:0; color:var(--muted); text-decoration:underline; font-size:13px; cursor:pointer; padding:6px; }
 .linkbtn.danger { color:var(--err); font-weight:600; }
-.clearday-row { text-align:center; }
 .modal-form { max-width:520px; max-height:88vh; display:flex; flex-direction:column; }
 .form-body { overflow:auto; }
 .f { margin-bottom:10px; } .f-label { font-size:12px; font-weight:600; color:var(--muted); margin-bottom:3px; }
@@ -337,8 +336,6 @@ ul.tight { margin: 4px 0 0; padding-left: 18px; } ul.tight li { padding: 1px 0; 
 .ds .btn-mark{border:1px solid var(--teal);background:var(--teal);color:#fff;border-radius:999px;padding:5px 14px;font-size:13px;font-weight:600;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;}
 .ds .btn-mark.wide{display:block;width:100%;padding:11px;border-radius:12px;font-size:14px;}
 .ds .daybar{text-align:center;margin:4px 0 2px;}
-.ds .daybar .daycounts{margin-bottom:8px;}
-.ds .daybar .mark-hint{margin-top:8px;}
 .ds .daybar.done{color:var(--ok);font-weight:600;padding:10px;}
 .ds .prog-chip.done{background:#dcfce7;color:#15803d;}
 .ds .loc-count{margin-left:2px;white-space:nowrap;}
@@ -467,6 +464,16 @@ const __HT_TEMPLATE__ = {
 
 function getPref(k){ try { return (typeof localStorage !== 'undefined') && localStorage.getItem('ht.pref.' + k) === '1'; } catch { return false; } }
 function setPref(k, v){ try { if (typeof localStorage !== 'undefined') localStorage.setItem('ht.pref.' + k, v ? '1' : '0'); } catch {} }
+
+// Shared time-of-day ordering (morning → midday → evening → PRN). Used for sorting meds
+// across the daily view, Summary, and the doctor print sheet. (MED_SLOT_BY_TIME is a
+// separate map because it maps PRN to null rather than a sort position.)
+const TOD_ORDER = { morning: 0, midday: 1, evening: 2, bedtime: 2, prn: 3 };
+
+// Shared HTML-escaper (null-safe). One definition for every module + top-level code.
+const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+// Shared date shift by N days (UTC-safe). Used by the Log strip/calendar and Trends.
+function shiftDate(iso, days) { const d = new Date(iso + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() + days); return d.toISOString().slice(0, 10); }
 
 const SCHEMA = (function(){
 
@@ -616,16 +623,6 @@ function derivedIntensity(symptomType, dayRows) {
 }
 function activeSymptomTypes(data = _data) { return (data.symptomTypes || []).filter((s) => !s.archived); }
 function activeLocations(symptomType) { return (symptomType?.locations || []).filter((l) => !l.archived); }
-function episodeFrequency(data = _data) {
-  const byTypeYear = {}; const byYear = {}; let ongoing = 0;
-  (data.episodes || []).forEach((e) => { const year = (e.startDate || '').slice(0, 4) || 'unknown'; byTypeYear[year] = byTypeYear[year] || {}; byTypeYear[year][e.type] = (byTypeYear[year][e.type] || 0) + 1; byYear[year] = (byYear[year] || 0) + 1; if (e.endDate == null) ongoing += 1; });
-  return { byTypeYear, byYear, ongoing };
-}
-function daysUnwell(year, data = _data, today = new Date()) {
-  let days = 0;
-  (data.episodes || []).forEach((e) => { if (!e.startDate || !e.startDate.startsWith(String(year))) return; const start = new Date(e.startDate + 'T00:00:00Z'); const end = e.endDate ? new Date(e.endDate + 'T00:00:00Z') : today; days += Math.max(1, Math.round((end - start) / 86400000) + 1); });
-  return days;
-}
 function latestLab(lab) { const sorted = [...(lab.results || [])].sort((a, b) => (a.date < b.date ? 1 : -1)); return sorted[0] || null; }
 function labWindow(lab, windowKey, now = new Date()) {
   const all = [...(lab.results || [])].sort((a, b) => (a.date < b.date ? -1 : 1));
@@ -692,12 +689,6 @@ function labPosNeg(lab, result) {
   return null;
 }
 function labGroups(data = _data) { return [...new Set((data.labs || []).map((l) => l.group).filter(Boolean))]; }
-function questionsForSpecialist(specialismId, data = _data, today = new Date()) {
-  const open = (data.questions || []).filter((q) => q.specialismId === specialismId && q.status === 'open');
-  const upcoming = (data.appointments || []).filter((a) => a.specialismId === specialismId && new Date(a.date + 'T00:00:00Z') >= startOfDay(today)).sort((a, b) => (a.date < b.date ? -1 : 1));
-  return { open, nextAppointment: upcoming[0] || null };
-}
-function startOfDay(d) { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; }
 function parseReport(data = _data, meta = _meta) {
   const counts = {}; COLLECTIONS.forEach((c) => (counts[c] = (data[c] || []).length));
   const jointPain = (data.symptomTypes || []).find((s) => s.trackBy === 'locations');
@@ -731,8 +722,6 @@ function setSymptomNote(date, symptomId, locationId, text) {
   return log;
 }
 function getSymptomNote(date, symptomId, locationId, data = _data) { const r = _row(getDailyLog(date, data) || { symptoms: [] }, symptomId, locationId); return r?.note || ''; }
-function setOverallPain(date, val) { const log = ensureLog(date); if (val == null) delete log.overallPain; else log.overallPain = val; return log; }
-function getOverallPain(date, data = _data) { const log = getDailyLog(date, data); return log && typeof log.overallPain === 'number' ? log.overallPain : null; }
 function setMedTaken(date, medId, taken) {
   const log = ensureLog(date); const i = log.medsTaken.findIndex((r) => r.medId === medId);
   if (taken == null) { if (i >= 0) log.medsTaken.splice(i, 1); } else { const row = { medId, taken }; if (i >= 0) log.medsTaken[i] = row; else log.medsTaken.push(row); }
@@ -755,13 +744,12 @@ function medDueOn(m, date) {
   if (m.everyNDays && m.anchorDate) { const diff = Math.round((new Date(date + 'T00:00:00Z') - new Date(m.anchorDate + 'T00:00:00Z')) / 86400000); return diff >= 0 && diff % m.everyNDays === 0; }
   return Array.isArray(m.scheduledDays) && m.scheduledDays.includes(weekdayOf(date));
 }
-const TIME_ORDER = { morning: 0, midday: 1, evening: 2, bedtime: 2, prn: 3 };
 function medTimeOfDay(m) { return m.timeOfDay || 'morning'; }
 // Daily view: only meds flagged track !== false, ordered morning → midday → evening.
 function medsForDate(date, data = _data) {
   const active = (data.medications || []).filter((m) => m.status !== 'stopped' && m.track !== false);
   const isPrn = (m) => m.scheduledDays === 'prn' || (m.status === 'prn' && m.everyNDays == null);
-  const byTime = (a, b) => (TIME_ORDER[medTimeOfDay(a)] - TIME_ORDER[medTimeOfDay(b)]);
+  const byTime = (a, b) => (TOD_ORDER[medTimeOfDay(a)] - TOD_ORDER[medTimeOfDay(b)]);
   const prn = active.filter(isPrn).sort(byTime);
   const scheduled = active.filter((m) => !isPrn(m) && medDueOn(m, date)).sort(byTime);
   return { scheduled, prn };
@@ -865,9 +853,6 @@ function recordDoseChange(medId, { date, dose, note }) {
   m.dose = dose; m.lastDoseChange = date; return m;
 }
 
-// Historic daily entries: delete a whole day's log.
-function clearDay(date) { if (_data.dailyLogs) _data.dailyLogs = _data.dailyLogs.filter((d) => d.date !== date); }
-
 // Export / import the whole document as a file (backup; bridge until OneDrive sync).
 function exportJSON() { return JSON.stringify(_data, null, 2); }
 async function importData(text) {
@@ -880,7 +865,7 @@ async function importData(text) {
   return report;
 }
 
-return { CONFIG, getData, getLoadMeta, subscribe, setActiveSource, getActiveSource, loadData, resetToSeed, saveData, t, tx, specialistLabel, derivedOverall, derivedIntensity, activeSymptomTypes, activeLocations, episodeFrequency, daysUnwell, latestLab, labWindow, activeConditions, excludedList, bigPicture, labStatus, labTrend, labPosNeg, labGroups, questionsForSpecialist, parseReport, weekdayOf, getDailyLog, setSeverity, getSeverity, setSymptomNote, getSymptomNote, setOverallPain, getOverallPain, setMedTaken, getMedTaken, setMedCount, getMedCount, medDueOn, TIME_ORDER, medTimeOfDay, medsForDate, submitSymptoms, requiredMedsOn, symptomsSubmitted, startEpisode, endEpisode, reopenEpisode, setEpisodeNote, ongoingEpisodes, episodesEndedOn, persist, persistLocal, markQuestionAnswered, genId, getRecord, upsert, remove, archiveSymptomType, addSymptomType, renameSymptomType, setSymptomOverall, addLocation, renameLocation, archiveLocation, reorderSymptomTypes, addLabResult, removeLabResult, recordDoseChange, clearDay, exportJSON, importData };
+return { CONFIG, getData, getLoadMeta, subscribe, setActiveSource, getActiveSource, loadData, resetToSeed, saveData, t, tx, specialistLabel, derivedOverall, derivedIntensity, activeSymptomTypes, activeLocations, latestLab, labWindow, activeConditions, excludedList, bigPicture, labStatus, labTrend, labPosNeg, labGroups, parseReport, weekdayOf, getDailyLog, setSeverity, getSeverity, setSymptomNote, getSymptomNote, setMedTaken, getMedTaken, setMedCount, getMedCount, medDueOn, medTimeOfDay, medsForDate, submitSymptoms, requiredMedsOn, symptomsSubmitted, startEpisode, endEpisode, reopenEpisode, setEpisodeNote, ongoingEpisodes, episodesEndedOn, persist, persistLocal, markQuestionAnswered, genId, getRecord, upsert, remove, archiveSymptomType, addSymptomType, renameSymptomType, setSymptomOverall, addLocation, renameLocation, archiveLocation, reorderSymptomTypes, addLabResult, removeLabResult, recordDoseChange, exportJSON, importData };
 })();
 
 const Today = (function(){
@@ -888,7 +873,7 @@ const { tx } = DL;
 
 
 
-const ui = { expanded: new Set(['sym_jointpain']), epFormOpen: false, savedAt: null, noteOpen: new Set(), noteInit: new Set(), scaleOpen: new Set(), confirmClear: false, calView: 'week', calMonth: null, medHist: false, editPick: null };
+const ui = { expanded: new Set(['sym_jointpain']), epFormOpen: false, savedAt: null, noteOpen: new Set(), noteInit: new Set(), scaleOpen: new Set(), calView: 'week', calMonth: null, medHist: false, editPick: null };
 
 const STR = {
   en: { today: 'Today', symptoms: 'Symptoms', meds: 'Medications', asNeeded: 'As needed (PRN)', secRegular: 'Regular', secSupplements: 'Supplements', secTherapies: 'Therapies',
@@ -898,10 +883,7 @@ const STR = {
         name: 'Short label', type: 'Type', start: 'Start date', start2: 'Start', cancel: 'Cancel',
         none: 'none', saved: 'Saved locally', noMeds: 'No medications scheduled for this day.',
         scaleHint: '0 none · 1 noticeable · 2 distracting · 3 interferes · 4 prevents', clear: 'clear',
-        clearDay: 'Clear this day', confirmClear: 'Tap again to clear',
-        overallPain: 'Overall', overallTap: 'Tap to set your score for the day',
-        painLevels: ['No pain','Noticeable','Distracting','Interferes with activities','Prevents activity'],
-        prevDay: 'Previous day', nextDay: 'Next day', noData: 'No data.', sites: 'sites',
+        noData: 'No data.', sites: 'sites',
         rowNotePh: 'Add a detail (optional)…', addNote: 'Add note', done: 'Done', epNotePh: 'Add a note (e.g. still burning today)…', reopen: 'Reopen', morning: 'Morning', midday: 'Midday', evening: 'Evening' },
   es: { today: 'Hoy', symptoms: 'Síntomas', meds: 'Medicación', asNeeded: 'Según necesidad (PRN)', secRegular: 'Pauta fija', secSupplements: 'Suplementos', secTherapies: 'Terapias',
         note: 'Nota (opcional)', notePlaceholder: 'Algo que recordar de hoy…',
@@ -910,22 +892,16 @@ const STR = {
         name: 'Etiqueta corta', type: 'Tipo', start: 'Fecha de inicio', start2: 'Inicio', cancel: 'Cancelar',
         none: 'ninguno', saved: 'Guardado localmente', noMeds: 'No hay medicación programada para este día.',
         scaleHint: '0 ninguno · 1 leve · 2 molesto · 3 interfiere · 4 impide', clear: 'borrar',
-        clearDay: 'Borrar este día', confirmClear: 'Toca otra vez para borrar',
-        overallPain: 'General', overallTap: 'Toca para registrar tu puntuación del día',
-        painLevels: ['Sin dolor','Leve','Molesto','Interfiere con la actividad','Impide la actividad'],
-        prevDay: 'Día anterior', nextDay: 'Día siguiente', noData: 'Sin datos.', sites: 'zonas',
+        noData: 'Sin datos.', sites: 'zonas',
         rowNotePh: 'Añadir un detalle (opcional)…', addNote: 'Añadir nota', done: 'Listo', epNotePh: 'Añadir una nota (p. ej. sigue el ardor hoy)…', reopen: 'Reabrir', morning: 'Mañana', midday: 'Mediodía', evening: 'Noche' },
 };
 const EP_TYPES = {
   en: { cold_flu: 'Cold / flu', infection: 'Infection', gi: 'GI', flare: 'Flare', other: 'Other' },
   es: { cold_flu: 'Resfriado / gripe', infection: 'Infección', gi: 'Digestivo', flare: 'Brote', other: 'Otro' },
 };
-const TIME_LABEL = (T) => ({ morning: T.morning, midday: T.midday, evening: T.evening });
 
 function todayISO() { return new Date().toLocaleDateString('en-CA'); }
 function fmtDate(iso, lang) { const d = new Date(iso + 'T00:00:00'); return d.toLocaleDateString(lang === 'es' ? 'es-ES' : 'en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }); }
-function shiftDate(iso, days) { const d = new Date(iso + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() + days); return d.toISOString().slice(0, 10); }
-function esc(s) { return String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
 
 function sevSelector(symptomId, locationId, value) {
   const ctx = `data-sym="${symptomId}"${locationId ? ` data-loc="${locationId}"` : ''}`;
@@ -946,9 +922,11 @@ function symRow(state, symId, locId, label) {
   if (note && !ui.noteInit.has(key)) { ui.noteOpen.add(key); ui.noteInit.add(key); }
   const noteOpen = ui.noteOpen.has(key);
   const noteBtn = (v != null) ? `<button class="noteicon${note ? ' has' : ''}${noteOpen ? ' on' : ''}" data-note="${key}" aria-label="${STR[lang].addNote}">${NOTE_SVG}</button>` : '';
-  const sevWord = (SEV_WORDS[lang] || SEV_WORDS.en)[v] || '';
-  const control = expanded ? (sevSelector(symId, locId, v) + noteBtn)
-    : (`<button class="sevpick sev-chip sev-${v} sevlabel" data-reopen="${key}" aria-label="${esc(label)} = ${v} ${sevWord}">${v}<span class="sevword">${sevWord}</span></button>` + noteBtn);
+  const sevWord = v > 0 ? ((SEV_WORDS[lang] || SEV_WORDS.en)[v] || '') : '';
+  const chip = sevWord
+    ? `<button class="sevpick sev-chip sev-${v} sevlabel" data-reopen="${key}" aria-label="${esc(label)} = ${v} ${sevWord}">${v}<span class="sevword">${sevWord}</span></button>`
+    : `<button class="sevpick sev-chip sev-${v}" data-reopen="${key}" aria-label="${esc(label)} = ${v}">${v}</button>`;
+  const control = expanded ? (sevSelector(symId, locId, v) + noteBtn) : (chip + noteBtn);
   const noteArea = (v != null && noteOpen) ? `<div class="rownote-wrap"><textarea class="rownote" data-sym="${symId}"${locId ? ` data-loc="${locId}"` : ''} rows="2" placeholder="${STR[lang].rowNotePh}">${esc(note)}</textarea><button class="rownote-done" data-noteclose="${key}" aria-label="${STR[lang].done}">${CHECK_SVG}</button></div>` : '';
   return `<div class="symrow${locId ? ' loc' : ''}">
     <span class="symrow-name as-text">${esc(label)}</span>
@@ -1244,8 +1222,8 @@ async function onClick(e, state, rerender) {
   if (t.dataset.medhist != null) { ui.medHist = true; rerender(); return; }
   if (t.dataset.medback != null) { ui.medHist = false; rerender(); document.getElementById('medsCard')?.scrollIntoView({ block: 'start' }); return; }
   if (t.dataset.editpick != null) { ui.editPick = ui.editPick === t.dataset.editpick ? null : t.dataset.editpick; rerender(); return; }
-  if (t.dataset.today != null) { state.date = todayISO(); ui.savedAt = null; ui.confirmClear = false; rerender(); return; }
-  if (t.dataset.day) { const dd = t.dataset.day; state.date = dd; ui.calView = 'week'; ui.savedAt = null; ui.confirmClear = false; rerender(); return; }
+  if (t.dataset.today != null) { state.date = todayISO(); ui.savedAt = null; rerender(); return; }
+  if (t.dataset.day) { const dd = t.dataset.day; state.date = dd; ui.calView = 'week'; ui.savedAt = null; rerender(); return; }
   if (t.dataset.calview) { ui.calView = t.dataset.calview; if (ui.calView === 'month') ui.calMonth = state.date.slice(0, 7); rerender(); return; }
   if (t.dataset.calnav) { const base = ui.calMonth || state.date.slice(0, 7); const [yy, mm] = base.split('-').map(Number); const nd = new Date(Date.UTC(yy, mm - 1 + Number(t.dataset.calnav), 1)); ui.calMonth = nd.toISOString().slice(0, 7); rerender(); return; }
   if (t.dataset.reopen) { ui.scaleOpen.add(t.dataset.reopen); rerender(); return; }
@@ -1262,7 +1240,6 @@ async function onClick(e, state, rerender) {
   if (t.id === 'epCancel') { ui.epFormOpen = false; rerender(); return; }
   if (t.id === 'epSave') { const name = document.getElementById('epName').value.trim(); const type = document.getElementById('epType').value; const startDate = document.getElementById('epStart').value || state.date; DL.startEpisode({ name, type, startDate }); ui.epFormOpen = false; save(); rerender(); return; }
 }
-async function onChange(e, state, rerender) { if (e.target.id === 'dateInput') { state.date = e.target.value; ui.savedAt = null; rerender(); } }
 let _noteTimer = null;
 function onInput(e, state) {
   if (e.target.classList.contains('rownote')) { DL.setSymptomNote(state.date, e.target.dataset.sym, e.target.dataset.loc || null, e.target.value); }
@@ -1272,7 +1249,7 @@ function onInput(e, state) {
   clearTimeout(_noteTimer); _noteTimer = setTimeout(() => { DL.persist({ silent: true }); }, 600);
 }
 
-return { ui, todayISO, headerHTML, renderToday, onClick, onChange, onInput, dayBandIdx };
+return { ui, todayISO, headerHTML, renderToday, onClick, onInput, dayBandIdx };
 })();
 
 // ---- Shared doctor-readable medication schedule (used by Prep + Records) ----
@@ -1312,7 +1289,6 @@ function medSchedule(m, lang) {
   else if (Array.isArray(m.scheduledDays) && m.scheduledDays.length && m.scheduledDays.length < 7) { freq = m.scheduledDays.map((d) => (T.wd[d] || d)).join('/'); }
   return { xxx, freq };
 }
-function medScheduleStr(m, lang) { const s = medSchedule(m, lang); return [s.xxx, s.freq].filter(Boolean).join(' · '); }
 
 // Doctor-facing print sheet — a clean one-pager (conditions + medications) built
 // from current data, in the current language. Rendered into #printSheet, then
@@ -1336,7 +1312,6 @@ function buildDoctorSheet(lang) {
   }).join('') || `<tr><td colspan="2">${T.none}</td></tr>`;
   // --- Medications, grouped like the Summary tab (Regular / Supplements / Therapies / PRN) ---
   const isPrnMed = (m) => m.scheduledDays === 'prn' || (m.status === 'prn' && m.everyNDays == null);
-  const TOD_ORDER = { morning: 0, midday: 1, evening: 2, bedtime: 2, prn: 3 };
   const byTimeOfDay = (a, b) => ((TOD_ORDER[a.timeOfDay] != null ? TOD_ORDER[a.timeOfDay] : 1) - (TOD_ORDER[b.timeOfDay] != null ? TOD_ORDER[b.timeOfDay] : 1));
   const all = bp.medications;
   const prn = all.filter(isPrnMed);
@@ -1400,14 +1375,13 @@ const { tx, specialistLabel } = DL;
 
 
 
-const ui = { specialistId: null, answering: null, editPick: null, postVisit: null, qExpanded: null, apptView: 'upcoming', apptNotesOpen: new Set(), condView: 'active' };
+const ui = { answering: null, editPick: null, postVisit: null, qExpanded: null, apptView: 'upcoming', apptNotesOpen: new Set(), condView: 'active' };
 
 const STR = {
   en: { dx: 'Diagnosed', conditions: 'Active conditions', activeManaged: 'Conditions', since: 'Since', currentMeds: 'Current medications',
         control: { treated: 'Treating', no_treatment: 'No treatment', adjusting: 'Adjusting' },
         ruledOut: 'Ruled out', other: 'Other', provShort: 'Provisional', none: 'None', revisit: 'may re-test',
-        questionsFor: 'Questions for', markAnswered: 'Mark answered', cont: 'Continue', answerNotePh: 'Add a note (optional)…', medStatus: { tapering: 'tapering off', prn: 'as needed', stopped: 'stopped' }, noQuestions: 'No open questions for this specialist.', noQuestionsAll: 'No open questions.', addQ: 'Add question', appointments: 'Upcoming appointments', pastAppts: 'Past appointments', addAppt: 'Add appointment', noAppt: 'No appointments yet',
-        filterBy: 'Filter by specialist', allSpecialists: 'All specialists', allQuestions: 'All open questions',
+        markAnswered: 'Mark answered', cont: 'Continue', answerNotePh: 'Add a note (optional)…', medStatus: { tapering: 'tapering off', prn: 'as needed', stopped: 'stopped' }, noQuestions: 'No open questions for this specialist.', noQuestionsAll: 'No open questions.', addQ: 'Add question', appointments: 'Upcoming appointments', pastAppts: 'Past appointments', addAppt: 'Add appointment', noAppt: 'No appointments yet',
         secRegular: 'Regular', secSupplements: 'Supplements', secTherapies: 'Therapies', secPrn: 'As needed (PRN)',
         prnLabel: 'PRN', everyOther: 'every other day', everyN: 'every {n} days',
         wd: { mon: 'Mon', tue: 'Tue', wed: 'Wed', thu: 'Thu', fri: 'Fri', sat: 'Sat', sun: 'Sun' },
@@ -1415,8 +1389,7 @@ const STR = {
   es: { dx: 'Diagnóstico', conditions: 'Condiciones activas', activeManaged: 'Condiciones', since: 'Desde', currentMeds: 'Medicación actual',
         control: { treated: 'En tratamiento', no_treatment: 'Sin tratamiento', adjusting: 'Ajustando' },
         ruledOut: 'Descartado', other: 'Otros', provShort: 'Provisional', none: 'Ninguno', revisit: 'puede reevaluarse',
-        questionsFor: 'Preguntas para', markAnswered: 'Marcar respondida', cont: 'Continuar', answerNotePh: 'Añadir una nota (opcional)…', medStatus: { tapering: 'en reducción', prn: 'según necesidad', stopped: 'suspendido' }, noQuestions: 'Sin preguntas pendientes para este especialista.', noQuestionsAll: 'Sin preguntas pendientes.', addQ: 'Añadir pregunta', appointments: 'Próximas citas', pastAppts: 'Citas anteriores', addAppt: 'Añadir cita', noAppt: 'Sin citas todavía',
-        filterBy: 'Filtrar por especialista', allSpecialists: 'Todos los especialistas', allQuestions: 'Todas las preguntas',
+        markAnswered: 'Marcar respondida', cont: 'Continuar', answerNotePh: 'Añadir una nota (opcional)…', medStatus: { tapering: 'en reducción', prn: 'según necesidad', stopped: 'suspendido' }, noQuestions: 'Sin preguntas pendientes para este especialista.', noQuestionsAll: 'Sin preguntas pendientes.', addQ: 'Añadir pregunta', appointments: 'Próximas citas', pastAppts: 'Citas anteriores', addAppt: 'Añadir cita', noAppt: 'Sin citas todavía',
         secRegular: 'Pauta fija', secSupplements: 'Suplementos', secTherapies: 'Terapias', secPrn: 'Según necesidad (PRN)',
         prnLabel: 'PRN', everyOther: 'días alternos', everyN: 'cada {n} días',
         wd: { mon: 'Lun', tue: 'Mar', wed: 'Mié', thu: 'Jue', fri: 'Vie', sat: 'Sáb', sun: 'Dom' },
@@ -1429,7 +1402,6 @@ const STATUS = {
 const STATUS_CLS = { current: 'ok', investigating: 'warn', excluded: 'err', provisionally_excluded: 'prov', resolved: 'ok' };
 function docLine(sp) { const bits = []; if (sp.doctor) bits.push(sp.doctor); if (sp.clinic) bits.push(sp.clinic); return bits.join(' · '); }
 
-function esc(s) { return String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
 function fmtDate(iso, lang) { if (!iso) return ''; return new Date(iso + 'T00:00:00').toLocaleDateString(lang === 'es' ? 'es-ES' : 'en-GB', { day: 'numeric', month: 'short', year: 'numeric' }); }
 
 // Overview (renderBig) and Next (renderQuestions) are rendered directly by the
@@ -1476,7 +1448,6 @@ function renderBig(state) {
     const sub = (tag ? esc(tag) : '') + (tag && m.dose ? ' · ' : '') + (m.dose ? `<b>${esc(m.dose)}</b>` : '');
     return `<div class="drow"><div><div class="dname">${esc(tx(m.name, lang))}</div>${sub ? `<div class="dmeta">${sub}</div>` : ''}</div><div class="dright"><div class="sched">${right}</div></div></div>`;
   };
-  const TOD_ORDER = { morning: 0, midday: 1, evening: 2, bedtime: 2, prn: 3 };
   const byTimeOfDay = (a, b) => ((TOD_ORDER[a.timeOfDay] != null ? TOD_ORDER[a.timeOfDay] : 1) - (TOD_ORDER[b.timeOfDay] != null ? TOD_ORDER[b.timeOfDay] : 1));
   const allMeds = bp.medications;
   const prnMeds = allMeds.filter(isPrnMed);
@@ -1652,18 +1623,12 @@ async function onClick(e, state, rerender) {
   if (t.dataset.continue) { const qid = t.dataset.continue; const ta = document.querySelector('.q-note[data-qnote="' + qid + '"]'); const rec = DL.getRecord('questions', qid); if (rec && ta) { rec.answerNote = rec.answerNote || { en: '', es: '' }; rec.answerNote[state.lang] = ta.value; } DL.markQuestionAnswered(qid); ui.answering = null; await DL.persist(); rerender(); return; }
 }
 
-function onChange(e, state, rerender) {
-  const t = e.target;
-  if (t && t.dataset && t.dataset.spfilter !== undefined) { ui.specialistId = t.value || null; ui.answering = null; rerender(); return; }
-}
-
-return { ui, renderBig, renderQuestions, onClick, onChange };
+return { ui, renderBig, renderQuestions, onClick };
 })();
 
 const Records = (function(){
 const { tx, specialistLabel } = DL;
 const { todayISO } = Today;
-function shiftDate(iso, days) { const d = new Date(iso + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() + days); return d.toISOString().slice(0, 10); }
 
 
 
@@ -1703,10 +1668,8 @@ const MS_ICON = {
   milestone: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/></svg>'
 };
 
-function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
 function fmtDate(iso, lang) { if (!iso) return ''; return new Date(iso + 'T00:00:00').toLocaleDateString(lang === 'es' ? 'es-ES' : 'en-GB', { day: 'numeric', month: 'short', year: 'numeric' }); }
 function fmtMonth(iso, lang) { if (!iso) return ''; return new Date(iso + 'T00:00:00').toLocaleDateString(lang === 'es' ? 'es-ES' : 'en-GB', { month: 'short', year: 'numeric' }); }
-const TREND_ARROW = { up: '↑', down: '↓', flat: '→' };
 const statusDot = (st) => st ? `<span class="lab-dot lab-${st}"></span>` : '';
 const ed = (coll, id) => `<button class="ed-btn" data-edit="${coll}:${id}" aria-label="Edit">✎</button>`;
 const add = (coll, label) => `<button class="btn ghost addbtn" data-add="${coll}">+ ${label}</button>`;
@@ -2372,7 +2335,6 @@ function close() { fcol = null; fs = null; fmode = null; fconfirm = false; ferr 
 
 function gv(o, k) { return k.split('.').reduce((a, p) => (a == null ? a : a[p]), o); }
 function sv(o, k, v) { const ps = k.split('.'); let t = o; for (let i = 0; i < ps.length - 1; i++) { t[ps[i]] = t[ps[i]] || {}; t = t[ps[i]]; } t[ps[ps.length - 1]] = v; }
-function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
 
 function srcOptions(source) {
   const data = DL.getData();
@@ -2715,7 +2677,7 @@ return { getClientId, setClientId, getFilePath, setFilePath, isConfigured, setTe
 })();
 
 (function(){
-const { loadData, getData, getLoadMeta, parseReport, subscribe, resetToSeed, specialistLabel, episodeFrequency, latestLab, tx, exportJSON, importData, setActiveSource } = DL;
+const { loadData, getData, getLoadMeta, parseReport, subscribe, resetToSeed, exportJSON, importData, setActiveSource } = DL;
 const { COLLECTIONS } = SCHEMA;
 OneDrive.setTemplateProvider(function(){ return JSON.parse(JSON.stringify(__HT_TEMPLATE__)); });
 setActiveSource(OneDrive.oneDriveSource);
@@ -2778,9 +2740,6 @@ function wireChrome() {
     if (e.target.id === 'burdenTt') { const t = Math.max(0, Math.round(Number(e.target.value) || 2) - 1); const d = DL.getData(); if (d) { d.meta = d.meta || {}; d.meta.burdenBands = Object.assign({}, d.meta.burdenBands, { t }); DL.persistLocal(); DL.persist(); } render(); return; }
     if (e.target.id === 'burdenVH') { const vhCount = Math.max(2, Math.round(Number(e.target.value) || 2)); const d = DL.getData(); if (d) { d.meta = d.meta || {}; d.meta.burdenBands = Object.assign({}, d.meta.burdenBands, { vhCount }); DL.persistLocal(); DL.persist(); } render(); return; }
     if (Forms.isOpen()) { Forms.onInput(e); return; }
-    if (state.showData) return;
-    if (state.tab === 'today') Today.onChange(e, state, render);
-    else if (state.tab === 'overview' || state.tab === 'next') Appt.onChange(e, state, render);
   });
 }
 function setLang(lang) { state.lang = lang; document.documentElement.lang = lang; document.querySelectorAll('.lang-btn').forEach((b) => b.classList.toggle('is-active', b.dataset.lang === lang)); render(); }
@@ -2904,7 +2863,7 @@ function render() {
     }
   } catch (err) {
     console.error('render failed', err);
-    content = '<div class="card"><h2>Couldn’t load this page</h2><p class="muted small">' + escapeHtml(err && err.message ? err.message : String(err)) + '</p><p class="muted small">Try reloading. If it persists, take a screenshot of this message.</p></div>';
+    content = '<div class="card"><h2>Couldn’t load this page</h2><p class="muted small">' + esc(err && err.message ? err.message : String(err)) + '</p><p class="muted small">Try reloading. If it persists, take a screenshot of this message.</p></div>';
   }
   screen.innerHTML = content + (Forms.isOpen() ? Forms.renderForm() : '');
   const tb = document.querySelector('.topbar'); if (tb) document.documentElement.style.setProperty('--topbar-h', tb.offsetHeight + 'px');
@@ -2919,8 +2878,8 @@ function renderDataScreen() {
   const pr = parseReport(); const v = meta?.validation || { ok: true, errors: [], warnings: [] }; const lang = state.lang;
   const statsHtml = COLLECTIONS.map((c) => '<div class="stat"><div class="n">' + pr.counts[c] + '</div><div class="k">' + c + '</div></div>').join('');
   const verdict = v.ok ? '<span class="badge ok">SCHEMA OK</span>' : '<span class="badge err">' + v.errors.length + ' ERRORS</span>';
-  const errHtml = v.errors.length ? '<details class="msgs" open><summary>' + v.errors.length + ' error(s)</summary><ul class="msglist">' + v.errors.map((e) => '<li>✗ ' + escapeHtml(e) + '</li>').join('') + '</ul></details>' : '';
-  const warnHtml = v.warnings.length ? '<details class="msgs"><summary>' + v.warnings.length + ' note(s)</summary><ul class="msglist">' + v.warnings.map((w) => '<li>! ' + escapeHtml(w) + '</li>').join('') + '</ul></details>' : '';
+  const errHtml = v.errors.length ? '<details class="msgs" open><summary>' + v.errors.length + ' error(s)</summary><ul class="msglist">' + v.errors.map((e) => '<li>✗ ' + esc(e) + '</li>').join('') + '</ul></details>' : '';
+  const warnHtml = v.warnings.length ? '<details class="msgs"><summary>' + v.warnings.length + ' note(s)</summary><ul class="msglist">' + v.warnings.map((w) => '<li>! ' + esc(w) + '</li>').join('') + '</ul></details>' : '';
   const curK = (data.meta && data.meta.burdenBands && typeof data.meta.burdenBands.k === 'number') ? data.meta.burdenBands.k : 2;
   const curVH = (data.meta && data.meta.burdenBands && typeof data.meta.burdenBands.vhCount === 'number') ? data.meta.burdenBands.vhCount : 2;
   const curT = (data.meta && data.meta.burdenBands && typeof data.meta.burdenBands.t === 'number') ? data.meta.burdenBands.t : 1;
@@ -2945,7 +2904,7 @@ function renderDataScreen() {
     '</div>' +
     '</div>' +
     '<div class="card"><h2>Parse report ' + verdict + '</h2>' +
-    '<div class="kv"><span class="k">Source</span><span class="v">' + escapeHtml(pr.source || '') + '</span></div>' +
+    '<div class="kv"><span class="k">Source</span><span class="v">' + esc(pr.source || '') + '</span></div>' +
     errHtml + warnHtml + '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;"><button id="exportBtn" class="btn">⤓ Export data</button><label class="btn ghost" style="cursor:pointer">⤒ Import data<input id="importFile" type="file" accept=".json,application/json" hidden></label><button id="resetSeedBtn" class="btn ghost">↺ Reset to seed</button></div><p class="muted small" style="margin-top:8px">Export saves everything to a <b>health-data.json</b> file you can keep or send to lock in your work. Import loads one back.</p></div>' +
     '<div class="card"><h2>Records parsed</h2><div class="grid">' + statsHtml + '</div></div>';
 }
@@ -2953,18 +2912,17 @@ function odPanel() {
   const configured = OneDrive.isConfigured();
   const signedIn = OneDrive.isSignedIn();
   const status = !configured ? 'Not set up yet — paste your Client ID below, then sign in.'
-    : (signedIn ? ('Signed in as ' + escapeHtml(OneDrive.accountName()) + ' · changes sync to OneDrive automatically.')
+    : (signedIn ? ('Signed in as ' + esc(OneDrive.accountName()) + ' · changes sync to OneDrive automatically.')
                 : 'Set up. Tap “Sign in with Microsoft” to start syncing.');
   const authBtn = configured ? (signedIn
     ? '<button id="odSignOut" class="btn ghost">Sign out</button><button id="odSync" class="btn">Sync now</button>'
     : '<button id="odSignIn" class="btn">Sign in with Microsoft</button>') : '';
   return '<div class="card"><h2>OneDrive sync</h2>' +
     '<p class="muted small">' + status + '</p>' +
-    '<div class="f"><div class="f-label">Microsoft Client ID</div><input id="odClientId" type="text" value="' + escapeHtml(OneDrive.getClientId()) + '" placeholder="paste the Application (client) ID"></div>' +
-    '<details class="msgs"><summary>Advanced: file location in OneDrive</summary><div class="f" style="margin-top:8px"><input id="odPath" type="text" value="' + escapeHtml(OneDrive.getFilePath()) + '"></div></details>' +
+    '<div class="f"><div class="f-label">Microsoft Client ID</div><input id="odClientId" type="text" value="' + esc(OneDrive.getClientId()) + '" placeholder="paste the Application (client) ID"></div>' +
+    '<details class="msgs"><summary>Advanced: file location in OneDrive</summary><div class="f" style="margin-top:8px"><input id="odPath" type="text" value="' + esc(OneDrive.getFilePath()) + '"></div></details>' +
     '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;"><button id="odSaveCfg" class="btn ghost">Save settings</button>' + authBtn + '</div></div>';
 }
-function escapeHtml(s) { return String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
 function downloadJSON() { const blob = new Blob([exportJSON()], { type: 'application/json' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'health-data.json'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(a.href); }
 function registerSW() { if ('serviceWorker' in navigator) { navigator.serviceWorker.register('sw.js').catch((e) => console.warn('SW register failed', e)); } }
 
