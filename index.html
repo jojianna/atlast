@@ -127,6 +127,9 @@ ul.tight { margin: 4px 0 0; padding-left: 18px; } ul.tight li { padding: 1px 0; 
 .f-i18n { display:grid; grid-template-columns:auto 1fr; gap:4px 8px; align-items:center; } .f-i18n span { font-size:11px; color:var(--muted); }
 .f-row label { display:flex; align-items:center; gap:8px; }
 .f-chks { display:flex; flex-wrap:wrap; gap:6px 12px; } .f-chk { display:inline-flex; align-items:center; gap:4px; font-size:13px; }
+.f-radios { display:flex; flex-direction:column; gap:2px; }
+.f-radios .f-radio { display:flex; align-items:center; gap:10px; padding:9px 4px; font-size:15px; cursor:pointer; }
+.f-radios .f-radio input { width:18px; height:18px; margin:0; flex:none; accent-color:var(--teal); }
 .f-rowitem { display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin-bottom:6px; background:var(--chip); padding:6px; border-radius:8px; }
 .f-rowitem input { flex:1 1 80px; border:1px solid var(--line); border-radius:6px; padding:6px; font:inherit; }
 .form-actions { display:flex; align-items:center; gap:8px; margin-top:12px; padding-top:10px; border-top:1px solid var(--line); } .form-actions .spacer { flex:1; }
@@ -336,7 +339,7 @@ ul.tight { margin: 4px 0 0; padding-left: 18px; } ul.tight li { padding: 1px 0; 
 .ds .labgrp .lab-row .lab-val .small{font-weight:400;}
 .ds .btn-mark{border:1px solid var(--teal);background:var(--teal);color:#fff;border-radius:999px;padding:5px 14px;font-size:13px;font-weight:600;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;}
 .ds .btn-mark.wide{display:block;width:100%;padding:11px;border-radius:12px;font-size:14px;}
-.ds .daybar{text-align:center;margin:4px 0 2px;}
+.ds .daybar{text-align:center;margin:6px 0 16px;}
 .ds .daybar.done{color:var(--ok);font-weight:600;padding:10px;}
 .ds .prog-chip.done{background:#dcfce7;color:#15803d;}
 .ds .loc-count{margin-left:2px;white-space:nowrap;}
@@ -885,7 +888,7 @@ const ui = { expanded: new Set(['sym_jointpain']), epFormOpen: false, savedAt: n
 const STR = {
   en: { today: 'Today', symptoms: 'Symptoms', meds: 'Medications', asNeeded: 'As needed (PRN)', secRegular: 'Regular', secSupplements: 'Supplements', secTherapies: 'Therapies',
         episodes: 'Episodes',
-        ongoing: 'Ongoing', startEp: '+ Start an episode', end: 'End today', endedToday: 'Ended',
+        ongoing: 'Ongoing', end: 'End today', endedToday: 'Ended',
         name: 'Short label', start2: 'Start', cancel: 'Cancel',
         none: 'none', saved: 'Saved locally', noMeds: 'No medications scheduled for this day.',
         scaleHint: '0 none · 1 noticeable · 2 distracting · 3 interferes · 4 prevents',
@@ -893,7 +896,7 @@ const STR = {
         rowNotePh: 'Add a detail (optional)…', addNote: 'Add note', done: 'Done', epNotePh: 'Add a note (e.g. still burning today)…', reopen: 'Reopen' },
   es: { today: 'Hoy', symptoms: 'Síntomas', meds: 'Medicación', asNeeded: 'Según necesidad (PRN)', secRegular: 'Pauta fija', secSupplements: 'Suplementos', secTherapies: 'Terapias',
         episodes: 'Episodios',
-        ongoing: 'En curso', startEp: '+ Iniciar un episodio', end: 'Finalizar hoy', endedToday: 'Finalizado',
+        ongoing: 'En curso', end: 'Finalizar hoy', endedToday: 'Finalizado',
         name: 'Etiqueta corta', start2: 'Inicio', cancel: 'Cancelar',
         none: 'ninguno', saved: 'Guardado localmente', noMeds: 'No hay medicación programada para este día.',
         scaleHint: '0 ninguno · 1 leve · 2 molesto · 3 interfiere · 4 impide',
@@ -1153,12 +1156,14 @@ function renderToday(state) {
   const endedToday = DL.episodesEndedOn(date, data);
   const endedHtml = endedToday.map((e) => `<div class="ep-ongoing"><span class="muted">${esc(tx(e.name, lang) || EP_TYPES[lang][e.type])} <span class="pill">${EP_TYPES[lang][e.type] || e.type}</span> <span class="small">${T.endedToday} ${e.endDate}</span></span><button class="btn-sm" data-reopen-ep="${e.id}">↺ ${T.reopen}</button></div>`).join('');
   const typeOpts = Object.entries(EP_TYPES[lang]).map(([k, v]) => `<option value="${k}">${v}</option>`).join('');
-  const epForm = ui.epFormOpen ? `<div class="ep-form"><input id="epName" placeholder="${T.name}" /><div class="ep-form-row"><select id="epType">${typeOpts}</select><input type="date" id="epStart" value="${date}" /></div><div class="ep-form-actions"><button class="btn" id="epSave">${T.start2}</button><button class="btn ghost" id="epCancel">${T.cancel}</button></div></div>` : `<button class="btn ghost wide" id="epStartBtn">${T.startEp}</button>`;
+  // Episode add form is opened by the header ＋ (mirrors Symptoms/Meds) — no separate wide button.
+  const epForm = ui.epFormOpen ? `<div class="ep-form"><input id="epName" placeholder="${T.name}" /><div class="ep-form-row"><select id="epType">${typeOpts}</select><input type="date" id="epStart" value="${date}" /></div><div class="ep-form-actions"><button class="btn" id="epSave">${T.start2}</button><button class="btn ghost" id="epCancel">${T.cancel}</button></div></div>` : '';
   const allEps = (data.episodes || []).slice().sort((a, b) => (a.startDate < b.startDate ? 1 : -1));
   const epEditing = ui.editPick === 'episodes';
   const epPick = allEps.map((e) => `<button class="pickrow" data-edit="episodes:${e.id}">${esc(tx(e.name, lang) || EP_TYPES[lang][e.type])} <span class="muted small">${esc(e.startDate)}${e.endDate ? ' → ' + esc(e.endDate) : ''}</span></button>`).join('') || `<p class="muted small">${T.none}</p>`;
+  const epEditBtns = `<button class="addmini" data-editpick="episodes" aria-label="${lang === 'es' ? 'Editar' : 'Edit'}">${epEditing ? '✕' : '✎'}</button><button class="addmini" id="epStartBtn" aria-label="${lang === 'es' ? 'Iniciar un episodio' : 'Start an episode'}">＋</button>`;
   const savedNote = ui.savedAt ? `<div class="muted small saved-tag">✓ ${T.saved} · ${ui.savedAt}</div>` : '';
-  const epCardHtml = getPref('hideEpisodes') ? '' : `<div class="card"><div class="card-h"><h2>${T.episodes}</h2><button class="addmini" data-editpick="episodes" aria-label="${lang === 'es' ? 'Editar' : 'Edit'}">${epEditing ? '✕' : '✎'}</button></div>${epEditing ? `<div class="muted small" style="margin:2px 0 6px">${lang === 'es' ? 'Elige cuál editar:' : 'Choose which to edit:'}</div>${epPick}` : `${ongoing.length ? `<div class="subhead">${T.ongoing}</div>${ongoingHtml}` : ''}${endedHtml}${epForm}`}</div>`;
+  const epCardHtml = getPref('hideEpisodes') ? '' : `<div class="card"><div class="card-h"><h2>${T.episodes}</h2><span class="hgrp">${epEditBtns}</span></div>${epEditing ? `<div class="muted small" style="margin:2px 0 6px">${lang === 'es' ? 'Elige cuál editar:' : 'Choose which to edit:'}</div>${epPick}` : `${ongoing.length ? `<div class="subhead">${T.ongoing}</div>${ongoingHtml}` : ''}${endedHtml}${epForm}`}</div>`;
   return `<div class="ds">${head}
     ${symptomsCard}
     <div class="card" id="medsCard"><div class="card-h"><h2>${T.meds}</h2><span class="hgrp">${medEditBtns}</span></div>${medEditing ? `<div class="muted small" style="margin:2px 0 6px">${lang === 'es' ? 'Elige cuál editar:' : 'Choose which to edit:'}</div>${medPick}` : medsBody}</div>
@@ -1200,7 +1205,7 @@ async function onClick(e, state, rerender) {
   if (t.id === 'markZero') { DL.submitSymptoms(state.date); save(); rerender(); return; }
   if (t.dataset.endEp) { DL.endEpisode(t.dataset.endEp, state.date); save(); rerender(); return; }
   if (t.dataset.reopenEp) { DL.reopenEpisode(t.dataset.reopenEp); save(); rerender(); return; }
-  if (t.id === 'epStartBtn') { ui.epFormOpen = true; rerender(); return; }
+  if (t.id === 'epStartBtn') { ui.epFormOpen = !ui.epFormOpen; rerender(); return; }
   if (t.id === 'epCancel') { ui.epFormOpen = false; rerender(); return; }
   if (t.id === 'epSave') { const name = document.getElementById('epName').value.trim(); const type = document.getElementById('epType').value; const startDate = document.getElementById('epStart').value || state.date; DL.startEpisode({ name, type, startDate }); ui.epFormOpen = false; save(); rerender(); return; }
 }
@@ -2222,7 +2227,7 @@ const SPECS = {
     { key: 'anchorDate', type: 'date', label: 'Anchor date (a day it is due)' },
     { key: 'timeOfDay', type: 'seg', label: 'Time of day', options: [{ v: 'morning', l: 'Morning' }, { v: 'midday', l: 'Midday' }, { v: 'evening', l: 'Evening' }] },
     { key: 'track', type: 'checkbox', label: 'Track daily (show in the daily check-off)' },
-    { key: 'category', type: 'seg', label: 'Category', options: [{ v: 'prescription', l: 'Prescription' }, { v: 'supplement', l: 'Supplement' }, { v: 'otc', l: 'OTC' }, { v: 'therapy', l: 'Therapy' }] },
+    { key: 'category', type: 'radio', label: 'Category', options: [{ v: 'prescription', l: 'Prescription' }, { v: 'supplement', l: 'Supplement' }, { v: 'otc', l: 'OTC (over-the-counter)' }, { v: 'therapy', l: 'Therapy' }] },
     { key: 'purpose', type: 'i18n', label: 'Purpose' },
     { key: 'status', type: 'select', label: 'Status', options: ['active', 'tapering', 'stopped'] },
     { key: 'startDate', type: 'date', label: 'Started' },
@@ -2316,6 +2321,7 @@ function field(f) {
   if (f.type === 'date') return `<div class="f">${L}<input type="date" data-fkey="${f.key}" value="${esc(gv(fs, f.key) ?? '')}"></div>`;
   if (f.type === 'checkbox') return `<div class="f f-row"><label><input type="checkbox" data-fkey="${f.key}" data-bool ${gv(fs, f.key) ? 'checked' : ''}> ${f.label}</label></div>`;
   if (f.type === 'seg') { const cur = gv(fs, f.key); const btns = (f.options || []).map((o) => { const v = typeof o === 'string' ? o : o.v; const l = typeof o === 'string' ? o : o.l; return `<button type="button" class="${cur === v ? 'on' : ''}" data-formaction="segpick" data-segkey="${f.key}" data-segval="${v}">${esc(l)}</button>`; }).join(''); return `<div class="f">${L}<div class="medseg" style="flex-wrap:wrap">${btns}</div></div>`; }
+  if (f.type === 'radio') { const cur = gv(fs, f.key); const items = (f.options || []).map((o) => { const v = typeof o === 'string' ? o : o.v; const l = typeof o === 'string' ? o : o.l; return `<label class="f-radio"><input type="radio" name="rf_${f.key}" data-fkey="${f.key}" value="${v}" ${cur === v ? 'checked' : ''}> <span>${esc(l)}</span></label>`; }).join(''); return `<div class="f">${L}<div class="f-radios">${items}</div></div>`; }
   if (f.type === 'i18n') { const v = gv(fs, f.key) || { en: '', es: '' }; const mk = (lang) => f.textarea ? `<textarea data-fkey="${f.key}" data-lang="${lang}" rows="2" placeholder="${esc(f.ph || '')}">${esc(v[lang])}</textarea>` : `<input type="text" data-fkey="${f.key}" data-lang="${lang}" value="${esc(v[lang])}" placeholder="${esc(f.ph || '')}">`; return `<div class="f">${L}${mk('en')}</div>`; }
   if (f.type === 'datalist') { const opts = (f.source === 'labGroups' ? DL.labGroups() : []).map((g) => `<option value="${esc(g)}"></option>`).join(''); const id = 'dl_' + f.key.replace(/\./g, '_'); return `<div class="f">${L}<input type="text" list="${id}" data-fkey="${f.key}" value="${esc(gv(fs, f.key) ?? '')}"><datalist id="${id}">${opts}</datalist></div>`; }
   if (f.type === 'select') { const cur = gv(fs, f.key); const blank = (f.required && !cur) ? '<option value="" selected disabled>— Choose —</option>' : (f.optional ? '<option value="">—</option>' : ''); const opts = f.options ? f.options.map((o) => `<option value="${o}" ${cur === o ? 'selected' : ''}>${o}</option>`).join('') : srcOptions(f.source).map((o) => `<option value="${o.v}" ${cur === o.v ? 'selected' : ''}>${esc(o.l)}</option>`).join(''); return `<div class="f">${L}<select data-fkey="${f.key}">${blank}${opts}</select></div>`; }
@@ -2332,16 +2338,27 @@ function medStatusBadge(st) {
   const m = map[st] || map.active;
   return `<div style="display:inline-block;background:${m[0]};color:${m[1]};font-size:12px;font-weight:600;padding:3px 10px;border-radius:999px;margin:0 0 12px">${m[2]}</div>`;
 }
+// Map a "how often" choice onto the underlying schedule fields. Shared by the radios (via onInput) so
+// the control and the data stay in one place.
+function applyMedFreq(v) {
+  if (v === 'prn') { fs.scheduledDays = 'prn'; fs.everyNDays = undefined; fs.anchorDate = undefined; fs.timeOfDay = 'prn'; }
+  else {
+    if (fs.timeOfDay === 'prn') fs.timeOfDay = 'morning';
+    if (v === 'daily') { fs.scheduledDays = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']; fs.everyNDays = undefined; fs.anchorDate = undefined; }
+    else if (v === 'weekly') { if (!Array.isArray(fs.scheduledDays) || fs.scheduledDays.length === 7) fs.scheduledDays = ['mon']; fs.everyNDays = undefined; fs.anchorDate = undefined; }
+    else if (v === 'everyn') { fs.scheduledDays = null; if (fs.everyNDays == null) fs.everyNDays = 2; if (!fs.anchorDate) fs.anchorDate = fs.startDate || medToday(); }
+  }
+}
 function medFreqControlHtml(F) {
   const isPrn = fs.scheduledDays === 'prn';
   const isInterval = !isPrn && fs.everyNDays != null;
   const allDays = Array.isArray(fs.scheduledDays) && fs.scheduledDays.length === 7;
   const cur = isPrn ? 'prn' : (isInterval ? 'everyn' : (allDays ? 'daily' : 'weekly'));
-  const btn = (v, l) => `<button type="button" class="${cur === v ? 'on' : ''}" data-formaction="medfreq" data-freq="${v}">${l}</button>`;
-  const seg = `<div class="medseg">${btn('daily', 'Daily')}${btn('weekly', 'Weekly')}${btn('everyn', 'Every N days')}${btn('prn', 'As needed')}</div>`;
+  const radio = (v, l) => `<label class="f-radio"><input type="radio" name="rf_medfreq" data-medfreq="${v}" data-rerender ${cur === v ? 'checked' : ''}> <span>${l}</span></label>`;
+  const opts = `<div class="f-radios">${radio('daily', 'Daily')}${radio('weekly', 'Weekly')}${radio('everyn', 'Every N days')}${radio('prn', 'As needed')}</div>`;
   const days = cur === 'weekly' ? field(F.scheduledDays) : '';
   const everyn = cur === 'everyn' ? field(Object.assign({}, F.everyNDays, { label: 'Every how many days', showIf: null })) : '';
-  return `<div class="f"><div class="f-label">How often</div>${seg}${days}${everyn}</div>`;
+  return `<div class="f"><div class="f-label">How often</div>${opts}${days}${everyn}</div>`;
 }
 function medFormBody(spec) {
   const F = {}; spec.fields.forEach((f) => { F[f.key] = f; });
@@ -2375,17 +2392,18 @@ function medFormBody(spec) {
     actions,
     dosePanel,
     stoppedDate,
-    field(F.dose),
-    field(Object.assign({}, F.purpose, { label: "What it's for", ph: 'free text — e.g. NSAID for joint pain' })),
-    medFreqControlHtml(F),
-    fs.scheduledDays === 'prn' ? '' : field(F.timeOfDay),
-    field(F.track),
     field(F.category),
+    field(F.dose),
+    medFreqControlHtml(F),
+    field(F.track),
+    field(Object.assign({}, F.purpose, { label: "What it's for", ph: 'free text — e.g. NSAID for joint pain' })),
+    fs.scheduledDays === 'prn' ? '' : field(F.timeOfDay),
     field(F.startDate),
   ].join('');
+  // Status is set via the Stop/Resume actions above (edit only); no reason to show it when adding.
   const adv = [
     field(F.freqLabel) + '<div class="muted small" style="margin-top:-4px">overrides the 0-0-1 schedule, e.g. showing "as needed" instead</div>',
-    field(F.status),
+    isAdd ? '' : field(F.status),
     field(F.lastDoseChange),
     field(F.doseHistory),
     field(F.notes),
@@ -2448,6 +2466,7 @@ function onInput(e) {
   if (!fcol) return;
   const el = e.target; const k = el.dataset.fkey; const rowKey = el.dataset.row;
   if (el.dataset.dosedraft !== undefined) { fdoseDraft = fdoseDraft || {}; fdoseDraft[el.dataset.dosedraft] = el.value; return; }
+  if (el.dataset.medfreq !== undefined) { applyMedFreq(el.dataset.medfreq); return; } // rerender comes from the change listener (data-rerender)
   if (rowKey) {
     const idx = Number(el.dataset.idx); const sub = el.dataset.sub; const lang = el.dataset.lang;
     fs[rowKey] = fs[rowKey] || []; fs[rowKey][idx] = fs[rowKey][idx] || {};
@@ -2506,14 +2525,6 @@ async function onClick(e, rerender) {
   if (a === 'dosepanel') { fdosePanel = true; fdoseDraft = { dose: fs.dose || '', date: medToday() }; rerender(); return true; }
   if (a === 'dosecancel') { fdosePanel = false; fdoseDraft = null; rerender(); return true; }
   if (a === 'dosesave') { const d = fdoseDraft || {}; const dt = d.date || medToday(); if (!Array.isArray(fs.doseHistory)) fs.doseHistory = []; fs.doseHistory.unshift({ date: dt, dose: d.dose || '', note: '' }); if (d.dose) fs.dose = d.dose; fs.lastDoseChange = dt; fdosePanel = false; fdoseDraft = null; rerender(); return true; }
-  if (a === 'medfreq') { const v = t.dataset.freq;
-    if (v === 'prn') { fs.scheduledDays = 'prn'; fs.everyNDays = undefined; fs.anchorDate = undefined; fs.timeOfDay = 'prn'; }
-    else { if (fs.timeOfDay === 'prn') fs.timeOfDay = 'morning';
-      if (v === 'daily') { fs.scheduledDays = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']; fs.everyNDays = undefined; fs.anchorDate = undefined; }
-      else if (v === 'weekly') { if (!Array.isArray(fs.scheduledDays) || fs.scheduledDays.length === 7) fs.scheduledDays = ['mon']; fs.everyNDays = undefined; fs.anchorDate = undefined; }
-      else if (v === 'everyn') { fs.scheduledDays = null; if (fs.everyNDays == null) fs.everyNDays = 2; if (!fs.anchorDate) fs.anchorDate = fs.startDate || medToday(); }
-    }
-    rerender(); return true; }
   if (a === 'archivetoggle') { DL.archiveSymptomType(fs.id, !fs.archived); await DL.persist(); close(); rerender(); return true; }
   if (a === 'delete') {
     if (!fconfirm) { fconfirm = true; rerender(); return true; }
