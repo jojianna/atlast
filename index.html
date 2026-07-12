@@ -60,6 +60,8 @@ details.msgs { margin-top:8px; } details.msgs summary { cursor:pointer; font-siz
 .navbtn { border:0; background:var(--chip); width:40px; height:40px; border-radius:50%; font-size:22px; color:var(--teal-d); cursor:pointer; } .navbtn:disabled { opacity:.35; }
 .sym { padding:8px 0; border-bottom:1px solid var(--line); } .sym:last-child { border-bottom:0; } .sym.loc { padding-left:6px; }
 .sym-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; } .sym-head.expandable { cursor:pointer; }
+/* Group header is a <button> for keyboard access; strip the UA chrome so it matches the row it replaced. */
+button.sym-head { background:none; border-left:0; border-right:0; border-bottom:0; width:100%; font:inherit; color:inherit; text-align:left; }
 .sym-name { font-weight:600; } .located .loc-list { border-left:3px solid var(--chip); padding-left:10px; margin-top:4px; }
 .sev-row { display:grid; grid-template-columns:repeat(5,1fr); gap:6px; }
 .sev { border:1px solid var(--line); background:#fff; color:var(--muted); border-radius:9px; padding:9px 0; font-size:15px; font-weight:700; cursor:pointer; touch-action:manipulation; -webkit-tap-highlight-color:transparent; user-select:none; }
@@ -727,7 +729,7 @@ function setMedTaken(date, medId, taken) {
   if (taken == null) { if (i >= 0) log.medsTaken.splice(i, 1); } else { const row = { medId, taken }; if (i >= 0) log.medsTaken[i] = row; else log.medsTaken.push(row); }
   return log;
 }
-function getMedTaken(date, medId, data = _data) { const log = getDailyLog(date, data); const row = log?.medsTaken.find((r) => r.medId === medId); return row ? row.taken : null; }
+function getMedTaken(date, medId, data = _data) { const log = getDailyLog(date, data); const row = log?.medsTaken?.find((r) => r.medId === medId); return row ? row.taken : null; }
 // PRN dose counter (e.g. "took ibuprofen 4 times today"). Stored on the same medsTaken row
 // as an optional `count`; `taken` is kept in lockstep (true whenever count>0) so existing
 // adherence code that reads getMedTaken keeps working unchanged. count<=0 removes the row,
@@ -739,7 +741,7 @@ function setMedCount(date, medId, count) {
   else { const row = { medId, taken: true, count: n }; if (i >= 0) log.medsTaken[i] = row; else log.medsTaken.push(row); }
   return log;
 }
-function getMedCount(date, medId, data = _data) { const log = getDailyLog(date, data); const row = log?.medsTaken.find((r) => r.medId === medId); return row && typeof row.count === 'number' ? row.count : 0; }
+function getMedCount(date, medId, data = _data) { const log = getDailyLog(date, data); const row = log?.medsTaken?.find((r) => r.medId === medId); return row && typeof row.count === 'number' ? row.count : 0; }
 function medDueOn(m, date) {
   if (m.everyNDays && m.anchorDate) { const diff = Math.round((new Date(date + 'T00:00:00Z') - new Date(m.anchorDate + 'T00:00:00Z')) / 86400000); return diff >= 0 && diff % m.everyNDays === 0; }
   return Array.isArray(m.scheduledDays) && m.scheduledDays.includes(weekdayOf(date));
@@ -812,14 +814,14 @@ function remove(collection, id) {
 function archiveSymptomType(id, archived = true) { const s = getRecord('symptomTypes', id); if (s) s.archived = archived; return s; }
 function addSymptomType({ en, es, trackBy = 'single' }) {
   const s = { id: genId('sym'), name: { en: en || '', es: es || '' }, trackBy, archived: false, addedDate: new Date().toISOString().slice(0, 10), locations: [] };
-  if (trackBy === 'locations') s.overall = 'max';
+  if (trackBy === 'locations') s.overall = 'sum';
   (_data.symptomTypes = _data.symptomTypes || []).push(s); return s;
 }
 function renameSymptomType(id, en, es) { const s = getRecord('symptomTypes', id); if (s) { s.name = { en, es }; } return s; }
 function setSymptomOverall(id, overall) { const s = getRecord('symptomTypes', id); if (s) s.overall = overall; return s; }
 function addLocation(symId, en, es) {
   const s = getRecord('symptomTypes', symId); if (!s) return null;
-  s.trackBy = 'locations'; if (!s.overall) s.overall = 'max';
+  s.trackBy = 'locations'; if (!s.overall) s.overall = 'sum';
   const loc = { id: genId('loc'), name: { en: en || '', es: es || '' }, addedDate: new Date().toISOString().slice(0, 10), archived: false };
   (s.locations = s.locations || []).push(loc); return loc;
 }
@@ -1089,7 +1091,7 @@ function renderToday(state) {
     }
     const locsArr = DL.activeLocations(s);
     const locs = locsArr.map((l) => symRow(state, s.id, l.id, tx(l.name, lang))).join('');
-    return `<div class="symrow located-head sym-head expandable" data-expand="${s.id}"><span class="symrow-name as-text">${esc(tx(s.name, lang))} <span class="muted small loc-count">${open ? '▾' : '▸'}</span></span><span class="chipgrp">${chip}${sumChip}</span></div>
+    return `<button type="button" class="symrow located-head sym-head expandable" data-expand="${s.id}" aria-expanded="${open}"><span class="symrow-name as-text">${esc(tx(s.name, lang))} <span class="muted small loc-count">${open ? '▾' : '▸'}</span></span><span class="chipgrp">${chip}${sumChip}</span></button>
     <div class="loc-list" ${open ? '' : 'hidden'}>${locs}</div>`;
   }).join('');
   const complete = isComplete(date);
@@ -1183,8 +1185,11 @@ async function onClick(e, state, rerender) {
   document.querySelectorAll('.rownote').forEach((el) => DL.setSymptomNote(state.date, el.dataset.sym, el.dataset.loc || null, el.value));
   document.querySelectorAll('.epnote').forEach((el) => DL.setEpisodeNote(el.dataset.epnote, 'en', el.value));
   if (t.dataset.editpick != null) { ui.editPick = ui.editPick === t.dataset.editpick ? null : t.dataset.editpick; rerender(); return; }
-  if (t.dataset.today != null) { state.date = todayISO(); ui.savedAt = null; rerender(); return; }
-  if (t.dataset.day) { const dd = t.dataset.day; state.date = dd; ui.calView = 'week'; ui.savedAt = null; rerender(); return; }
+  // Per-row UI state is keyed by symptom, not date — clear it on any date change so expanded ratings
+  // and open note boxes don't bleed from one day to another.
+  const resetRowUI = () => { ui.scaleOpen.clear(); ui.noteOpen.clear(); ui.noteInit.clear(); };
+  if (t.dataset.today != null) { state.date = todayISO(); ui.savedAt = null; resetRowUI(); rerender(); return; }
+  if (t.dataset.day) { const dd = t.dataset.day; state.date = dd; ui.calView = 'week'; ui.savedAt = null; resetRowUI(); rerender(); return; }
   if (t.dataset.calview) { ui.calView = t.dataset.calview; if (ui.calView === 'month') ui.calMonth = state.date.slice(0, 7); rerender(); return; }
   if (t.dataset.calnav) { const base = ui.calMonth || state.date.slice(0, 7); const [yy, mm] = base.split('-').map(Number); const nd = new Date(Date.UTC(yy, mm - 1 + Number(t.dataset.calnav), 1)); ui.calMonth = nd.toISOString().slice(0, 7); rerender(); return; }
   if (t.dataset.reopen) { ui.scaleOpen.add(t.dataset.reopen); rerender(); return; }
@@ -2276,7 +2281,7 @@ const SPECS = {
     { key: 'name', type: 'i18n', label: 'Name' },
     { key: 'trackBy', type: 'seg', label: 'Track by', options: [{ v: 'single', l: 'Single' }, { v: 'locations', l: 'Group' }], showIf: () => fmode === 'add' },
     { key: 'onsetDate', type: 'date', label: 'Start date (when it began — for the timeline)', showIf: (s) => s.trackBy === 'single' },
-    { key: 'overall', type: 'select', label: 'Group score (how members combine)', options: ['max', 'mean', 'sum'], showIf: (s) => s.trackBy === 'locations' },
+    // Groups always roll up as 'sum' (severity × breadth) — the aggregation isn't user-configurable.
     { key: 'locations', type: 'locrows', label: 'Members', showIf: (s) => s.trackBy === 'locations' },
     { key: 'archived', type: 'checkbox', label: 'Archived (hidden from daily log)', showIf: () => fmode === 'edit' },
   ], defaults: { name: { en: '', es: '' }, trackBy: 'single', onsetDate: null, archived: false, locations: [] } },
@@ -2407,7 +2412,6 @@ function symFormBody(spec) {
     groupBlock = `<div class="f"><div class="f-label">Group</div><select data-fkey="_groupId" data-rerender><option value="" ${cur === '' ? 'selected' : ''} disabled>— Choose a group —</option>${gopts}<option value="__new__" ${cur === '__new__' ? 'selected' : ''}>+ New group…</option></select></div>`;
     if (cur === '__new__') {
       groupBlock += `<div class="f"><div class="f-label">New group name</div><input type="text" data-fkey="_newGroup" value="${esc(fs._newGroup || '')}" placeholder="e.g. Joint pain"></div>`;
-      groupBlock += field({ key: '_newGroupOverall', type: 'select', label: 'Group score (how members combine)', options: ['max', 'mean', 'sum'] });
     }
   }
   const startField = field(Object.assign({}, F.onsetDate, { showIf: null }));
@@ -2522,7 +2526,7 @@ async function onClick(e, rerender) {
           const gName = (fs._newGroup || '').trim();
           if (!gName) { ferr = 'Please name the new group.'; rerender(); return true; }
           grp = DL.addSymptomType({ en: gName, trackBy: 'locations' });
-          grp.overall = fs._newGroupOverall || 'max';
+          grp.overall = 'sum';
         } else {
           grp = DL.getRecord('symptomTypes', sel);
           if (!grp) { ferr = 'That group no longer exists.'; rerender(); return true; }
