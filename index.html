@@ -1471,14 +1471,11 @@ function renderBig(state) {
     let statusLbl = '';
     if (m.status && m.status !== 'active' && !isPrnMed(m)) {
       statusLbl = (T.medStatus && T.medStatus[m.status]) || m.status;
-      const note = m.statusNote ? (m.statusNote[lang] || m.statusNote.en) : '';
-      if (note) statusLbl += ' ' + note;
     }
     let right;
     if (sch.xxx) { const sub = [sch.freq, statusLbl].filter(Boolean).join(' · '); right = `${esc(sch.xxx)}${sub ? `<span class="f">${esc(sub)}</span>` : ''}`; }
     else { right = `<span class="f">${esc(sch.freq || statusLbl)}</span>`; }
-    const firstCond = (m.conditionIds || [])[0];
-    const tag = (firstCond && condById[firstCond]) ? tx(condById[firstCond].name, lang) : (tx(m.purpose, lang) || '');
+    const tag = tx(m.purpose, lang) || '';
     const sub = (tag ? esc(tag) : '') + (tag && m.dose ? ' · ' : '') + (m.dose ? `<b>${esc(m.dose)}</b>` : '');
     return `<div class="drow"><div><div class="dname">${esc(tx(m.name, lang))}</div>${sub ? `<div class="dmeta">${sub}</div>` : ''}</div><div class="dright"><div class="sched">${right}</div></div></div>`;
   };
@@ -2295,24 +2292,21 @@ const SPECS = {
   medications: { title: 'Medication', fields: [
     { key: 'name', type: 'i18n', label: 'Name' },
     { key: 'dose', type: 'text', label: 'Dose' },
-    { key: 'freqLabel', type: 'i18n', label: 'Prep frequency label (PRN cadence, e.g. "As needed (~2-3x/week)") — leave blank to auto-compute' },
-    { key: 'cadence', type: 'select', label: 'Cadence', options: ['weekly', 'interval', 'prn'] },
-    { key: 'scheduledDays', type: 'weekdays', label: 'Days', showIf: (s) => s.cadence === 'weekly' },
-    { key: 'everyNDays', type: 'number', label: 'Every N days', showIf: (s) => s.cadence === 'interval' },
-    { key: 'anchorDate', type: 'date', label: 'Anchor date (a day it is due)', showIf: (s) => s.cadence === 'interval' },
+    { key: 'freqLabel', type: 'i18n', label: 'Alternate dosing label' },
+    { key: 'scheduledDays', type: 'weekdays', label: 'Days' },
+    { key: 'everyNDays', type: 'number', label: 'Every how many days' },
+    { key: 'anchorDate', type: 'date', label: 'Anchor date (a day it is due)' },
     { key: 'timeOfDay', type: 'select', label: 'Time of day', options: ['morning', 'midday', 'evening', 'prn'] },
-    { key: 'track', type: 'checkbox', label: 'Track daily (show in the Today med check-off)' },
-    { key: 'category', type: 'select', label: 'Category (prescription/supplement/therapy shown to doctor; otc hidden)', options: ['prescription', 'supplement', 'otc', 'therapy'] },
+    { key: 'track', type: 'checkbox', label: 'Track daily (show in the daily check-off)' },
+    { key: 'category', type: 'select', label: 'Category', options: ['prescription', 'supplement', 'otc', 'therapy'] },
     { key: 'purpose', type: 'i18n', label: 'Purpose' },
-    { key: 'conditionIds', type: 'multiselect', label: 'For condition(s)', source: 'conditions' },
-    { key: 'status', type: 'select', label: 'Status', options: ['active', 'tapering', 'stopped', 'prn'] },
-    { key: 'statusNote', type: 'i18n', label: 'Status note (e.g. "from 60 mg") — shown under the schedule in Prep' },
+    { key: 'status', type: 'select', label: 'Status', options: ['active', 'tapering', 'stopped'] },
     { key: 'startDate', type: 'date', label: 'Started' },
     { key: 'stopDate', type: 'date', label: 'Stopped' },
     { key: 'lastDoseChange', type: 'date', label: 'Last dose change' },
     { key: 'doseHistory', type: 'rows', label: 'Dose history', sub: [{ key: 'date', type: 'date', label: 'Date' }, { key: 'dose', type: 'text', label: 'Dose' }, { key: 'note', type: 'text', label: 'Note' }] },
     { key: 'notes', type: 'i18n', label: 'Notes', textarea: true },
-  ], defaults: { name: { en: '', es: '' }, dose: '', freqLabel: { en: '', es: '' }, cadence: 'weekly', scheduledDays: ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'], timeOfDay: 'morning', track: true, category: 'prescription', purpose: { en: '', es: '' }, conditionIds: [], status: 'active', statusNote: { en: '', es: '' }, startDate: null, stopDate: null, lastDoseChange: null, doseHistory: [], notes: { en: '', es: '' } } },
+  ], defaults: { name: { en: '', es: '' }, dose: '', freqLabel: { en: '', es: '' }, scheduledDays: ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'], timeOfDay: 'morning', track: true, category: 'prescription', purpose: { en: '', es: '' }, conditionIds: [], status: 'active', startDate: null, stopDate: null, lastDoseChange: null, doseHistory: [], notes: { en: '', es: '' } } },
   episodes: { title: 'Episode', fields: [
     { key: 'name', type: 'i18n', label: 'Name', enOnly: true },
     { key: 'type', type: 'select', label: 'Type', options: ['cold_flu', 'infection', 'gi', 'flare', 'other'] },
@@ -2376,7 +2370,6 @@ function open(collection, id, prefill) {
   if (!id && prefill) Object.assign(fs, prefill);
   // New symptom: default the start date to today (user can back-date it in the form).
   if (!id && collection === 'symptomTypes' && fs.onsetDate == null) fs.onsetDate = new Date().toISOString().slice(0, 10);
-  if (collection === 'medications') fs.cadence = fs.everyNDays != null ? 'interval' : (fs.scheduledDays === 'prn' ? 'prn' : 'weekly');
 }
 function close() { fcol = null; fs = null; fmode = null; fconfirm = false; ferr = ''; fdosePanel = false; fdoseDraft = null; }
 
@@ -2414,15 +2407,15 @@ function medStatusBadge(st) {
   return `<div style="display:inline-block;background:${m[0]};color:${m[1]};font-size:12px;font-weight:600;padding:3px 10px;border-radius:999px;margin:0 0 12px">${m[2]}</div>`;
 }
 function medFreqControlHtml(F) {
-  const isPrn = fs.scheduledDays === 'prn' || fs.cadence === 'prn';
-  const isInterval = fs.cadence === 'interval' || fs.everyNDays != null;
+  const isPrn = fs.scheduledDays === 'prn';
+  const isInterval = !isPrn && fs.everyNDays != null;
   const allDays = Array.isArray(fs.scheduledDays) && fs.scheduledDays.length === 7;
-  const cur = isPrn ? 'prn' : (isInterval ? 'custom' : (allDays ? 'daily' : 'weekly'));
-  const btn = (v, l) => `<button class="${cur === v ? 'on' : ''}" data-formaction="medfreq" data-freq="${v}">${l}</button>`;
-  const seg = `<div class="medseg">${btn('daily', 'Daily')}${btn('weekly', 'Weekly')}${btn('prn', 'As needed')}</div>`;
-  const note = cur === 'custom' ? `<div class="muted small" style="margin-top:-4px">Custom schedule — set in Advanced options.</div>` : '';
+  const cur = isPrn ? 'prn' : (isInterval ? 'everyn' : (allDays ? 'daily' : 'weekly'));
+  const btn = (v, l) => `<button type="button" class="${cur === v ? 'on' : ''}" data-formaction="medfreq" data-freq="${v}">${l}</button>`;
+  const seg = `<div class="medseg">${btn('daily', 'Daily')}${btn('weekly', 'Weekly')}${btn('everyn', 'Every N days')}${btn('prn', 'As needed')}</div>`;
   const days = cur === 'weekly' ? field(F.scheduledDays) : '';
-  return `<div class="f"><div class="f-label">How often</div>${seg}${note}${days}</div>`;
+  const everyn = cur === 'everyn' ? field(Object.assign({}, F.everyNDays, { label: 'Every how many days', showIf: null })) : '';
+  return `<div class="f"><div class="f-label">How often</div>${seg}${days}${everyn}</div>`;
 }
 function medFormBody(spec) {
   const F = {}; spec.fields.forEach((f) => { F[f.key] = f; });
@@ -2460,10 +2453,17 @@ function medFormBody(spec) {
     field(Object.assign({}, F.purpose, { label: "What it's for" })),
     medFreqControlHtml(F),
     field(F.timeOfDay),
+    field(F.track),
+    field(F.category),
     field(F.startDate),
   ].join('');
-  const advKeys = ['freqLabel', 'cadence', 'everyNDays', 'anchorDate', 'track', 'category', 'conditionIds', 'status', 'statusNote', 'lastDoseChange', 'doseHistory', 'notes'];
-  const adv = advKeys.map((k) => (F[k] ? field(F[k]) : '')).join('');
+  const adv = [
+    field(F.freqLabel) + '<div class="muted small" style="margin-top:-4px">overrides the 0-0-1 schedule, e.g. showing "as needed" instead</div>',
+    field(F.status),
+    field(F.lastDoseChange),
+    field(F.doseHistory),
+    field(F.notes),
+  ].join('');
   return simple + `<details style="margin-top:10px;border-top:1px solid var(--line);padding-top:8px"><summary style="cursor:pointer;color:var(--muted);font-size:14px">Advanced options</summary><div style="margin-top:10px">${adv}</div></details>`;
 }
 
@@ -2506,10 +2506,9 @@ function onInput(e) {
 
 function postprocess() {
   if (fcol === 'medications') {
-    if (fs.cadence === 'prn') { fs.scheduledDays = 'prn'; fs.everyNDays = undefined; fs.anchorDate = undefined; }
-    else if (fs.cadence === 'interval') { fs.scheduledDays = null; }
+    if (fs.scheduledDays === 'prn') { fs.everyNDays = undefined; fs.anchorDate = undefined; }
+    else if (fs.everyNDays != null) { fs.everyNDays = Number(fs.everyNDays); fs.scheduledDays = null; if (!fs.anchorDate) fs.anchorDate = fs.startDate || medToday(); }
     else { fs.everyNDays = undefined; fs.anchorDate = undefined; if (!Array.isArray(fs.scheduledDays)) fs.scheduledDays = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']; }
-    delete fs.cadence;
     Object.keys(fs).forEach((k) => fs[k] === undefined && delete fs[k]);
     if (!Array.isArray(fs.doseHistory)) fs.doseHistory = [];
     if (fs.lastDoseChange === undefined) fs.lastDoseChange = null;
@@ -2543,7 +2542,12 @@ async function onClick(e, rerender) {
   if (a === 'dosepanel') { fdosePanel = true; fdoseDraft = { dose: fs.dose || '', date: medToday() }; rerender(); return true; }
   if (a === 'dosecancel') { fdosePanel = false; fdoseDraft = null; rerender(); return true; }
   if (a === 'dosesave') { const d = fdoseDraft || {}; const dt = d.date || medToday(); if (!Array.isArray(fs.doseHistory)) fs.doseHistory = []; fs.doseHistory.unshift({ date: dt, dose: d.dose || '', note: '' }); if (d.dose) fs.dose = d.dose; fs.lastDoseChange = dt; fdosePanel = false; fdoseDraft = null; rerender(); return true; }
-  if (a === 'medfreq') { const v = t.dataset.freq; if (v === 'prn') { fs.cadence = 'prn'; } else if (v === 'daily') { fs.cadence = 'weekly'; fs.scheduledDays = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']; fs.everyNDays = undefined; fs.anchorDate = undefined; if (fs.status === 'prn') fs.status = 'active'; } else if (v === 'weekly') { fs.cadence = 'weekly'; if (!Array.isArray(fs.scheduledDays) || fs.scheduledDays.length === 7) fs.scheduledDays = ['mon']; fs.everyNDays = undefined; fs.anchorDate = undefined; if (fs.status === 'prn') fs.status = 'active'; } rerender(); return true; }
+  if (a === 'medfreq') { const v = t.dataset.freq;
+    if (v === 'prn') { fs.scheduledDays = 'prn'; fs.everyNDays = undefined; fs.anchorDate = undefined; }
+    else if (v === 'daily') { fs.scheduledDays = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']; fs.everyNDays = undefined; fs.anchorDate = undefined; if (fs.status === 'prn') fs.status = 'active'; }
+    else if (v === 'weekly') { if (!Array.isArray(fs.scheduledDays) || fs.scheduledDays.length === 7) fs.scheduledDays = ['mon']; fs.everyNDays = undefined; fs.anchorDate = undefined; if (fs.status === 'prn') fs.status = 'active'; }
+    else if (v === 'everyn') { fs.scheduledDays = null; if (fs.everyNDays == null) fs.everyNDays = 2; if (!fs.anchorDate) fs.anchorDate = fs.startDate || medToday(); if (fs.status === 'prn') fs.status = 'active'; }
+    rerender(); return true; }
   if (a === 'delete') {
     if (!fconfirm) { fconfirm = true; rerender(); return true; }
     const spec = SPECS[fcol];
@@ -2691,8 +2695,6 @@ function buildSummary(d) {
       let statusLbl = '';
       if (m.status && m.status !== 'active' && !isPrnMed(m)) {
         statusLbl = medStatusLbl[m.status] || m.status;
-        const note = m.statusNote ? (m.statusNote[L] || m.statusNote.en) : '';
-        if (note) statusLbl += ' ' + note;
       }
       const schedStr = [sch.xxx, sch.freq, statusLbl].filter(Boolean).join(' · ');
       lines.push('- ' + tx(m.name, L) + (m.dose ? ' ' + m.dose : '') + (schedStr ? ' — ' + schedStr : ''));
