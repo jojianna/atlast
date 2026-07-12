@@ -285,7 +285,6 @@ ul.tight { margin: 4px 0 0; padding-left: 18px; } ul.tight li { padding: 1px 0; 
 .ds .wksub{text-align:center;margin-bottom:10px;}
 .ds .symrow .symctl{display:flex;align-items:center;gap:6px;}
 .ds .sevpick,.ds .sev-chip.sevsq{display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;min-width:38px;padding:0;border:0;border-radius:9px;font-size:15px;font-weight:700;cursor:pointer;}
-.ds .sevpick.sevlabel,.ds .sev-chip.sevsq.sevlabel{width:auto;min-width:0;height:38px;padding:0 13px;gap:7px;} .ds .sevpick.sevlabel .sevword,.ds .sev-chip.sevsq.sevlabel .sevword{font-size:13px;font-weight:500;}
 .ds .chipgrp{display:flex;align-items:center;gap:6px;} .ds .sev-chip.sumsq{background:var(--teal);color:#fff;cursor:default;}
 .ds .noteicon{width:38px;height:38px;display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--line);background:#fff;border-radius:9px;cursor:pointer;color:var(--muted);touch-action:manipulation;-webkit-tap-highlight-color:transparent;position:relative;}
 .ds .noteicon.has{color:#0f766e;}
@@ -812,6 +811,12 @@ function remove(collection, id) {
 
 // Symptom types & locations: archive (keep history), never hard-delete when logged.
 function archiveSymptomType(id, archived = true) { const s = getRecord('symptomTypes', id); if (s) s.archived = archived; return s; }
+// Hard-delete a symptom type AND strip its logged rows from every daily log (no orphaned severities left
+// behind to skew burden/sum). Archiving is the "keep history" path; this is the permanent one.
+function deleteSymptomType(id) {
+  remove('symptomTypes', id);
+  (_data.dailyLogs || []).forEach((l) => { if (Array.isArray(l.symptoms)) l.symptoms = l.symptoms.filter((r) => r.symptomId !== id); });
+}
 function addSymptomType({ en, es, trackBy = 'single' }) {
   const s = { id: genId('sym'), name: { en: en || '', es: es || '' }, trackBy, archived: false, addedDate: new Date().toISOString().slice(0, 10), locations: [] };
   if (trackBy === 'locations') s.overall = 'sum';
@@ -867,7 +872,7 @@ async function importData(text) {
   return report;
 }
 
-return { CONFIG, getData, getLoadMeta, subscribe, setActiveSource, getActiveSource, loadData, resetToSeed, saveData, t, tx, specialistLabel, derivedOverall, derivedIntensity, activeSymptomTypes, activeLocations, latestLab, labWindow, activeConditions, excludedList, bigPicture, labStatus, labTrend, labPosNeg, labGroups, parseReport, weekdayOf, getDailyLog, setSeverity, getSeverity, setSymptomNote, getSymptomNote, setMedTaken, getMedTaken, setMedCount, getMedCount, medDueOn, medTimeOfDay, medsForDate, submitSymptoms, requiredMedsOn, symptomsSubmitted, startEpisode, endEpisode, reopenEpisode, setEpisodeNote, ongoingEpisodes, episodesEndedOn, persist, persistLocal, markQuestionAnswered, genId, getRecord, upsert, remove, archiveSymptomType, addSymptomType, renameSymptomType, setSymptomOverall, addLocation, renameLocation, archiveLocation, reorderSymptomTypes, addLabResult, removeLabResult, recordDoseChange, exportJSON, importData };
+return { CONFIG, getData, getLoadMeta, subscribe, setActiveSource, getActiveSource, loadData, resetToSeed, saveData, t, tx, specialistLabel, derivedOverall, derivedIntensity, activeSymptomTypes, activeLocations, latestLab, labWindow, activeConditions, excludedList, bigPicture, labStatus, labTrend, labPosNeg, labGroups, parseReport, weekdayOf, getDailyLog, setSeverity, getSeverity, setSymptomNote, getSymptomNote, setMedTaken, getMedTaken, setMedCount, getMedCount, medDueOn, medTimeOfDay, medsForDate, submitSymptoms, requiredMedsOn, symptomsSubmitted, startEpisode, endEpisode, reopenEpisode, setEpisodeNote, ongoingEpisodes, episodesEndedOn, persist, persistLocal, markQuestionAnswered, genId, getRecord, upsert, remove, archiveSymptomType, deleteSymptomType, addSymptomType, renameSymptomType, setSymptomOverall, addLocation, renameLocation, archiveLocation, reorderSymptomTypes, addLabResult, removeLabResult, recordDoseChange, exportJSON, importData };
 })();
 
 const Today = (function(){
@@ -912,8 +917,6 @@ function sevSelector(symptomId, locationId, value) {
   return `<div class="sev-row" ${ctx}>${btns}</div>`;
 }
 const rowKey = (sym, loc) => sym + '|' + (loc || '');
-// Functional-scale words shown on the collapsed rating chip (0-4). Matches the scaleHint legend.
-const SEV_WORDS = { en: ['none', 'noticeable', 'distracting', 'interferes', 'prevents'], es: ['ninguno', 'leve', 'molesto', 'interfiere', 'impide'] };
 function symRow(state, symId, locId, label) {
   const { date, lang } = state; const data = DL.getData();
   // On a day marked complete, ungraded symptoms read as 0 (Mark complete = unmarked are none).
@@ -925,10 +928,7 @@ function symRow(state, symId, locId, label) {
   if (note && !ui.noteInit.has(key)) { ui.noteOpen.add(key); ui.noteInit.add(key); }
   const noteOpen = ui.noteOpen.has(key);
   const noteBtn = (v != null) ? `<button class="noteicon${note ? ' has' : ''}${noteOpen ? ' on' : ''}" data-note="${key}" aria-label="${STR[lang].addNote}">${NOTE_SVG}</button>` : '';
-  const sevWord = v > 0 ? ((SEV_WORDS[lang] || SEV_WORDS.en)[v] || '') : '';
-  const chip = sevWord
-    ? `<button class="sevpick sev-chip sev-${v} sevlabel" data-reopen="${key}" aria-label="${esc(label)} = ${v} ${sevWord}">${v}<span class="sevword">${sevWord}</span></button>`
-    : `<button class="sevpick sev-chip sev-${v}" data-reopen="${key}" aria-label="${esc(label)} = ${v}">${v}</button>`;
+  const chip = `<button class="sevpick sev-chip sev-${v}" data-reopen="${key}" aria-label="${esc(label)} = ${v}">${v}</button>`;
   const control = expanded ? (sevSelector(symId, locId, v) + noteBtn) : (chip + noteBtn);
   const noteArea = (v != null && noteOpen) ? `<div class="rownote-wrap"><textarea class="rownote" data-sym="${symId}"${locId ? ` data-loc="${locId}"` : ''} rows="2" placeholder="${STR[lang].rowNotePh}">${esc(note)}</textarea><button class="rownote-done" data-noteclose="${key}" aria-label="${STR[lang].done}">${CHECK_SVG}</button></div>` : '';
   return `<div class="symrow${locId ? ' loc' : ''}">
@@ -1079,9 +1079,7 @@ function renderToday(state) {
     const submitted = !!(dayLog && dayLog.symptomsSubmittedAt);
     const ov = DL.derivedIntensity(s, (dayLog?.symptoms) || []);
     const overall = (ov == null && submitted) ? 0 : ov;
-    // Worst-area chip carries the same functional-scale word as single symptoms (0 shows just the number).
-    const ovWord = (overall != null && overall > 0) ? ((SEV_WORDS[lang] || SEV_WORDS.en)[overall] || '') : '';
-    const chip = overall != null ? `<span class="sev-chip sevsq sev-${overall}${ovWord ? ' sevlabel' : ''}" title="${lang === 'es' ? 'Peor zona' : 'Worst area'}">${overall}${ovWord ? `<span class="sevword">${ovWord}</span>` : ''}</span>` : '<span class="muted small">—</span>';
+    const chip = overall != null ? `<span class="sev-chip sevsq sev-${overall}" title="${lang === 'es' ? 'Peor zona' : 'Worst area'}">${overall}</span>` : '<span class="muted small">—</span>';
     // Sum-rollup symptoms (joint pain) also show their total burden (severity × breadth) as a teal chip beside the worst-site square.
     let sumChip = '';
     if (s.overall === 'sum') {
@@ -2283,7 +2281,7 @@ const SPECS = {
     { key: 'onsetDate', type: 'date', label: 'Start date (when it began — for the timeline)', showIf: (s) => s.trackBy === 'single' },
     // Groups always roll up as 'sum' (severity × breadth) — the aggregation isn't user-configurable.
     { key: 'locations', type: 'locrows', label: 'Members', showIf: (s) => s.trackBy === 'locations' },
-    { key: 'archived', type: 'checkbox', label: 'Archived (hidden from daily log)', showIf: () => fmode === 'edit' },
+    // Archiving is handled by the Archive/Unarchive button in the footer (not a checkbox).
   ], defaults: { name: { en: '', es: '' }, trackBy: 'single', onsetDate: null, archived: false, locations: [] } },
 };
 
@@ -2324,7 +2322,7 @@ function field(f) {
   if (f.type === 'multiselect') { const cur = gv(fs, f.key) || []; const boxes = srcOptions(f.source).map((o) => `<label class="f-chk"><input type="checkbox" data-fkey="${f.key}" data-msval="${o.v}" ${cur.includes(o.v) ? 'checked' : ''}> ${esc(o.l)}</label>`).join(''); return `<div class="f">${L}<div class="f-chks">${boxes}</div></div>`; }
   if (f.type === 'weekdays') { const cur = Array.isArray(gv(fs, f.key)) ? gv(fs, f.key) : []; const boxes = WD.map((d) => `<label class="f-chk"><input type="checkbox" data-fkey="${f.key}" data-wd="${d}" ${cur.includes(d) ? 'checked' : ''}> ${d}</label>`).join(''); return `<div class="f">${L}<div class="f-chks">${boxes}</div></div>`; }
   if (f.type === 'rows') { const rows = (gv(fs, f.key) || []).map((r, i) => { const subs = f.sub.map((sf) => { if (sf.type === 'i18n') { const v = r[sf.key] || { en: '', es: '' }; return `<input type="text" placeholder="${sf.label}" data-row="${f.key}" data-idx="${i}" data-sub="${sf.key}" data-lang="en" value="${esc(v.en)}">`; } return `<input type="${sf.type === 'number' ? 'number' : (sf.type === 'date' ? 'date' : 'text')}" step="any" placeholder="${sf.label}" data-row="${f.key}" data-idx="${i}" data-sub="${sf.key}" value="${esc(r[sf.key] ?? '')}">`; }).join(''); return `<div class="f-rowitem">${subs}<button class="btn-sm" data-formaction="delrow" data-row="${f.key}" data-idx="${i}">×</button></div>`; }).join(''); return `<div class="f">${L}${rows}<button class="btn ghost" data-formaction="addrow" data-row="${f.key}">+ Add</button></div>`; }
-  if (f.type === 'locrows') { const rows = (gv(fs, f.key) || []).map((r, i) => { const v = r.name || { en: '', es: '' }; return `<div class="f-rowitem"><input type="text" placeholder="Member name" data-row="${f.key}" data-idx="${i}" data-sub="name" data-lang="en" value="${esc(v.en)}"><input type="date" title="Start date" data-row="${f.key}" data-idx="${i}" data-sub="onsetDate" value="${esc(r.onsetDate ?? '')}"><label class="f-chk"><input type="checkbox" data-row="${f.key}" data-idx="${i}" data-sub="archived" data-bool ${r.archived ? 'checked' : ''}> arch.</label></div>`; }).join(''); return `<div class="f">${L}${rows}<button class="btn ghost" data-formaction="addrow" data-row="${f.key}">+ Add member</button></div>`; }
+  if (f.type === 'locrows') { const rows = (gv(fs, f.key) || []).map((r, i) => { const v = r.name || { en: '', es: '' }; return `<div class="f-rowitem"><input type="text" placeholder="Member name" data-row="${f.key}" data-idx="${i}" data-sub="name" data-lang="en" value="${esc(v.en)}"><input type="date" title="Start date" data-row="${f.key}" data-idx="${i}" data-sub="onsetDate" value="${esc(r.onsetDate ?? '')}"><label class="f-chk" title="Hide this member from the daily log (keeps its history)"><input type="checkbox" data-row="${f.key}" data-idx="${i}" data-sub="archived" data-bool ${r.archived ? 'checked' : ''}> hide</label></div>`; }).join(''); return `<div class="f">${L}<div class="muted small" style="margin:-2px 0 6px">Tick <b>hide</b> to retire a member from the daily log while keeping its history.</div>${rows}<button class="btn ghost" data-formaction="addrow" data-row="${f.key}">+ Add member</button></div>`; }
   return '';
 }
 
@@ -2424,12 +2422,24 @@ function renderForm() {
   const body = fcol === 'medications' ? medFormBody(spec)
     : (fcol === 'symptomTypes' && fmode === 'add') ? symFormBody(spec)
     : spec.fields.map(field).join('');
-  const delLabel = fconfirm ? 'Confirm delete' : (spec.archive ? 'Archive' : 'Delete');
-  const delBtn = fmode === 'edit' ? `<button class="btn ${fconfirm ? '' : 'ghost'}" data-formaction="delete" style="${fconfirm ? 'background:var(--err)' : 'color:var(--err)'}">${delLabel}</button>` : '';
+  // Footer actions. Archivable types (symptomTypes) get a reversible Archive/Unarchive button *plus* a
+  // separate hard Delete (two-step confirm); everything else keeps the single Delete.
+  let delBtn = '', delWarn = '';
+  if (fmode === 'edit') {
+    const delCore = `<button class="btn ${fconfirm ? '' : 'ghost'}" data-formaction="delete" style="${fconfirm ? 'background:var(--err)' : 'color:var(--err)'}">${fconfirm ? 'Confirm delete' : 'Delete'}</button>`;
+    delBtn = spec.archive
+      ? `<button class="btn ghost" data-formaction="archivetoggle">${fs.archived ? 'Unarchive' : 'Archive'}</button>${delCore}`
+      : delCore;
+    if (fconfirm && fcol === 'symptomTypes') {
+      const n = (DL.getData().dailyLogs || []).reduce((a, l) => a + ((l.symptoms || []).filter((r) => r.symptomId === fs.id).length), 0);
+      delWarn = `<div class="small" style="color:var(--err);margin:6px 2px 0">Permanently deletes this symptom${n ? ` and its ${n} logged ${n === 1 ? 'entry' : 'entries'}` : ''}. To keep the history, Archive instead.</div>`;
+    }
+  }
   return `<div class="modal-bg" data-formaction="cancelbg"><div class="modal modal-form" role="dialog">
     <h2>${fmode === 'add' ? 'Add' : 'Edit'} ${spec.title}</h2>
     <div class="form-body">${body}</div>
     ${ferr ? `<div class="f-err" style="color:var(--err);font-size:13px;margin:4px 2px 0">${esc(ferr)}</div>` : ''}
+    ${delWarn}
     <div class="form-actions">${delBtn}<span class="spacer"></span><button class="btn ghost" data-formaction="cancel">Cancel</button><button class="btn" data-formaction="save">${fcol === 'medications' && fmode === 'add' ? 'Add medication' : 'Save'}</button></div>
   </div></div>`;
 }
@@ -2504,10 +2514,12 @@ async function onClick(e, rerender) {
       else if (v === 'everyn') { fs.scheduledDays = null; if (fs.everyNDays == null) fs.everyNDays = 2; if (!fs.anchorDate) fs.anchorDate = fs.startDate || medToday(); }
     }
     rerender(); return true; }
+  if (a === 'archivetoggle') { DL.archiveSymptomType(fs.id, !fs.archived); await DL.persist(); close(); rerender(); return true; }
   if (a === 'delete') {
     if (!fconfirm) { fconfirm = true; rerender(); return true; }
-    const spec = SPECS[fcol];
-    if (spec.archive) DL.archiveSymptomType(fs.id, true); else DL.remove(fcol, fs.id);
+    // Hard delete. Symptoms also strip their rows from every daily log so nothing is left orphaned
+    // (archive is the "keep history" path; delete means gone). Other collections just drop the record.
+    if (fcol === 'symptomTypes') DL.deleteSymptomType(fs.id); else DL.remove(fcol, fs.id);
     await DL.persist(); close(); rerender(); return true;
   }
   if (a === 'save') {
