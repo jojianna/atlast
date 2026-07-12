@@ -750,7 +750,6 @@ function setMedCount(date, medId, count) {
   return log;
 }
 function getMedCount(date, medId, data = _data) { const log = getDailyLog(date, data); const row = log?.medsTaken.find((r) => r.medId === medId); return row && typeof row.count === 'number' ? row.count : 0; }
-function setNote(date, lang, text) { const log = ensureLog(date); log.note = log.note || { en: '', es: '' }; log.note[lang] = text; return log; }
 function medDueOn(m, date) {
   if (m.everyNDays && m.anchorDate) { const diff = Math.round((new Date(date + 'T00:00:00Z') - new Date(m.anchorDate + 'T00:00:00Z')) / 86400000); return diff >= 0 && diff % m.everyNDays === 0; }
   return Array.isArray(m.scheduledDays) && m.scheduledDays.includes(weekdayOf(date));
@@ -880,7 +879,7 @@ async function importData(text) {
   return report;
 }
 
-return { CONFIG, getData, getLoadMeta, subscribe, setActiveSource, getActiveSource, loadData, resetToSeed, saveData, t, tx, specialistLabel, derivedOverall, derivedIntensity, activeSymptomTypes, activeLocations, episodeFrequency, daysUnwell, latestLab, labWindow, activeConditions, excludedList, bigPicture, labStatus, labTrend, labPosNeg, labGroups, questionsForSpecialist, parseReport, weekdayOf, getDailyLog, setSeverity, getSeverity, setSymptomNote, getSymptomNote, setOverallPain, getOverallPain, setMedTaken, getMedTaken, setMedCount, getMedCount, setNote, medDueOn, TIME_ORDER, medTimeOfDay, medsForDate, submitSymptoms, requiredMedsOn, symptomsSubmitted, startEpisode, endEpisode, reopenEpisode, setEpisodeNote, ongoingEpisodes, episodesEndedOn, persist, persistLocal, markQuestionAnswered, genId, getRecord, upsert, remove, archiveSymptomType, addSymptomType, renameSymptomType, setSymptomOverall, addLocation, renameLocation, archiveLocation, reorderSymptomTypes, addLabResult, removeLabResult, recordDoseChange, clearDay, exportJSON, importData };
+return { CONFIG, getData, getLoadMeta, subscribe, setActiveSource, getActiveSource, loadData, resetToSeed, saveData, t, tx, specialistLabel, derivedOverall, derivedIntensity, activeSymptomTypes, activeLocations, episodeFrequency, daysUnwell, latestLab, labWindow, activeConditions, excludedList, bigPicture, labStatus, labTrend, labPosNeg, labGroups, questionsForSpecialist, parseReport, weekdayOf, getDailyLog, setSeverity, getSeverity, setSymptomNote, getSymptomNote, setOverallPain, getOverallPain, setMedTaken, getMedTaken, setMedCount, getMedCount, medDueOn, TIME_ORDER, medTimeOfDay, medsForDate, submitSymptoms, requiredMedsOn, symptomsSubmitted, startEpisode, endEpisode, reopenEpisode, setEpisodeNote, ongoingEpisodes, episodesEndedOn, persist, persistLocal, markQuestionAnswered, genId, getRecord, upsert, remove, archiveSymptomType, addSymptomType, renameSymptomType, setSymptomOverall, addLocation, renameLocation, archiveLocation, reorderSymptomTypes, addLabResult, removeLabResult, recordDoseChange, clearDay, exportJSON, importData };
 })();
 
 const Today = (function(){
@@ -888,7 +887,7 @@ const { tx } = DL;
 
 
 
-const ui = { expanded: new Set(['sym_jointpain']), epFormOpen: false, savedAt: null, noteOpen: new Set(), noteInit: new Set(), scaleOpen: new Set(), confirmClear: false, calView: 'week', calMonth: null, medHist: false, weekAnchor: null, editPick: null };
+const ui = { expanded: new Set(['sym_jointpain']), epFormOpen: false, savedAt: null, noteOpen: new Set(), noteInit: new Set(), scaleOpen: new Set(), confirmClear: false, calView: 'week', calMonth: null, medHist: false, editPick: null };
 
 const STR = {
   en: { today: 'Today', symptoms: 'Symptoms', meds: 'Medications', asNeeded: 'As needed (PRN)', secRegular: 'Regular', secSupplements: 'Supplements', secTherapies: 'Therapies',
@@ -974,7 +973,7 @@ function dayIntensities(iso, types, data) {
   });
   return out;
 }
-// Day band from PEAK intensity + breadth (Anna's rule, 9 Jul 2026 — replaces the old sum-based bands):
+// Day band from PEAK intensity + breadth (design rule, 9 Jul 2026 — replaces the old sum-based bands):
 // 0 clear · 1 light (only 1s, or a lone 2) · 2 typical (2+ symptoms at 2, or a lone 3 without breadth) · 3 heavy (a single 3 with k+ others at 2, two-plus 3s below the very-heavy line, or any single 4) · 4 very heavy (vh+ symptoms at 3+). k and vh are per-person dials. NB "symptoms" here = intensity entries from dayIntensities, where located symptoms (joint pain, nerve) count EACH affected region — so multiple severe joints add to breadth.
 function dayBandIdx(iso, types, data) {
   const ints = dayIntensities(iso, types, data);
@@ -1019,7 +1018,34 @@ function monthCal(state, data, types) {
   const lg = (cls, txt) => `<span><span class="lgsw ${cls}"></span>${txt}</span>`;
   const legend = `<div class="callegend"><span style="color:var(--muted)">${lang === 'es' ? 'Carga:' : 'Burden:'}</span>${lg('calb1', lang === 'es' ? 'leve' : 'light')}${lg('calb2', lang === 'es' ? 'típico' : 'typical')}${lg('calb3', lang === 'es' ? 'difícil' : 'difficult')}${lg('calb4', lang === 'es' ? 'grave' : 'severe')}${lg('calb0', lang === 'es' ? 'sin síntomas' : 'clear')}</div>`;
   const note = `<div class="calnote">${lang === 'es' ? "Color = la carga general del día. Difícil = una o dos cosas que interfieren de verdad (o una en su peor punto); grave = tres o más a la vez — cada articulación dolorida cuenta. Toca un día para abrirlo." : "Colour = the day's overall burden. Difficult = one or two things really interfering (or one at its worst); severe = three or more interfering at once — each painful joint counts. Tap a day to open it."}</div>`;
-  return `<div class="card"><div class="calhead"><span class="mlabel">${mlabel}</span><span class="hgrp"><button class="wknav" data-calnav="-1" aria-label="Previous month">‹</button><button class="wknav" data-calnav="1" aria-label="Next month" ${canNext ? '' : 'disabled'}>›</button><button class="wkcal on" data-calview="week" aria-label="${lang === 'es' ? 'Volver a la semana' : 'Back to week'}">${CAL_SVG}</button></span></div><div class="calgrid">${cells}</div>${legend}${note}</div>`;
+  // Month notes list — shown only under the month calendar. Chronological, newest first,
+  // scoped to the displayed month; taps open that day (data-day). Log view is English-only,
+  // so note text isn't translated; symptom/episode labels still localise. No calendar dots.
+  const noteBandCols = ['#94a3b8', '#fde047', '#f59e0b', '#f97316', '#b91c1c'];
+  const fmtNoteDate = (iso) => new Date(iso + 'T00:00:00').toLocaleDateString(lang === 'es' ? 'es-ES' : 'en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+  const mNotes = [];
+  (data.dailyLogs || []).forEach((l) => {
+    if (!l.date || l.date.slice(0, 7) !== monthIso) return;
+    (l.symptoms || []).forEach((r) => {
+      if (!(r.note && String(r.note).trim())) return;
+      const st = (data.symptomTypes || []).find((s) => s.id === r.symptomId);
+      let tag = st ? tx(st.name, lang) : (r.symptomId || '');
+      if (r.locationId && st && Array.isArray(st.locations)) { const loc = st.locations.find((x) => x.id === r.locationId); if (loc) tag += ' · ' + tx(loc.name, lang); }
+      mNotes.push({ date: l.date, tag, text: String(r.note), col: noteBandCols[Math.max(0, dayBandIdx(l.date, types, data))] });
+    });
+  });
+  (data.episodes || []).forEach((e) => {
+    const nt = e.note && (e.note.en || e.note.es);
+    if (!(nt && String(nt).trim()) || !e.startDate || e.startDate.slice(0, 7) !== monthIso) return;
+    const nm = tx(e.name, lang) || (EP_TYPES[lang] && EP_TYPES[lang][e.type]) || e.type;
+    mNotes.push({ date: e.startDate, tag: (lang === 'es' ? 'Episodio' : 'Episode') + ' — ' + nm, text: String(nt), col: '#0f766e' });
+  });
+  mNotes.sort((a, b) => (a.date < b.date ? 1 : (a.date > b.date ? -1 : 0)));
+  const noteRows = mNotes.map((n) => `<button class="monthnote" data-day="${n.date}" style="display:block;width:100%;text-align:left;background:none;border:0;border-left:3px solid ${n.col};padding:2px 0 2px 10px;margin:0 0 12px;cursor:pointer"><div class="muted small">${esc(fmtNoteDate(n.date))} · ${esc(n.tag)}</div><div style="font-size:14px;line-height:1.45">${esc(n.text)}</div></button>`).join('');
+  const notesLbl = lang === 'es' ? 'Notas de este mes' : 'Notes this month';
+  const noNotesLbl = lang === 'es' ? 'Aún no hay notas este mes.' : 'No notes this month yet.';
+  const notesSection = `<div style="border-top:0.5px solid var(--line);margin:14px 0 12px"></div><div class="subhead" style="margin-bottom:10px">${notesLbl}${mNotes.length ? ` <span class="muted small">· ${mNotes.length}</span>` : ''}</div>${mNotes.length ? noteRows : `<p class="muted small">${noNotesLbl}</p>`}`;
+  return `<div class="card"><div class="calhead"><span class="mlabel">${mlabel}</span><span class="hgrp"><button class="wknav" data-calnav="-1" aria-label="Previous month">‹</button><button class="wknav" data-calnav="1" aria-label="Next month" ${canNext ? '' : 'disabled'}>›</button><button class="wkcal on" data-calview="week" aria-label="${lang === 'es' ? 'Volver a la semana' : 'Back to week'}">${CAL_SVG}</button></span></div><div class="calgrid">${cells}</div>${legend}${note}${notesSection}</div>`;
 }
 
 // Medication adherence sub-view (last 30 days). Per med: taken/missed strip + count/%, streak; PRN shows dose count.
@@ -1084,8 +1110,8 @@ function renderToday(state) {
   if (ui.calView === 'month') return `<div class="ds">${monthCal(state, data, types)}</div>`;
   if (ui.medHist) return renderAdherence(state, data);
   const isComplete = (iso) => { const l = DL.getDailyLog(iso, data); if (!l) return false; if (l.symptomsSubmittedAt) return true; const symOk = typesOn(iso).every((s) => s.trackBy === 'single' ? (DL.getSeverity(iso, s.id, null, data) != null) : (DL.derivedOverall(s, l.symptoms || []) != null)); const medsOk = DL.requiredMedsOn(iso, data).every((m) => DL.getMedTaken(iso, m.id, data) != null); return symOk && medsOk; };
-  // Rolling 7-day window ending on the anchor (default = today, so today is the rightmost tile and there are no future/empty days).
-  const anchor = (ui.weekAnchor && ui.weekAnchor <= tISO) ? ui.weekAnchor : tISO;
+  // 42-day (6-week) strip ending today: today is the rightmost tile, no future/empty days.
+  // Horizontally scrollable; navigate by scrolling the strip or tapping a day.
   const DOWL = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
   const WINDOW = 42;
   let tiles = '';
@@ -1159,6 +1185,12 @@ function renderToday(state) {
   const suppMeds = scheduled.filter((m) => m.category === 'supplement');
   const therMeds = scheduled.filter((m) => m.category === 'therapy');
   const medsBody = (medSec(T.secRegular, regMeds) + medSec(T.secSupplements, suppMeds) + medSec(T.secTherapies, therMeds) + medSec(T.asNeeded, prn, true)) || `<p class="muted small">${T.noMeds}</p>`;
+  // Meds card edit controls (mirrors the symptoms card): ✎ opens a pick-list of meds to edit, ＋ adds one.
+  // Both open the same medication form used on the Summary tab, so the two entry points never diverge.
+  const medEditing = ui.editPick === 'medications';
+  const editableMeds = (data.medications || []).filter((m) => m.status !== 'stopped');
+  const medPick = editableMeds.map((m) => `<button class="pickrow" data-edit="medications:${m.id}">${esc(tx(m.name, lang))}${m.dose ? ` <span class="muted small">${esc(m.dose)}</span>` : ''}</button>`).join('') || `<p class="muted small">${T.noMeds}</p>`;
+  const medEditBtns = `<button class="addmini" data-editpick="medications" aria-label="${lang === 'es' ? 'Editar' : 'Edit'}">${medEditing ? '✕' : '✎'}</button><button class="addmini" data-add="medications" aria-label="${lang === 'es' ? 'Añadir medicamento' : 'Add medication'}">＋</button>`;
 
   // Day-level footer: a symptoms/meds progress counter + the single "Mark day complete" action
   // (fills unanswered symptoms → 0 and unanswered regular meds → not taken). Regular meds only —
@@ -1189,7 +1221,7 @@ function renderToday(state) {
   const epCardHtml = getPref('hideEpisodes') ? '' : `<div class="card"><div class="card-h"><h2>${T.episodes}</h2><button class="addmini" data-editpick="episodes" aria-label="${lang === 'es' ? 'Editar' : 'Edit'}">${epEditing ? '✕' : '✎'}</button></div>${epEditing ? `<div class="muted small" style="margin:2px 0 6px">${lang === 'es' ? 'Elige cuál editar:' : 'Choose which to edit:'}</div>${epPick}` : `${ongoing.length ? `<div class="subhead">${T.ongoing}</div>${ongoingHtml}` : ''}${endedHtml}${epForm}`}</div>`;
   return `<div class="ds">${head}
     ${symptomsCard}
-    <div class="card" id="medsCard"><div class="card-h"><h2>${T.meds}</h2><button class="linkbtn" data-goto="overview" data-scroll="medsTable">${lang === 'es' ? 'Dosis y pauta ›' : 'Doses & schedule ›'}</button></div>${medsBody}</div>
+    <div class="card" id="medsCard"><div class="card-h"><h2>${T.meds}</h2><span class="hgrp">${medEditBtns}</span></div>${medEditing ? `<div class="muted small" style="margin:2px 0 6px">${lang === 'es' ? 'Elige cuál editar:' : 'Choose which to edit:'}</div>${medPick}` : medsBody}</div>
     ${completeBar}
     ${epCardHtml}
     ${savedNote}
@@ -1214,9 +1246,8 @@ async function onClick(e, state, rerender) {
   if (t.dataset.medhist != null) { ui.medHist = true; rerender(); return; }
   if (t.dataset.medback != null) { ui.medHist = false; rerender(); document.getElementById('medsCard')?.scrollIntoView({ block: 'start' }); return; }
   if (t.dataset.editpick != null) { ui.editPick = ui.editPick === t.dataset.editpick ? null : t.dataset.editpick; rerender(); return; }
-  if (t.dataset.weekshift) { const tI = todayISO(); const cur = (ui.weekAnchor && ui.weekAnchor <= tI) ? ui.weekAnchor : tI; let na = shiftDate(cur, Number(t.dataset.weekshift)); if (na > tI) na = tI; ui.weekAnchor = na; state.date = na; ui.savedAt = null; ui.confirmClear = false; rerender(); return; }
-  if (t.dataset.today != null) { ui.weekAnchor = null; state.date = todayISO(); ui.savedAt = null; ui.confirmClear = false; rerender(); return; }
-  if (t.dataset.day) { const dd = t.dataset.day; if (ui.calView === 'month') ui.weekAnchor = (dd >= todayISO()) ? null : dd; state.date = dd; ui.calView = 'week'; ui.savedAt = null; ui.confirmClear = false; rerender(); return; }
+  if (t.dataset.today != null) { state.date = todayISO(); ui.savedAt = null; ui.confirmClear = false; rerender(); return; }
+  if (t.dataset.day) { const dd = t.dataset.day; state.date = dd; ui.calView = 'week'; ui.savedAt = null; ui.confirmClear = false; rerender(); return; }
   if (t.dataset.calview) { ui.calView = t.dataset.calview; if (ui.calView === 'month') ui.calMonth = state.date.slice(0, 7); rerender(); return; }
   if (t.dataset.calnav) { const base = ui.calMonth || state.date.slice(0, 7); const [yy, mm] = base.split('-').map(Number); const nd = new Date(Date.UTC(yy, mm - 1 + Number(t.dataset.calnav), 1)); ui.calMonth = nd.toISOString().slice(0, 7); rerender(); return; }
   if (t.dataset.reopen) { ui.scaleOpen.add(t.dataset.reopen); rerender(); return; }
@@ -2076,7 +2107,7 @@ function trendBadLineCard(lang, TT, tb, win) {
   return `<div class="card"><div class="card-h"><h2>${TT.badLineTitle} <span class="muted small">— ${period}</span></h2></div><div class="lgrow" style="margin:2px 0 4px">${legBtn(3, 'heavy')}${legBtn(4, 'vh')}</div>${svg}</div>`;
 }
 // #4 Areas affected — spread of ONE located symptom (default: first located type, e.g. joint pain), i.e. how many of its sites are active per day.
-// Selectable when the person tracks >1 located symptom; hidden entirely for people who track none (e.g. a single-symptom-only user like Joanna's dad).
+// Selectable when the person tracks >1 located symptom; hidden entirely for people who track none (e.g. a single-symptom-only user).
 function trendAreasCard(state, data, days, win, TT, reliable) {
   const lang = state.lang;
   const located = DL.activeSymptomTypes(data).filter((s) => s.trackBy === 'locations');
@@ -2166,8 +2197,8 @@ function renderProg(state) {
   // Timeline = symptom onsets DERIVED from each symptom's onsetDate (single source of truth — no drift) + curated non-onset milestones (diagnoses, medications, events). Onset rows are read-only; the rest stay editable.
   const onsetLabel = (o) => `${o.cat === 'joint' ? TT.newJointLoc : o.cat === 'nerve' ? TT.newNerve : TT.newSymptom} — ${tx(o.name, lang)}`;
   const onsetRows = collectOnsets(data).map((o) => ({ date: o.onset, label: onsetLabel(o), type: 'new_symptom', derived: true }));
-  // If this data set has onsetDate-derived onsets (e.g. Joanna), the hand-curated symptom-onset milestones are redundant → drop them.
-  // If it has NONE (e.g. Joanna's dad — his symptoms carry no onsetDate), keep ALL milestones so his hand-entered onsets still show.
+  // If this data set has onsetDate-derived onsets, the hand-curated symptom-onset milestones are redundant → drop them.
+  // If it has NONE (i.e. its symptoms carry no onsetDate), keep ALL milestones so the hand-entered onsets still show.
   const derived = onsetRows.length > 0;
   const curated = derived ? (data.milestones || []).filter((m) => m.type !== 'new_symptom') : (data.milestones || []).slice();
   const ms = [...onsetRows, ...curated].sort((a, b) => (a.date < b.date ? 1 : -1));
@@ -2428,9 +2459,10 @@ function medFormBody(spec) {
     field(F.dose),
     field(Object.assign({}, F.purpose, { label: "What it's for" })),
     medFreqControlHtml(F),
+    field(F.timeOfDay),
     field(F.startDate),
   ].join('');
-  const advKeys = ['freqLabel', 'cadence', 'everyNDays', 'anchorDate', 'timeOfDay', 'track', 'category', 'conditionIds', 'status', 'statusNote', 'lastDoseChange', 'doseHistory', 'notes'];
+  const advKeys = ['freqLabel', 'cadence', 'everyNDays', 'anchorDate', 'track', 'category', 'conditionIds', 'status', 'statusNote', 'lastDoseChange', 'doseHistory', 'notes'];
   const adv = advKeys.map((k) => (F[k] ? field(F[k]) : '')).join('');
   return simple + `<details style="margin-top:10px;border-top:1px solid var(--line);padding-top:8px"><summary style="cursor:pointer;color:var(--muted);font-size:14px">Advanced options</summary><div style="margin-top:10px">${adv}</div></details>`;
 }
@@ -2774,6 +2806,25 @@ function attachDrag(el) {
   el.addEventListener('pointercancel', end);
   el.addEventListener('click', (e) => { if (moved) { e.preventDefault(); e.stopPropagation(); moved = false; } }, true);
 }
+// Horizontal swipe on the month grid → previous / next month. Works for touch + mouse
+// (pointer events). Respects the future-month guard by clicking the existing nav buttons;
+// short movements fall through as a normal day-select tap.
+function attachCalSwipe(el) {
+  let x0 = 0, y0 = 0, active = false, swiped = false;
+  el.addEventListener('pointerdown', (e) => { active = true; swiped = false; x0 = e.clientX; y0 = e.clientY; });
+  el.addEventListener('pointermove', (e) => { if (active && Math.abs(e.clientX - x0) > 8 && Math.abs(e.clientX - x0) > Math.abs(e.clientY - y0)) swiped = true; });
+  const end = (e) => {
+    if (!active) return; active = false;
+    const dx = e.clientX - x0, dy = e.clientY - y0;
+    if (Math.abs(dx) < 45 || Math.abs(dx) < Math.abs(dy)) { swiped = false; return; }
+    const dir = dx < 0 ? '1' : '-1'; // swipe left → next month, swipe right → previous
+    const btn = el.closest('.card')?.querySelector(`[data-calnav="${dir}"]`);
+    if (btn && !btn.disabled) btn.click();
+  };
+  el.addEventListener('pointerup', end);
+  el.addEventListener('pointercancel', () => { active = false; });
+  el.addEventListener('click', (e) => { if (swiped) { e.preventDefault(); e.stopPropagation(); swiped = false; } }, true);
+}
 // Pointer-based drag-to-reorder for the symptom edit picker. Works for mouse + touch
 // (touch-action:none on the grip stops the page scrolling mid-drag). Reorders the DOM
 // live against sibling midpoints, then commits the final order to symptomTypes.
@@ -2848,6 +2899,7 @@ function render() {
   const tb = document.querySelector('.topbar'); if (tb) document.documentElement.style.setProperty('--topbar-h', tb.offsetHeight + 'px');
   const wd = screen.querySelector('.wkdays.scroll');
   if (wd) { const sel = wd.querySelector('.wkday.sel'); wd.scrollLeft = sel ? Math.max(0, sel.offsetLeft - wd.clientWidth / 2 + sel.offsetWidth / 2) : wd.scrollWidth; attachDrag(wd); }
+  const cg = screen.querySelector('.calgrid'); if (cg) attachCalSwipe(cg);
   const symRe = screen.querySelector('#symReorder'); if (symRe) attachSymptomReorder(symRe);
 }
 function renderDataScreen() {
