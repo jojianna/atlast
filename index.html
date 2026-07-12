@@ -284,6 +284,7 @@ ul.tight { margin: 4px 0 0; padding-left: 18px; } ul.tight li { padding: 1px 0; 
 .ds .wksub{text-align:center;margin-bottom:10px;}
 .ds .symrow .symctl{display:flex;align-items:center;gap:6px;}
 .ds .sevpick,.ds .sev-chip.sevsq{display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;min-width:38px;padding:0;border:0;border-radius:9px;font-size:15px;font-weight:700;cursor:pointer;}
+.ds .sevpick.sevlabel{width:auto;min-width:0;height:38px;padding:0 13px;gap:7px;} .ds .sevpick.sevlabel .sevword{font-size:13px;font-weight:500;}
 .ds .chipgrp{display:flex;align-items:center;gap:6px;} .ds .sev-chip.sumsq{background:var(--teal);color:#fff;cursor:default;}
 .ds .noteicon{width:38px;height:38px;display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--line);background:#fff;border-radius:9px;cursor:pointer;color:var(--muted);touch-action:manipulation;-webkit-tap-highlight-color:transparent;position:relative;}
 .ds .noteicon.has{color:#0f766e;}
@@ -932,6 +933,8 @@ function sevSelector(symptomId, locationId, value) {
   return `<div class="sev-row" ${ctx}>${btns}</div>`;
 }
 const rowKey = (sym, loc) => sym + '|' + (loc || '');
+// Functional-scale words shown on the collapsed rating chip (0-4). Matches the scaleHint legend.
+const SEV_WORDS = { en: ['none', 'noticeable', 'distracting', 'interferes', 'prevents'], es: ['ninguno', 'leve', 'molesto', 'interfiere', 'impide'] };
 function symRow(state, symId, locId, label) {
   const { date, lang } = state; const data = DL.getData();
   // On a day marked complete, ungraded symptoms read as 0 (Mark complete = unmarked are none).
@@ -943,8 +946,9 @@ function symRow(state, symId, locId, label) {
   if (note && !ui.noteInit.has(key)) { ui.noteOpen.add(key); ui.noteInit.add(key); }
   const noteOpen = ui.noteOpen.has(key);
   const noteBtn = (v != null) ? `<button class="noteicon${note ? ' has' : ''}${noteOpen ? ' on' : ''}" data-note="${key}" aria-label="${STR[lang].addNote}">${NOTE_SVG}</button>` : '';
+  const sevWord = (SEV_WORDS[lang] || SEV_WORDS.en)[v] || '';
   const control = expanded ? (sevSelector(symId, locId, v) + noteBtn)
-    : (`<button class="sevpick sev-chip sev-${v}" data-reopen="${key}" aria-label="${esc(label)} = ${v}">${v}</button>` + noteBtn);
+    : (`<button class="sevpick sev-chip sev-${v} sevlabel" data-reopen="${key}" aria-label="${esc(label)} = ${v} ${sevWord}">${v}<span class="sevword">${sevWord}</span></button>` + noteBtn);
   const noteArea = (v != null && noteOpen) ? `<div class="rownote-wrap"><textarea class="rownote" data-sym="${symId}"${locId ? ` data-loc="${locId}"` : ''} rows="2" placeholder="${STR[lang].rowNotePh}">${esc(note)}</textarea><button class="rownote-done" data-noteclose="${key}" aria-label="${STR[lang].done}">${CHECK_SVG}</button></div>` : '';
   return `<div class="symrow${locId ? ' loc' : ''}">
     <span class="symrow-name as-text">${esc(label)}</span>
@@ -1045,7 +1049,7 @@ function monthCal(state, data, types) {
   const notesLbl = lang === 'es' ? 'Notas de este mes' : 'Notes this month';
   const noNotesLbl = lang === 'es' ? 'Aún no hay notas este mes.' : 'No notes this month yet.';
   const notesSection = `<div style="border-top:0.5px solid var(--line);margin:14px 0 12px"></div><div class="subhead" style="margin-bottom:10px">${notesLbl}${mNotes.length ? ` <span class="muted small">· ${mNotes.length}</span>` : ''}</div>${mNotes.length ? noteRows : `<p class="muted small">${noNotesLbl}</p>`}`;
-  return `<div class="card"><div class="calhead"><span class="mlabel">${mlabel}</span><span class="hgrp"><button class="wknav" data-calnav="-1" aria-label="Previous month">‹</button><button class="wknav" data-calnav="1" aria-label="Next month" ${canNext ? '' : 'disabled'}>›</button><button class="wkcal on" data-calview="week" aria-label="${lang === 'es' ? 'Volver a la semana' : 'Back to week'}">${CAL_SVG}</button></span></div><div class="calgrid">${cells}</div>${legend}${note}${notesSection}</div>`;
+  return `<div class="card monthview" style="touch-action:pan-y"><div class="calhead"><span class="mlabel">${mlabel}</span><span class="hgrp"><button class="wknav" data-calnav="-1" aria-label="Previous month">‹</button><button class="wknav" data-calnav="1" aria-label="Next month" ${canNext ? '' : 'disabled'}>›</button><button class="wkcal on" data-calview="week" aria-label="${lang === 'es' ? 'Volver a la semana' : 'Back to week'}">${CAL_SVG}</button></span></div><div class="calgrid">${cells}</div>${legend}${note}${notesSection}</div>`;
 }
 
 // Medication adherence sub-view (last 30 days). Per med: taken/missed strip + count/%, streak; PRN shows dose count.
@@ -1147,7 +1151,7 @@ function renderToday(state) {
     const locsArr = DL.activeLocations(s);
     const locs = locsArr.map((l) => symRow(state, s.id, l.id, tx(l.name, lang))).join('');
     return `<div class="symrow located-head sym-head expandable" data-expand="${s.id}"><span class="symrow-name as-text">${esc(tx(s.name, lang))} <span class="muted small loc-count">${open ? '▾' : '▸'}</span></span><span class="chipgrp">${chip}${sumChip}</span></div>
-    <div class="loc-list" ${open ? '' : 'hidden'}>${locs}<button class="linkbtn" data-edit="symptomTypes:${s.id}" style="margin:6px 0 2px 4px">+ ${lang === 'es' ? 'Añadir zona' : 'Add site'}</button></div>`;
+    <div class="loc-list" ${open ? '' : 'hidden'}>${locs}</div>`;
   }).join('');
   const complete = isComplete(date);
   const symEditing = ui.editPick === 'symptomTypes';
@@ -1192,16 +1196,11 @@ function renderToday(state) {
   const medPick = editableMeds.map((m) => `<button class="pickrow" data-edit="medications:${m.id}">${esc(tx(m.name, lang))}${m.dose ? ` <span class="muted small">${esc(m.dose)}</span>` : ''}</button>`).join('') || `<p class="muted small">${T.noMeds}</p>`;
   const medEditBtns = `<button class="addmini" data-editpick="medications" aria-label="${lang === 'es' ? 'Editar' : 'Edit'}">${medEditing ? '✕' : '✎'}</button><button class="addmini" data-add="medications" aria-label="${lang === 'es' ? 'Añadir medicamento' : 'Add medication'}">＋</button>`;
 
-  // Day-level footer: a symptoms/meds progress counter + the single "Mark day complete" action
-  // (fills unanswered symptoms → 0 and unanswered regular meds → not taken). Regular meds only —
-  // supplements/therapies/PRN don't count toward the tick, so they're left out of the meds tally.
-  const reqMeds = DL.requiredMedsOn(date, data);
-  const medsDone = reqMeds.filter((m) => DL.getMedTaken(date, m.id, data) != null).length;
-  const progressText = `${lang === 'en' ? 'Symptoms' : 'Síntomas'} ${doneCount}/${dayTypes.length}${reqMeds.length ? ` · ${lang === 'en' ? 'Meds' : 'Medicación'} ${medsDone}/${reqMeds.length}` : ''}`;
-  const markHint = lang === 'en' ? 'Unanswered symptoms → 0, unanswered regular meds → not taken.' : 'Síntomas sin responder → 0, medicación regular sin responder → no tomada.';
+  // Day-level footer: the single "Mark day complete" action (fills unanswered symptoms → 0 and
+  // unanswered regular meds → not taken). Progress counter + hint text removed 12 Jul 2026.
   const completeBar = complete
     ? `<div class="daybar done">✓ ${lang === 'en' ? 'Day complete' : 'Día completo'}</div>`
-    : `<div class="daybar"><div class="muted small daycounts">${progressText}</div><button class="btn-mark wide" id="markZero">${lang === 'en' ? 'Mark day complete' : 'Marcar día completo'}</button><div class="muted small mark-hint">${markHint}</div></div>`;
+    : `<div class="daybar"><button class="btn-mark wide" id="markZero">${lang === 'en' ? 'Mark day complete' : 'Marcar día completo'}</button></div>`;
 
   // Episodes active on the selected day (so past days show what was ongoing then), not just today's ongoing.
   const ongoing = (data.episodes || []).filter((e) => e.startDate && e.startDate <= date && (e.endDate == null || e.endDate > date));
@@ -1224,8 +1223,7 @@ function renderToday(state) {
     <div class="card" id="medsCard"><div class="card-h"><h2>${T.meds}</h2><span class="hgrp">${medEditBtns}</span></div>${medEditing ? `<div class="muted small" style="margin:2px 0 6px">${lang === 'es' ? 'Elige cuál editar:' : 'Choose which to edit:'}</div>${medPick}` : medsBody}</div>
     ${completeBar}
     ${epCardHtml}
-    ${savedNote}
-    <div class="clearday-row"><button class="linkbtn ${ui.confirmClear?'danger':''}" data-clearday>${ui.confirmClear?T.confirmClear:T.clearDay}</button></div></div>`;
+    ${savedNote}</div>`;
 }
 
 // Optimistic save: write the local cache synchronously (instant, crash-safe) and
@@ -1258,7 +1256,6 @@ async function onClick(e, state, rerender) {
   if (t.dataset.med) { const want = t.dataset.taken === 'yes'; const cur = DL.getMedTaken(state.date, t.dataset.med, DL.getData()); DL.setMedTaken(state.date, t.dataset.med, cur === want ? null : want); save(); rerender(); return; }
   if (t.dataset.medcount) { const cur = DL.getMedCount(state.date, t.dataset.medcount, DL.getData()); DL.setMedCount(state.date, t.dataset.medcount, cur + Number(t.dataset.delta)); save(); rerender(); return; }
   if (t.id === 'markZero') { DL.submitSymptoms(state.date); save(); rerender(); return; }
-  if (t.dataset.clearday !== undefined) { if (!ui.confirmClear) { ui.confirmClear = true; rerender(); return; } DL.clearDay(state.date); ui.confirmClear = false; save(); rerender(); return; }
   if (t.dataset.endEp) { DL.endEpisode(t.dataset.endEp, state.date); save(); rerender(); return; }
   if (t.dataset.reopenEp) { DL.reopenEpisode(t.dataset.reopenEp); save(); rerender(); return; }
   if (t.id === 'epStartBtn') { ui.epFormOpen = true; rerender(); return; }
@@ -2296,9 +2293,9 @@ const SPECS = {
     { key: 'scheduledDays', type: 'weekdays', label: 'Days' },
     { key: 'everyNDays', type: 'number', label: 'Every how many days' },
     { key: 'anchorDate', type: 'date', label: 'Anchor date (a day it is due)' },
-    { key: 'timeOfDay', type: 'select', label: 'Time of day', options: ['morning', 'midday', 'evening', 'prn'] },
+    { key: 'timeOfDay', type: 'seg', label: 'Time of day', options: [{ v: 'morning', l: 'Morning' }, { v: 'midday', l: 'Midday' }, { v: 'evening', l: 'Evening' }] },
     { key: 'track', type: 'checkbox', label: 'Track daily (show in the daily check-off)' },
-    { key: 'category', type: 'select', label: 'Category', options: ['prescription', 'supplement', 'otc', 'therapy'] },
+    { key: 'category', type: 'seg', label: 'Category', options: [{ v: 'prescription', l: 'Prescription' }, { v: 'supplement', l: 'Supplement' }, { v: 'otc', l: 'OTC' }, { v: 'therapy', l: 'Therapy' }] },
     { key: 'purpose', type: 'i18n', label: 'Purpose' },
     { key: 'status', type: 'select', label: 'Status', options: ['active', 'tapering', 'stopped'] },
     { key: 'startDate', type: 'date', label: 'Started' },
@@ -2351,10 +2348,10 @@ const SPECS = {
   ], defaults: { specialism: '', es: '', doctor: '' } },
   symptomTypes: { title: 'Symptom', archive: true, fields: [
     { key: 'name', type: 'i18n', label: 'Name' },
-    { key: 'trackBy', type: 'select', label: 'Track by', options: ['single', 'locations'] },
+    { key: 'trackBy', type: 'seg', label: 'Track by', options: [{ v: 'single', l: 'Single' }, { v: 'locations', l: 'Group' }] },
     { key: 'onsetDate', type: 'date', label: 'Start date (when it began — for the timeline)', showIf: (s) => s.trackBy === 'single' },
-    { key: 'overall', type: 'select', label: 'Overall (located)', options: ['max', 'mean'], showIf: (s) => s.trackBy === 'locations' },
-    { key: 'locations', type: 'locrows', label: 'Locations', showIf: (s) => s.trackBy === 'locations' },
+    { key: 'overall', type: 'select', label: 'Overall (group)', options: ['max', 'mean'], showIf: (s) => s.trackBy === 'locations' },
+    { key: 'locations', type: 'locrows', label: 'Group', showIf: (s) => s.trackBy === 'locations' },
     { key: 'archived', type: 'checkbox', label: 'Archived (hidden from daily log)' },
   ], defaults: { name: { en: '', es: '' }, trackBy: 'single', onsetDate: null, archived: false, locations: [] } },
 };
@@ -2390,6 +2387,7 @@ function field(f) {
   if (f.type === 'text' || f.type === 'number') return `<div class="f">${L}<input type="${f.type === 'number' ? 'number' : 'text'}" step="any" data-fkey="${f.key}" value="${esc(gv(fs, f.key) ?? '')}" placeholder="${esc(f.ph || '')}"></div>`;
   if (f.type === 'date') return `<div class="f">${L}<input type="date" data-fkey="${f.key}" value="${esc(gv(fs, f.key) ?? '')}"></div>`;
   if (f.type === 'checkbox') return `<div class="f f-row"><label><input type="checkbox" data-fkey="${f.key}" data-bool ${gv(fs, f.key) ? 'checked' : ''}> ${f.label}</label></div>`;
+  if (f.type === 'seg') { const cur = gv(fs, f.key); const btns = (f.options || []).map((o) => { const v = typeof o === 'string' ? o : o.v; const l = typeof o === 'string' ? o : o.l; return `<button type="button" class="${cur === v ? 'on' : ''}" data-formaction="segpick" data-segkey="${f.key}" data-segval="${v}">${esc(l)}</button>`; }).join(''); return `<div class="f">${L}<div class="medseg" style="flex-wrap:wrap">${btns}</div></div>`; }
   if (f.type === 'i18n') { const v = gv(fs, f.key) || { en: '', es: '' }; const mk = (lang) => f.textarea ? `<textarea data-fkey="${f.key}" data-lang="${lang}" rows="2" placeholder="${esc(f.ph || '')}">${esc(v[lang])}</textarea>` : `<input type="text" data-fkey="${f.key}" data-lang="${lang}" value="${esc(v[lang])}" placeholder="${esc(f.ph || '')}">`; return `<div class="f">${L}${mk('en')}</div>`; }
   if (f.type === 'datalist') { const opts = (f.source === 'labGroups' ? DL.labGroups() : []).map((g) => `<option value="${esc(g)}"></option>`).join(''); const id = 'dl_' + f.key.replace(/\./g, '_'); return `<div class="f">${L}<input type="text" list="${id}" data-fkey="${f.key}" value="${esc(gv(fs, f.key) ?? '')}"><datalist id="${id}">${opts}</datalist></div>`; }
   if (f.type === 'select') { const cur = gv(fs, f.key); const blank = (f.required && !cur) ? '<option value="" selected disabled>— Choose —</option>' : (f.optional ? '<option value="">—</option>' : ''); const opts = f.options ? f.options.map((o) => `<option value="${o}" ${cur === o ? 'selected' : ''}>${o}</option>`).join('') : srcOptions(f.source).map((o) => `<option value="${o.v}" ${cur === o.v ? 'selected' : ''}>${esc(o.l)}</option>`).join(''); return `<div class="f">${L}<select data-fkey="${f.key}">${blank}${opts}</select></div>`; }
@@ -2452,7 +2450,7 @@ function medFormBody(spec) {
     field(F.dose),
     field(Object.assign({}, F.purpose, { label: "What it's for", ph: 'free text — e.g. NSAID for joint pain' })),
     medFreqControlHtml(F),
-    field(F.timeOfDay),
+    fs.scheduledDays === 'prn' ? '' : field(F.timeOfDay),
     field(F.track),
     field(F.category),
     field(F.startDate),
@@ -2539,14 +2537,17 @@ async function onClick(e, rerender) {
   if (a === 'delrow') { fs[t.dataset.row].splice(Number(t.dataset.idx), 1); rerender(); return true; }
   if (a === 'medstop') { fs.status = 'stopped'; if (!fs.stopDate) fs.stopDate = medToday(); rerender(); return true; }
   if (a === 'medresume') { fs.status = 'active'; fs.stopDate = null; rerender(); return true; }
+  if (a === 'segpick') { sv(fs, t.dataset.segkey, t.dataset.segval); rerender(); return true; }
   if (a === 'dosepanel') { fdosePanel = true; fdoseDraft = { dose: fs.dose || '', date: medToday() }; rerender(); return true; }
   if (a === 'dosecancel') { fdosePanel = false; fdoseDraft = null; rerender(); return true; }
   if (a === 'dosesave') { const d = fdoseDraft || {}; const dt = d.date || medToday(); if (!Array.isArray(fs.doseHistory)) fs.doseHistory = []; fs.doseHistory.unshift({ date: dt, dose: d.dose || '', note: '' }); if (d.dose) fs.dose = d.dose; fs.lastDoseChange = dt; fdosePanel = false; fdoseDraft = null; rerender(); return true; }
   if (a === 'medfreq') { const v = t.dataset.freq;
-    if (v === 'prn') { fs.scheduledDays = 'prn'; fs.everyNDays = undefined; fs.anchorDate = undefined; }
-    else if (v === 'daily') { fs.scheduledDays = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']; fs.everyNDays = undefined; fs.anchorDate = undefined; if (fs.status === 'prn') fs.status = 'active'; }
-    else if (v === 'weekly') { if (!Array.isArray(fs.scheduledDays) || fs.scheduledDays.length === 7) fs.scheduledDays = ['mon']; fs.everyNDays = undefined; fs.anchorDate = undefined; if (fs.status === 'prn') fs.status = 'active'; }
-    else if (v === 'everyn') { fs.scheduledDays = null; if (fs.everyNDays == null) fs.everyNDays = 2; if (!fs.anchorDate) fs.anchorDate = fs.startDate || medToday(); if (fs.status === 'prn') fs.status = 'active'; }
+    if (v === 'prn') { fs.scheduledDays = 'prn'; fs.everyNDays = undefined; fs.anchorDate = undefined; fs.timeOfDay = 'prn'; }
+    else { if (fs.timeOfDay === 'prn') fs.timeOfDay = 'morning';
+      if (v === 'daily') { fs.scheduledDays = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']; fs.everyNDays = undefined; fs.anchorDate = undefined; }
+      else if (v === 'weekly') { if (!Array.isArray(fs.scheduledDays) || fs.scheduledDays.length === 7) fs.scheduledDays = ['mon']; fs.everyNDays = undefined; fs.anchorDate = undefined; }
+      else if (v === 'everyn') { fs.scheduledDays = null; if (fs.everyNDays == null) fs.everyNDays = 2; if (!fs.anchorDate) fs.anchorDate = fs.startDate || medToday(); }
+    }
     rerender(); return true; }
   if (a === 'delete') {
     if (!fconfirm) { fconfirm = true; rerender(); return true; }
@@ -2812,6 +2813,8 @@ function attachDrag(el) {
 // (pointer events). Respects the future-month guard by clicking the existing nav buttons;
 // short movements fall through as a normal day-select tap.
 function attachCalSwipe(el) {
+  // el = the whole month-view card. Swipe left → next month, right → previous.
+  const go = (dir) => { const b = el.querySelector(`[data-calnav="${dir}"]`); if (b && !b.disabled) b.click(); };
   let x0 = 0, y0 = 0, active = false, swiped = false;
   el.addEventListener('pointerdown', (e) => { active = true; swiped = false; x0 = e.clientX; y0 = e.clientY; });
   el.addEventListener('pointermove', (e) => { if (active && Math.abs(e.clientX - x0) > 8 && Math.abs(e.clientX - x0) > Math.abs(e.clientY - y0)) swiped = true; });
@@ -2819,13 +2822,19 @@ function attachCalSwipe(el) {
     if (!active) return; active = false;
     const dx = e.clientX - x0, dy = e.clientY - y0;
     if (Math.abs(dx) < 45 || Math.abs(dx) < Math.abs(dy)) { swiped = false; return; }
-    const dir = dx < 0 ? '1' : '-1'; // swipe left → next month, swipe right → previous
-    const btn = el.closest('.card')?.querySelector(`[data-calnav="${dir}"]`);
-    if (btn && !btn.disabled) btn.click();
+    go(dx < 0 ? '1' : '-1');
   };
   el.addEventListener('pointerup', end);
   el.addEventListener('pointercancel', () => { active = false; });
   el.addEventListener('click', (e) => { if (swiped) { e.preventDefault(); e.stopPropagation(); swiped = false; } }, true);
+  // Trackpad / horizontal-wheel swipe (desktop two-finger), throttled so one gesture = one month.
+  let wheelLock = 0;
+  el.addEventListener('wheel', (e) => {
+    if (Math.abs(e.deltaX) < 30 || Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return;
+    e.preventDefault();
+    const now = Date.now(); if (now < wheelLock) return; wheelLock = now + 600;
+    go(e.deltaX > 0 ? '1' : '-1');
+  }, { passive: false });
 }
 // Pointer-based drag-to-reorder for the symptom edit picker. Works for mouse + touch
 // (touch-action:none on the grip stops the page scrolling mid-drag). Reorders the DOM
@@ -2901,7 +2910,7 @@ function render() {
   const tb = document.querySelector('.topbar'); if (tb) document.documentElement.style.setProperty('--topbar-h', tb.offsetHeight + 'px');
   const wd = screen.querySelector('.wkdays.scroll');
   if (wd) { const sel = wd.querySelector('.wkday.sel'); wd.scrollLeft = sel ? Math.max(0, sel.offsetLeft - wd.clientWidth / 2 + sel.offsetWidth / 2) : wd.scrollWidth; attachDrag(wd); }
-  const cg = screen.querySelector('.calgrid'); if (cg) attachCalSwipe(cg);
+  const cg = screen.querySelector('.monthview'); if (cg) attachCalSwipe(cg);
   const symRe = screen.querySelector('#symReorder'); if (symRe) attachSymptomReorder(symRe);
 }
 function renderDataScreen() {
