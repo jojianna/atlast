@@ -2290,8 +2290,8 @@ const SPECS = {
     { key: 'notes', type: 'i18n', label: 'Notes / evidence', textarea: true, enOnly: true },
   ], defaults: { name: { en: '', es: '' }, status: 'investigating', control: '', statusDate: null, revisitNote: { en: '', es: '' }, specialismIds: [], notes: { en: '', es: '' } } },
   medications: { title: 'Medication', fields: [
-    { key: 'name', type: 'i18n', label: 'Name' },
-    { key: 'dose', type: 'text', label: 'Dose' },
+    { key: 'name', type: 'i18n', label: 'Name', ph: 'e.g. Naproxen' },
+    { key: 'dose', type: 'text', label: 'Dose', ph: 'e.g. 500 mg' },
     { key: 'freqLabel', type: 'i18n', label: 'Alternate dosing label' },
     { key: 'scheduledDays', type: 'weekdays', label: 'Days' },
     { key: 'everyNDays', type: 'number', label: 'Every how many days' },
@@ -2387,10 +2387,10 @@ function srcOptions(source) {
 function field(f) {
   if (f.showIf && !f.showIf(fs)) return '';
   const L = `<div class="f-label">${f.label}</div>`;
-  if (f.type === 'text' || f.type === 'number') return `<div class="f">${L}<input type="${f.type === 'number' ? 'number' : 'text'}" step="any" data-fkey="${f.key}" value="${esc(gv(fs, f.key) ?? '')}"></div>`;
+  if (f.type === 'text' || f.type === 'number') return `<div class="f">${L}<input type="${f.type === 'number' ? 'number' : 'text'}" step="any" data-fkey="${f.key}" value="${esc(gv(fs, f.key) ?? '')}" placeholder="${esc(f.ph || '')}"></div>`;
   if (f.type === 'date') return `<div class="f">${L}<input type="date" data-fkey="${f.key}" value="${esc(gv(fs, f.key) ?? '')}"></div>`;
   if (f.type === 'checkbox') return `<div class="f f-row"><label><input type="checkbox" data-fkey="${f.key}" data-bool ${gv(fs, f.key) ? 'checked' : ''}> ${f.label}</label></div>`;
-  if (f.type === 'i18n') { const v = gv(fs, f.key) || { en: '', es: '' }; const mk = (lang) => f.textarea ? `<textarea data-fkey="${f.key}" data-lang="${lang}" rows="2">${esc(v[lang])}</textarea>` : `<input type="text" data-fkey="${f.key}" data-lang="${lang}" value="${esc(v[lang])}">`; return `<div class="f">${L}${mk('en')}</div>`; }
+  if (f.type === 'i18n') { const v = gv(fs, f.key) || { en: '', es: '' }; const mk = (lang) => f.textarea ? `<textarea data-fkey="${f.key}" data-lang="${lang}" rows="2" placeholder="${esc(f.ph || '')}">${esc(v[lang])}</textarea>` : `<input type="text" data-fkey="${f.key}" data-lang="${lang}" value="${esc(v[lang])}" placeholder="${esc(f.ph || '')}">`; return `<div class="f">${L}${mk('en')}</div>`; }
   if (f.type === 'datalist') { const opts = (f.source === 'labGroups' ? DL.labGroups() : []).map((g) => `<option value="${esc(g)}"></option>`).join(''); const id = 'dl_' + f.key.replace(/\./g, '_'); return `<div class="f">${L}<input type="text" list="${id}" data-fkey="${f.key}" value="${esc(gv(fs, f.key) ?? '')}"><datalist id="${id}">${opts}</datalist></div>`; }
   if (f.type === 'select') { const cur = gv(fs, f.key); const blank = (f.required && !cur) ? '<option value="" selected disabled>— Choose —</option>' : (f.optional ? '<option value="">—</option>' : ''); const opts = f.options ? f.options.map((o) => `<option value="${o}" ${cur === o ? 'selected' : ''}>${o}</option>`).join('') : srcOptions(f.source).map((o) => `<option value="${o.v}" ${cur === o.v ? 'selected' : ''}>${esc(o.l)}</option>`).join(''); return `<div class="f">${L}<select data-fkey="${f.key}">${blank}${opts}</select></div>`; }
   if (f.type === 'multiselect') { const cur = gv(fs, f.key) || []; const boxes = srcOptions(f.source).map((o) => `<label class="f-chk"><input type="checkbox" data-fkey="${f.key}" data-msval="${o.v}" ${cur.includes(o.v) ? 'checked' : ''}> ${esc(o.l)}</label>`).join(''); return `<div class="f">${L}<div class="f-chks">${boxes}</div></div>`; }
@@ -2450,7 +2450,7 @@ function medFormBody(spec) {
     dosePanel,
     stoppedDate,
     field(F.dose),
-    field(Object.assign({}, F.purpose, { label: "What it's for" })),
+    field(Object.assign({}, F.purpose, { label: "What it's for", ph: 'free text — e.g. NSAID for joint pain' })),
     medFreqControlHtml(F),
     field(F.timeOfDay),
     field(F.track),
