@@ -47,7 +47,7 @@ body { font:16px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helveti
 details.msgs { margin-top:8px; } details.msgs summary { cursor:pointer; font-size:13px; color:var(--muted); }
 .msglist { margin:8px 0 0; padding:0; list-style:none; font-size:12.5px; } .msglist li { padding:4px 0; border-bottom:1px solid var(--line); color:var(--muted); }
 .chips-row { display:flex; flex-wrap:wrap; gap:6px; } .pill { font-size:12px; background:var(--chip); border-radius:999px; padding:4px 10px; color:var(--ink); }
-.tabbar { position:fixed; left:0; right:0; bottom:0; z-index:10; height:calc(var(--tabbar-h) + env(safe-area-inset-bottom)); padding-bottom:env(safe-area-inset-bottom); display:grid; grid-template-columns:repeat(5,1fr); background:#fff; border-top:1px solid var(--line); }
+.tabbar { position:fixed; left:0; right:0; bottom:0; z-index:10; height:calc(var(--tabbar-h) + env(safe-area-inset-bottom)); padding-bottom:env(safe-area-inset-bottom); display:grid; grid-template-columns:repeat(4,1fr); background:#fff; border-top:1px solid var(--line); }
 .tab { border:0; background:transparent; cursor:pointer; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; color:var(--muted); font-size:11px; }
 .tab .tab-ico { font-size:20px; line-height:1; } .tab.is-active { color:var(--teal); font-weight:600; }
 .btn { border:0; background:var(--teal); color:#fff; border-radius:10px; padding:10px 14px; font-size:14px; font-weight:600; cursor:pointer; touch-action:manipulation; -webkit-tap-highlight-color:transparent; }
@@ -69,6 +69,11 @@ button.sym-head { background:none; border-left:0; border-right:0; border-bottom:
 .sev-0.is-on,.sev-chip.sev-0 { background:#94a3b8; color:#fff; } .sev-1.is-on,.sev-chip.sev-1 { background:#fde047; color:#422006; }
 .sev-2.is-on,.sev-chip.sev-2 { background:#f59e0b; } .sev-3.is-on,.sev-chip.sev-3 { background:#f97316; } .sev-4.is-on,.sev-chip.sev-4 { background:#b91c1c; }
 .sev-chip { display:inline-block; min-width:22px; text-align:center; color:#fff; border-radius:999px; padding:2px 9px; font-weight:700; font-size:13px; } .sev-chip .small { color:rgba(255,255,255,.85); }
+.moodrow { display:grid; grid-template-columns:repeat(5,1fr); gap:6px; }
+.mood { border:1px solid var(--line); background:#fff; border-radius:9px; padding:10px 0; display:flex; align-items:center; justify-content:center; cursor:pointer; touch-action:manipulation; -webkit-tap-highlight-color:transparent; user-select:none; }
+.mood.is-on { border-width:2px; padding:9px 0; }
+.mood svg { display:block; }
+.moodnote { width:100%; margin-top:11px; border:1px solid var(--line); border-radius:8px; padding:8px; font:inherit; font-size:14px; line-height:1.45; resize:vertical; box-sizing:border-box; min-height:64px; max-height:240px; overflow-y:auto; }
 .med { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:8px 0; border-bottom:1px solid var(--line); } .med:last-child { border-bottom:0; }
 .med-name { font-weight:600; } .med-toggle { display:flex; gap:6px; }
 .tgl { width:38px; height:38px; border:1px solid var(--line); background:#fff; border-radius:8px; font-size:15px; cursor:pointer; color:var(--muted); touch-action:manipulation; -webkit-tap-highlight-color:transparent; user-select:none; }
@@ -222,6 +227,19 @@ ul.tight { margin: 4px 0 0; padding-left: 18px; } ul.tight li { padding: 1px 0; 
 .ds .sched{font-variant-numeric:tabular-nums;font-weight:700;white-space:nowrap;text-align:right;}
 .ds .sched .f{display:block;font-weight:500;color:var(--muted);font-size:11px;}
 .ds .addmini{border:0;width:28px;height:28px;border-radius:50%;background:#e1f5ee;color:var(--teal-d);font-size:18px;font-weight:700;line-height:1;cursor:pointer;}
+.ds .infobtn{border:0;width:20px;height:20px;padding:0;border-radius:50%;background:#e1f5ee;color:var(--teal-d);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;flex:none;}
+.ds .card-h .hgrp h2{margin:0;}
+.modal.sym-info{max-width:360px;}
+.sym-info-top{display:flex;justify-content:flex-end;margin:-6px -6px 0 0;}
+.sym-info-x{border:0;background:transparent;color:var(--muted);font-size:18px;line-height:1;cursor:pointer;padding:4px 6px;}
+.sym-info-title{font-size:17px;font-weight:600;color:var(--ink);margin:0 0 8px;line-height:1.35;}
+.sym-info-title b{font-weight:800;}
+.sym-info-body{font-size:14px;color:var(--muted);margin:0 0 16px;line-height:1.5;}
+.sym-info-scale{display:flex;flex-direction:column;gap:8px;}
+.sym-info-row{display:flex;align-items:center;gap:10px;}
+.sym-info-row .sev-chip{min-width:26px;}
+.sym-info-lbl{font-size:14px;color:var(--ink);}
+.linklike{border:0;background:transparent;padding:0;font:inherit;color:var(--teal-d);text-decoration:underline;cursor:pointer;}
 .ds .pickrow{display:block;width:100%;text-align:left;border:0;border-bottom:1px solid var(--line);background:transparent;padding:11px 2px;font-size:14px;color:var(--ink);cursor:pointer;}
 .ds .pickrow:last-child{border-bottom:0;}
 .ds .sym-reorder .pickrow-wrap{display:flex;align-items:stretch;gap:8px;}
@@ -260,7 +278,7 @@ ul.tight { margin: 4px 0 0; padding-left: 18px; } ul.tight li { padding: 1px 0; 
 .ds .wkday{flex:0 0 52px;scroll-snap-align:end;display:flex;flex-direction:column;align-items:center;gap:2px;border:1px solid var(--line);background:#fff;border-radius:10px;padding:5px 0;cursor:pointer;font:inherit;color:var(--ink);min-width:0;touch-action:manipulation;-webkit-tap-highlight-color:transparent;}
 .ds .wkday .wkdow{font-size:10px;color:var(--muted);}
 .ds .wkday .wkdate{font-size:13px;font-weight:600;}
-.ds .wkday .wktick{font-size:11px;height:14px;line-height:14px;color:var(--teal);}
+.ds .wkday .wktick{font-size:11px;height:16px;line-height:16px;color:var(--teal);display:flex;align-items:center;justify-content:center;}
 .ds .wkday.sel{background:var(--teal);border-color:var(--teal);color:#fff;}
 .ds .wkday.sel .wkdow,.ds .wkday.sel .wktick{color:rgba(255,255,255,.85);}
 .ds .wkday.tod:not(.sel){border-color:var(--teal);border-width:1.5px;}
@@ -272,14 +290,21 @@ ul.tight { margin: 4px 0 0; padding-left: 18px; } ul.tight li { padding: 1px 0; 
 .ds .calhead .mlabel{font-size:15px;font-weight:700;color:var(--ink);}
 .ds .calgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;}
 .ds .caldow{font-size:10px;color:var(--muted);text-align:center;padding-bottom:2px;}
-.ds .calday{aspect-ratio:1;border-radius:7px;border:1px solid var(--line);background:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--ink);cursor:pointer;font:inherit;padding:0;touch-action:manipulation;-webkit-tap-highlight-color:transparent;}
-.ds .calday.empty{border:0;background:transparent;cursor:default;}
-.ds .calday.fut{opacity:.35;}
-.ds .calday.tod{box-shadow:0 0 0 2px var(--teal);}
-.ds .calday.sel{outline:2px solid var(--ink);outline-offset:1px;}
-.ds .calb0{background:#f1f5f9;border-color:#f1f5f9;color:#64748b;}
-.ds .calb1{background:#fde047;border-color:#fde047;color:#422006;}
-.ds .calb2{background:#f59e0b;border-color:#f59e0b;color:#3b2606;}
+.ds .calday{position:relative;aspect-ratio:1;border-radius:7px;border:0;background:transparent;display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--ink);cursor:pointer;font:inherit;padding:0;touch-action:manipulation;-webkit-tap-highlight-color:transparent;}
+.ds .calfold{position:absolute;top:0;right:0;width:48%;height:48%;border-top-right-radius:7px;background:linear-gradient(to bottom left,#fff 0 50%,transparent 50%);pointer-events:none;}
+.ds .calmood{position:absolute;top:1px;right:1px;line-height:0;z-index:2;pointer-events:none;}
+.ds .calmood svg{display:block;}
+.ds .mooddist-lbl{margin:8px 0 2px;}
+.ds .mooddist-row{display:flex;align-items:center;gap:8px;margin:6px 0;}
+.ds .mooddist-track{flex:1;display:block;height:12px;background:#f1f5f9;border:0.5px solid var(--line);border-radius:4px;overflow:hidden;}
+.ds .mooddist-n{width:52px;text-align:right;font-size:12px;color:var(--muted);}
+.ds .calday.empty{background:transparent;cursor:default;}
+.ds .calday.fut{color:#b8c0c7;}
+.ds .calday.tod::after{content:'';position:absolute;bottom:5px;left:50%;transform:translateX(-50%);width:5px;height:5px;border-radius:50%;background:currentColor;}
+.ds .calday.sel{box-shadow:inset 0 0 0 2px #fff, 0 1px 5px rgba(0,0,0,.30);}
+.ds .calb0{background:#f1f5f9;border-color:#f1f5f9;color:#243027;}
+.ds .calb1{background:#fde047;border-color:#fde047;color:#243027;}
+.ds .calb2{background:#f59e0b;border-color:#f59e0b;color:#243027;}
 .ds .calb3{background:#f97316;border-color:#f97316;color:#fff;}
 .ds .calb4{background:#b91c1c;border-color:#b91c1c;color:#fff;}
 .ds .callegend{display:flex;flex-wrap:wrap;gap:7px 12px;margin-top:12px;font-size:11px;color:var(--muted);align-items:center;}
@@ -335,12 +360,17 @@ ul.tight { margin: 4px 0 0; padding-left: 18px; } ul.tight li { padding: 1px 0; 
 .ds .adh-dots{display:flex;flex-wrap:wrap;gap:3px;}
 .ds .adh-dot{width:11px;height:11px;border-radius:3px;}
 .ds .adh-streak{font-size:12px;color:var(--muted);margin-top:7px;}
+.ds .med-row{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;border:0;border-bottom:1px solid var(--line);background:transparent;padding:11px 0;cursor:pointer;text-align:left;font:inherit;}
+.ds .med-row.open{border-bottom:0;}
+.ds .med-name{font-size:14px;font-weight:500;display:flex;align-items:center;gap:7px;}
+.ds .med-name .gcaret{color:var(--muted);font-size:12px;width:12px;flex:0 0 auto;}
+.ds .med-sum{font-size:14px;font-weight:600;white-space:nowrap;}
+.ds .adh-detail{padding:0 0 12px 19px;}
 .ds .labgrp .lab-row .lab-val{font-size:14px;font-weight:600;}
 .ds .labgrp .lab-row .lab-val .small{font-weight:400;}
 .ds .btn-mark{border:1px solid var(--teal);background:var(--teal);color:#fff;border-radius:999px;padding:5px 14px;font-size:13px;font-weight:600;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;}
 .ds .btn-mark.wide{display:block;width:100%;padding:11px;border-radius:12px;font-size:14px;}
 .ds .daybar{text-align:center;margin:6px 0 16px;}
-.ds .daybar.done{color:var(--ok);font-weight:600;padding:10px;}
 .ds .prog-chip.done{background:#dcfce7;color:#15803d;}
 .ds .loc-count{margin-left:2px;white-space:nowrap;}
 .ds .card-h h2, .sec-head h2, .ds .ro-fold>summary h2 { font-size:11.5px; font-weight:700; letter-spacing:.07em; text-transform:uppercase; color:var(--teal-d); margin:0; }
@@ -357,6 +387,9 @@ ul.tight { margin: 4px 0 0; padding-left: 18px; } ul.tight li { padding: 1px 0; 
 .ds .plegend>span{display:inline-flex;align-items:center;gap:6px;}
 .ds .plegk{width:22px;height:22px;border-radius:50%;background:var(--card);border:1px solid var(--line);display:inline-flex;align-items:center;justify-content:center;}
 .ds .plegk svg{width:13px;height:13px;}
+.ds .histchips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;}
+.ds .histchip{font-size:12px;padding:5px 11px;border-radius:999px;border:1px solid var(--line);background:var(--card);color:var(--muted);cursor:pointer;font:inherit;}
+.ds .histchip.on{background:var(--teal);color:#fff;border-color:var(--teal);font-weight:600;}
 .ds .pyear{font-weight:800;font-size:13px;color:var(--teal-d);margin:10px 0 4px;padding-left:36px;}
 .ds .prail{position:relative;padding-left:36px;}
 .ds .prail::before{content:'';position:absolute;left:13px;top:6px;bottom:6px;width:2px;background:var(--line);}
@@ -448,7 +481,6 @@ ul.tight { margin: 4px 0 0; padding-left: 18px; } ul.tight li { padding: 1px 0; 
     <button class="tab" data-tab="overview"><span class="tab-ico" aria-hidden="true">📋</span><span class="tab-label">Summary</span></button>
     <button class="tab" data-tab="records"><span class="tab-ico" aria-hidden="true">📈</span><span class="tab-label">Trends</span></button>
     <button class="tab" data-tab="next"><span class="tab-ico" aria-hidden="true">🗓</span><span class="tab-label">Visits</span></button>
-    <button class="tab" data-tab="timeline"><span class="tab-ico" aria-hidden="true">🕓</span><span class="tab-label">Timeline</span></button>
   </nav>
   <div id="printSheet" aria-hidden="true"></div>
   <script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@3/lib/msal-browser.min.js"></script>
@@ -468,6 +500,9 @@ const __HT_TEMPLATE__ = {
 
 function getPref(k){ try { return (typeof localStorage !== 'undefined') && localStorage.getItem('ht.pref.' + k) === '1'; } catch { return false; } }
 function setPref(k, v){ try { if (typeof localStorage !== 'undefined') localStorage.setItem('ht.pref.' + k, v ? '1' : '0'); } catch {} }
+// String-valued prefs (e.g. the date mood tracking was switched on) — same ht.pref.* namespace.
+function getPrefStr(k){ try { return (typeof localStorage !== 'undefined') ? (localStorage.getItem('ht.pref.' + k) || '') : ''; } catch { return ''; } }
+function setPrefStr(k, v){ try { if (typeof localStorage !== 'undefined') localStorage.setItem('ht.pref.' + k, v || ''); } catch {} }
 
 // Shared time-of-day ordering (morning → midday → evening → PRN). Used for sorting meds
 // across the daily view, Summary, and the doctor print sheet. (MED_SLOT_BY_TIME is a
@@ -478,6 +513,14 @@ const TOD_ORDER = { morning: 0, midday: 1, evening: 2, bedtime: 2, prn: 3 };
 const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 // Shared date shift by N days (UTC-safe). Used by the Log strip/calendar and Trends.
 function shiftDate(iso, days) { const d = new Date(iso + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() + days); return d.toISOString().slice(0, 10); }
+// Shared mood palette + face, used by the Log mood picker, the week-strip completion glyph, the
+// month-calendar corner dot and the Trends mood distribution — one source of truth so the five
+// colours/mouths can't drift apart. Top-level so every module (Today + Records) can reach it.
+// 1 very low (red, frown) … 5 very good (green, big smile). moodFaceSVG(n, size) draws the circle,
+// eyes and the n-specific mouth in the mood colour.
+const MOOD_COLORS = ['#e0413b', '#f0952e', '#9e948b', '#8dc63f', '#1e9e4a'];
+const MOOD_MOUTHS = ['M8 17 Q12 13 16 17', 'M8 16 Q12 14.5 16 16', 'M8 15 H16', 'M8 14 Q12 16 16 14', 'M8 13 Q12 18 16 13'];
+function moodFaceSVG(n, size) { const c = MOOD_COLORS[n - 1]; return `<svg viewBox="0 0 24 24" width="${size}" height="${size}" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="none" stroke="${c}" stroke-width="2"/><circle cx="9" cy="10" r="1.3" fill="${c}"/><circle cx="15" cy="10" r="1.3" fill="${c}"/><path d="${MOOD_MOUTHS[n - 1]}" fill="none" stroke="${c}" stroke-width="2" stroke-linecap="round"/></svg>`; }
 
 const SCHEMA = (function(){
 
@@ -543,6 +586,8 @@ function validate(data) {
       if(r.severity!==undefined&&r.severity!==null){ if(!isNum(r.severity)||r.severity<SEVERITY_MIN||r.severity>SEVERITY_MAX||!Number.isInteger(r.severity))E(rat+'.severity out of 0-4'); }
       if(r.note!==undefined&&!isStr(r.note))E(rat+'.note'); });
     if(d.overallPain!==undefined&&d.overallPain!==null&&!(Number.isInteger(d.overallPain)&&d.overallPain>=SEVERITY_MIN&&d.overallPain<=SEVERITY_MAX))E(at+'.overallPain out of 0-4');
+    if(d.mood!==undefined&&d.mood!==null&&!(Number.isInteger(d.mood)&&d.mood>=1&&d.mood<=5))E(at+'.mood out of 1-5');
+    if(d.moodNote!==undefined&&d.moodNote!==null&&!isStr(d.moodNote))E(at+'.moodNote');
     if(!isArr(d.medsTaken))E(at+'.medsTaken'); else d.medsTaken.forEach((mt,j)=>{ if(!ids.medication.has(mt.medId))W(at+'.medsTaken['+j+'].medId unknown'); if(!isBool(mt.taken))E(at+'.medsTaken['+j+'].taken'); if(mt.count!==undefined&&!(Number.isInteger(mt.count)&&mt.count>=0))E(at+'.medsTaken['+j+'].count'); });
   });
   (data.episodes||[]).forEach((e,i)=>{ const at='episodes['+i+'] ('+e.id+')'; if(!isStr(e.id))E(at+'.id'); if(!isI18n(e.name))E(at+'.name'); if(!ENUMS.episodeType.includes(e.type))E(at+'.type invalid'); if(!isStr(e.startDate)||!ISO_DATE.test(e.startDate))E(at+'.startDate'); if(!isNullableDate(e.endDate))E(at+'.endDate'); if(!isBool(e.showOnTimeline))E(at+'.showOnTimeline'); });
@@ -719,7 +764,7 @@ function _ensureRow(log, sym, loc) { let r = _row(log, sym, loc); if (!r) { r = 
 function _pruneRow(log, sym, loc) { const i = _rowIdx(log, sym, loc); if (i < 0) return; const r = log.symptoms[i]; if (r.severity == null && !(r.note && String(r.note).trim())) log.symptoms.splice(i, 1); }
 function setSeverity(date, symptomId, locationId, severity) {
   const log = ensureLog(date);
-  if (severity == null) { const r = _row(log, symptomId, locationId); if (r) { delete r.severity; _pruneRow(log, symptomId, locationId); } }
+  if (severity == null) { const r = _row(log, symptomId, locationId); if (r) { delete r.severity; _pruneRow(log, symptomId, locationId); } delete log.symptomsSubmittedAt; } // clearing an answer un-submits the day
   else { _ensureRow(log, symptomId, locationId).severity = severity; }
   return log;
 }
@@ -731,9 +776,31 @@ function setSymptomNote(date, symptomId, locationId, text) {
   return log;
 }
 function getSymptomNote(date, symptomId, locationId, data = _data) { const r = _row(getDailyLog(date, data) || { symptoms: [] }, symptomId, locationId); return r?.note || ''; }
+// Daily mood — an optional 1–5 self-rating (1 very low … 5 very good), independent of symptom
+// severity (0–4, higher = worse) so the two never read the same. Off by default; the Log only
+// shows it, and completion only requires it, when the `trackMood` pref is on. Stored per day as
+// an optional `mood` on the daily log (mirrors the optional `overallPain` precedent) — no schema
+// migration, days without a mood are untouched. Setting mood to null clears it; unlike severity it
+// does NOT un-submit the day (mood is gated independently in isComplete), so a day stays "marked
+// complete" for symptoms/meds even while its mood is being changed.
+function setMood(date, mood) {
+  const log = ensureLog(date);
+  if (mood == null) delete log.mood; else log.mood = mood;
+  return log;
+}
+function getMood(date, data = _data) { const l = getDailyLog(date, data); return l && typeof l.mood === 'number' ? l.mood : null; }
+// Optional free-text journal note for the day, paired with mood. Stored as `moodNote` on the daily log;
+// independent of the mood score (a note can persist even if the mood face is later cleared) and never
+// required for day completion. Empty/blank removes it.
+function setMoodNote(date, text) {
+  const log = ensureLog(date);
+  if (!(text && text.trim())) delete log.moodNote; else log.moodNote = text;
+  return log;
+}
+function getMoodNote(date, data = _data) { const l = getDailyLog(date, data); return (l && typeof l.moodNote === 'string') ? l.moodNote : ''; }
 function setMedTaken(date, medId, taken) {
   const log = ensureLog(date); const i = log.medsTaken.findIndex((r) => r.medId === medId);
-  if (taken == null) { if (i >= 0) log.medsTaken.splice(i, 1); } else { const row = { medId, taken }; if (i >= 0) log.medsTaken[i] = row; else log.medsTaken.push(row); }
+  if (taken == null) { if (i >= 0) log.medsTaken.splice(i, 1); delete log.symptomsSubmittedAt; } else { const row = { medId, taken }; if (i >= 0) log.medsTaken[i] = row; else log.medsTaken.push(row); } // clearing an answer un-submits the day
   return log;
 }
 function getMedTaken(date, medId, data = _data) { const log = getDailyLog(date, data); const row = log?.medsTaken?.find((r) => r.medId === medId); return row ? row.taken : null; }
@@ -769,7 +836,9 @@ function medsForDate(date, data = _data) {
 const MEDS_REQUIRED_SINCE = '2026-07-09';
 function requiredMedsOn(date, data = _data) {
   if (date < MEDS_REQUIRED_SINCE) return [];
-  return medsForDate(date, data).scheduled.filter((m) => m.category !== 'supplement' && m.category !== 'therapy');
+  // Every scheduled (non-PRN) med counts — regular meds, supplements and therapies alike.
+  // "Mark day complete" fills any unanswered ones with ✗, and each must be answered for the day to read complete.
+  return medsForDate(date, data).scheduled;
 }
 function submitSymptoms(date, data = _data) {
   const log = ensureLog(date);
@@ -778,7 +847,7 @@ function submitSymptoms(date, data = _data) {
     if (s.trackBy === 'single') { if (getSeverity(date, s.id, null) == null) setSeverity(date, s.id, null, 0); }
     else { for (const l of activeLocations(s)) { if (getSeverity(date, s.id, l.id) == null) setSeverity(date, s.id, l.id, 0); } }
   }
-  for (const m of requiredMedsOn(date, data)) { if (getMedTaken(date, m.id) == null) setMedTaken(date, m.id, false); } // unanswered regular meds → not taken
+  for (const m of requiredMedsOn(date, data)) { if (getMedTaken(date, m.id) == null) setMedTaken(date, m.id, false); } // unanswered scheduled meds (regular, supplements, therapies) → not taken
   log.symptomsSubmittedAt = new Date().toISOString(); return log;
 }
 function symptomsSubmitted(date, data = _data) { return getDailyLog(date, data)?.symptomsSubmittedAt || null; }
@@ -880,7 +949,7 @@ async function importData(text) {
   return report;
 }
 
-return { CONFIG, getData, getLoadMeta, subscribe, setActiveSource, getActiveSource, loadData, resetToSeed, saveData, t, tx, specialistLabel, derivedOverall, derivedIntensity, activeSymptomTypes, activeLocations, latestLab, labWindow, activeConditions, excludedList, bigPicture, labStatus, labTrend, labPosNeg, labGroups, parseReport, weekdayOf, getDailyLog, setSeverity, getSeverity, setSymptomNote, getSymptomNote, setMedTaken, getMedTaken, setMedCount, getMedCount, medDueOn, medTimeOfDay, medsForDate, submitSymptoms, requiredMedsOn, symptomsSubmitted, startEpisode, endEpisode, reopenEpisode, setEpisodeNote, ongoingEpisodes, episodesEndedOn, persist, persistLocal, markQuestionAnswered, genId, getRecord, upsert, remove, archiveSymptomType, deleteSymptomType, addSymptomType, renameSymptomType, setSymptomOverall, addLocation, renameLocation, archiveLocation, reorderSymptomTypes, addLabResult, removeLabResult, recordDoseChange, exportJSON, importData };
+return { CONFIG, getData, getLoadMeta, subscribe, setActiveSource, getActiveSource, loadData, resetToSeed, saveData, t, tx, specialistLabel, derivedOverall, derivedIntensity, activeSymptomTypes, activeLocations, latestLab, labWindow, activeConditions, excludedList, bigPicture, labStatus, labTrend, labPosNeg, labGroups, parseReport, weekdayOf, getDailyLog, setSeverity, getSeverity, setSymptomNote, getSymptomNote, setMood, getMood, setMoodNote, getMoodNote, setMedTaken, getMedTaken, setMedCount, getMedCount, medDueOn, medTimeOfDay, medsForDate, submitSymptoms, requiredMedsOn, symptomsSubmitted, startEpisode, endEpisode, reopenEpisode, setEpisodeNote, ongoingEpisodes, episodesEndedOn, persist, persistLocal, markQuestionAnswered, genId, getRecord, upsert, remove, archiveSymptomType, deleteSymptomType, addSymptomType, renameSymptomType, setSymptomOverall, addLocation, renameLocation, archiveLocation, reorderSymptomTypes, addLabResult, removeLabResult, recordDoseChange, exportJSON, importData };
 })();
 
 const Today = (function(){
@@ -888,7 +957,7 @@ const { tx } = DL;
 
 
 
-const ui = { expanded: new Set(['sym_jointpain']), epFormOpen: false, savedAt: null, noteOpen: new Set(), noteInit: new Set(), scaleOpen: new Set(), calView: 'week', calMonth: null, editPick: null };
+const ui = { expanded: new Set(['sym_jointpain']), epFormOpen: false, savedAt: null, noteOpen: new Set(), noteInit: new Set(), scaleOpen: new Set(), calView: 'week', calMonth: null, editPick: null, infoOpen: false, epInfoOpen: false };
 
 const STR = {
   en: { today: 'Today', symptoms: 'Symptoms', meds: 'Medications', asNeeded: 'As needed (PRN)', secRegular: 'Regular', secSupplements: 'Supplements', secTherapies: 'Therapies',
@@ -898,7 +967,14 @@ const STR = {
         none: 'none', saved: 'Saved locally', noMeds: 'No medications scheduled for this day.',
         scaleHint: '0 none · 1 noticeable · 2 distracting · 3 interferes · 4 prevents',
         noData: 'No data.',
-        rowNotePh: 'Add a detail (optional)…', addNote: 'Add note', done: 'Done', epNotePh: 'Add a note (e.g. still burning today)…', reopen: 'Reopen' },
+        rowNotePh: 'Add a detail (optional)…', addNote: 'Add note', done: 'Done', epNotePh: 'Add a note (e.g. still burning today)…', reopen: 'Reopen',
+        symInfoAria: 'About symptom tracking', symInfoTitle: ['Track how your symptoms were today at ', 'their worst'],
+        symInfoBody: 'Logging daily helps you and your care team spot patterns over time.',
+        scaleLabels: ['None', 'Noticeable', 'Distracting', 'Interferes with daily activities', 'Prevents daily activities'], close: 'Close',
+        epInfoAria: "What's an episode?", epInfoTitle: "What's an episode?",
+        epInfoBody: 'Symptoms are what you rate day to day. An episode is a bout with a start and end — a cold, an infection, a flare — that gives context for why those symptoms shifted.',
+        epInfoSettingsPre: "Don't need it? Turn episode tracking off any time under ", settingsWord: 'Settings',
+        mood: 'Mood', moodNotePh: 'Add a note about today (optional)…' },
   es: { today: 'Hoy', symptoms: 'Síntomas', meds: 'Medicación', asNeeded: 'Según necesidad (PRN)', secRegular: 'Pauta fija', secSupplements: 'Suplementos', secTherapies: 'Terapias',
         episodes: 'Episodios',
         ongoing: 'En curso', end: 'Finalizar hoy', endedToday: 'Finalizado',
@@ -906,7 +982,14 @@ const STR = {
         none: 'ninguno', saved: 'Guardado localmente', noMeds: 'No hay medicación programada para este día.',
         scaleHint: '0 ninguno · 1 leve · 2 molesto · 3 interfiere · 4 impide',
         noData: 'Sin datos.',
-        rowNotePh: 'Añadir un detalle (opcional)…', addNote: 'Añadir nota', done: 'Listo', epNotePh: 'Añadir una nota (p. ej. sigue el ardor hoy)…', reopen: 'Reabrir' },
+        rowNotePh: 'Añadir un detalle (opcional)…', addNote: 'Añadir nota', done: 'Listo', epNotePh: 'Añadir una nota (p. ej. sigue el ardor hoy)…', reopen: 'Reabrir',
+        symInfoAria: 'Sobre el registro de síntomas', symInfoTitle: ['Registra cómo estuvieron tus síntomas hoy en ', 'su peor momento'],
+        symInfoBody: 'Registrarlo a diario te ayuda a ti y a tu equipo médico a detectar patrones con el tiempo.',
+        scaleLabels: ['Ninguno', 'Leve', 'Molesto', 'Interfiere con las actividades diarias', 'Impide las actividades diarias'], close: 'Cerrar',
+        epInfoAria: '¿Qué es un episodio?', epInfoTitle: '¿Qué es un episodio?',
+        epInfoBody: 'Los síntomas son lo que valoras día a día. Un episodio es un período con inicio y fin —un resfriado, una infección, un brote— que da contexto a por qué cambiaron esos síntomas.',
+        epInfoSettingsPre: '¿No lo necesitas? Puedes desactivar el registro de episodios cuando quieras en ', settingsWord: 'Ajustes',
+        mood: 'Mood', moodNotePh: 'Add a note about today (optional)…' },
 };
 const EP_TYPES = {
   en: { cold_flu: 'Cold / flu', infection: 'Infection', gi: 'GI', flare: 'Flare', other: 'Other' },
@@ -997,6 +1080,7 @@ function monthCal(state, data, types) {
   const daysIn = new Date(Date.UTC(yy, mm, 0)).getUTCDate();
   const dows = DOW_INITIALS[lang] || DOW_INITIALS.en;
   const mlabel = first.toLocaleDateString(lang === 'es' ? 'es-ES' : 'en-GB', { month: 'long', year: 'numeric' });
+  const moodOn = getPref('trackMood');
   let cells = dows.map((d) => `<div class="caldow">${d}</div>`).join('');
   for (let i = 0; i < lead; i++) cells += '<div class="calday empty"></div>';
   for (let d = 1; d <= daysIn; d++) {
@@ -1004,12 +1088,17 @@ function monthCal(state, data, types) {
     const fut = iso > tISO;
     const bi = fut ? -1 : dayBandIdx(iso, types, data);
     const cls = bi >= 0 ? ` calb${bi}` : '';
-    cells += `<button class="calday${cls}${iso === date ? ' sel' : ''}${iso === tISO ? ' tod' : ''}${fut ? ' fut' : ''}" data-day="${iso}" ${fut ? 'disabled' : ''}>${d}</button>`;
+    // Burden stays as the cell fill; a folded top-right corner (diagonal cut, white, matching the tile
+    // radius) carries that day's mood face when mood tracking is on and a mood was logged. The white fold
+    // gives the face legible contrast on any burden colour and needs no legend. No mood → no fold.
+    const mv = (!fut && moodOn) ? DL.getMood(iso, data) : null;
+    const dot = mv != null ? `<span class="calfold"></span><span class="calmood">${moodFaceSVG(mv, 12)}</span>` : '';
+    cells += `<button class="calday${cls}${iso === date ? ' sel' : ''}${iso === tISO ? ' tod' : ''}${fut ? ' fut' : ''}" data-day="${iso}" ${fut ? 'disabled' : ''}>${d}${dot}</button>`;
   }
   const canNext = monthIso < tISO.slice(0, 7);
   const lg = (cls, txt) => `<span><span class="lgsw ${cls}"></span>${txt}</span>`;
-  const legend = `<div class="callegend"><span style="color:var(--muted)">${lang === 'es' ? 'Carga:' : 'Burden:'}</span>${lg('calb1', lang === 'es' ? 'leve' : 'light')}${lg('calb2', lang === 'es' ? 'típico' : 'typical')}${lg('calb3', lang === 'es' ? 'difícil' : 'difficult')}${lg('calb4', lang === 'es' ? 'grave' : 'severe')}${lg('calb0', lang === 'es' ? 'sin síntomas' : 'clear')}</div>`;
-  const note = `<div class="calnote">${lang === 'es' ? "Color = la carga general del día. Difícil = una o dos cosas que interfieren de verdad (o una en su peor punto); grave = tres o más a la vez — cada articulación dolorida cuenta. Toca un día para abrirlo." : "Colour = the day's overall burden. Difficult = one or two things really interfering (or one at its worst); severe = three or more interfering at once — each painful joint counts. Tap a day to open it."}</div>`;
+  const legend = `<div class="callegend">${lg('calb1', lang === 'es' ? 'leve' : 'light')}${lg('calb2', lang === 'es' ? 'típico' : 'typical')}${lg('calb3', lang === 'es' ? 'difícil' : 'difficult')}${lg('calb4', lang === 'es' ? 'grave' : 'severe')}</div>`;
+  const note = `<div class="calnote">${lang === 'es' ? 'Toca un día para abrirlo.' : 'Tap a day to open it.'}</div>`;
   // Month notes list — shown only under the month calendar. Chronological, newest first,
   // scoped to the displayed month; taps open that day (data-day). Log view is English-only,
   // so note text isn't translated; symptom/episode labels still localise. No calendar dots.
@@ -1037,6 +1126,8 @@ function monthCal(state, data, types) {
   const notesLbl = lang === 'es' ? 'Notas de este mes' : 'Notes this month';
   const noNotesLbl = lang === 'es' ? 'Aún no hay notas este mes.' : 'No notes this month yet.';
   const notesSection = `<div style="border-top:0.5px solid var(--line);margin:14px 0 12px"></div><div class="subhead" style="margin-bottom:10px">${notesLbl}${mNotes.length ? ` <span class="muted small">· ${mNotes.length}</span>` : ''}</div>${mNotes.length ? noteRows : `<p class="muted small">${noNotesLbl}</p>`}`;
+  // Month-on-month burden comparison used to live here; moved out to keep the calendar focused —
+  // that kind of trend now belongs on the Trends page.
   return `<div class="card monthview" style="touch-action:pan-y"><div class="calhead"><span class="mlabel">${mlabel}</span><span class="hgrp"><button class="wknav" data-calnav="-1" aria-label="Previous month">‹</button><button class="wknav" data-calnav="1" aria-label="Next month" ${canNext ? '' : 'disabled'}>›</button><button class="wkcal on" data-calview="week" aria-label="${lang === 'es' ? 'Volver a la semana' : 'Back to week'}">${CAL_SVG}</button></span></div><div class="calgrid">${cells}</div>${legend}${note}${notesSection}</div>`;
 }
 
@@ -1054,13 +1145,18 @@ function renderToday(state) {
   const sub = isToday ? T.today : agoLabel(daysBetween(date, todayISO()), lang);
   const tISO = todayISO();
   const types = DL.activeSymptomTypes(data);
+  const moodOn = getPref('trackMood');
+  const moodSince = getPrefStr('moodSince');
+  // Mood counts toward completion only from the day tracking was switched on (moodSince) up to today,
+  // so enabling it never retroactively un-completes older days (mirrors symptom addedDate / MEDS_REQUIRED_SINCE).
+  const moodReq = (iso) => moodOn && !!moodSince && iso >= moodSince && iso <= tISO;
   // A symptom only counts toward a day's completeness on/after the day it was added.
   // Symptoms carry an addedDate (stamped on creation); older ones without it are treated
   // as always-present. This stops a newly-added symptom from retroactively un-completing
   // past days (before it existed there was nothing to log for it).
   const typesOn = (iso) => types.filter((s) => !s.addedDate || s.addedDate <= iso);
   if (ui.calView === 'month') return `<div class="ds">${monthCal(state, data, types)}</div>`;
-  const isComplete = (iso) => { const l = DL.getDailyLog(iso, data); if (!l) return false; if (l.symptomsSubmittedAt) return true; const symOk = typesOn(iso).every((s) => s.trackBy === 'single' ? (DL.getSeverity(iso, s.id, null, data) != null) : (DL.derivedOverall(s, l.symptoms || []) != null)); const medsOk = DL.requiredMedsOn(iso, data).every((m) => DL.getMedTaken(iso, m.id, data) != null); return symOk && medsOk; };
+  const isComplete = (iso) => { const l = DL.getDailyLog(iso, data); if (!l) return false; const moodOk = !moodReq(iso) || (typeof l.mood === 'number'); if (l.symptomsSubmittedAt) return moodOk; const symOk = typesOn(iso).every((s) => s.trackBy === 'single' ? (DL.getSeverity(iso, s.id, null, data) != null) : (DL.derivedOverall(s, l.symptoms || []) != null)); const medsOk = DL.requiredMedsOn(iso, data).every((m) => DL.getMedTaken(iso, m.id, data) != null); return symOk && medsOk && moodOk; };
   // 42-day (6-week) strip ending today: today is the rightmost tile, no future/empty days.
   // Horizontally scrollable; navigate by scrolling the strip or tapping a day.
   const DOWL = DOW_INITIALS[lang] || DOW_INITIALS.en;
@@ -1070,7 +1166,11 @@ function renderToday(state) {
     const iso = shiftDate(tISO, -i);
     const wd = new Date(iso + 'T00:00:00Z'); const dl = DOWL[(wd.getUTCDay() + 6) % 7];
     const done = isComplete(iso); const isTod = iso === tISO; const sel = iso === date;
-    tiles += `<button class="wkday${sel ? ' sel' : ''}${isTod ? ' tod' : ''}" data-day="${iso}"><span class="wkdow">${dl}</span><span class="wkdate">${iso.slice(8, 10)}</span><span class="wktick">${done ? '✓' : '·'}</span></button>`;
+    // On a completed day, show that day's mood face instead of the tick when mood tracking is on and a
+    // mood was logged; completed days without a mood (e.g. before mood tracking started) keep the tick.
+    const mv = done && moodOn ? DL.getMood(iso, data) : null;
+    const glyph = done ? (mv != null ? moodFaceSVG(mv, 16) : '✓') : '·';
+    tiles += `<button class="wkday${sel ? ' sel' : ''}${isTod ? ' tod' : ''}" data-day="${iso}"><span class="wkdow">${dl}</span><span class="wkdate">${iso.slice(8, 10)}</span><span class="wktick">${glyph}</span></button>`;
   }
   const head = `<div class="wkstrip">
     <div class="wkdays scroll">${tiles}</div>
@@ -1116,7 +1216,7 @@ function renderToday(state) {
   const scaleTop = `<div class="scale-head muted">${T.scaleHint}</div>`;
   const symptomsCard = symEditing
     ? `<div class="card"><div class="card-h"><h2>${T.symptoms}</h2><span class="hgrp">${symEditBtns}</span></div><div class="muted small" style="margin:2px 0 6px">${lang === 'es' ? 'Toca para editar · arrastra ⠿ para reordenar' : 'Tap to edit · drag ⠿ to reorder'}</div><div id="symReorder" class="sym-reorder">${symPick}</div></div>`
-    : `<div class="card"><div class="card-h"><h2>${T.symptoms}</h2><span class="hgrp">${headStatus}${symEditBtns}</span></div>${scaleTop}${symptomCards}</div>`;
+    : `<div class="card"><div class="card-h"><span class="hgrp"><h2>${T.symptoms}</h2><button class="infobtn" data-info aria-label="${T.symInfoAria}"><svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="7.5" r="1.4" fill="currentColor"/><rect x="10.8" y="10.5" width="2.4" height="7" rx="1.2" fill="currentColor"/></svg></button></span><span class="hgrp">${headStatus}${symEditBtns}</span></div>${scaleTop}${symptomCards}</div>`;
 
   const { scheduled, prn } = DL.medsForDate(date, data);
   // PRN rows get a dose stepper (how many times today) instead of the yes/no toggle —
@@ -1147,8 +1247,10 @@ function renderToday(state) {
 
   // Day-level footer: the single "Mark day complete" action (fills unanswered symptoms → 0 and
   // unanswered regular meds → not taken). Progress counter + hint text removed 12 Jul 2026.
+  // Once the day is complete there's nothing to action, and the header already shows the completion/
+  // burden chip — so we hide the footer entirely rather than showing a redundant "Day complete" bar.
   const completeBar = complete
-    ? `<div class="daybar done">✓ ${lang === 'en' ? 'Day complete' : 'Día completo'}</div>`
+    ? ''
     : `<div class="daybar"><button class="btn-mark wide" id="markZero">${lang === 'en' ? 'Mark day complete' : 'Marcar día completo'}</button></div>`;
 
   // Episodes active on the selected day (so past days show what was ongoing then), not just today's ongoing.
@@ -1168,13 +1270,43 @@ function renderToday(state) {
   const epPick = allEps.map((e) => `<button class="pickrow" data-edit="episodes:${e.id}">${esc(tx(e.name, lang) || EP_TYPES[lang][e.type])} <span class="muted small">${esc(e.startDate)}${e.endDate ? ' → ' + esc(e.endDate) : ''}</span></button>`).join('') || `<p class="muted small">${T.none}</p>`;
   const epEditBtns = `<button class="addmini" data-editpick="episodes" aria-label="${lang === 'es' ? 'Editar' : 'Edit'}">${epEditing ? '✕' : '✎'}</button><button class="addmini" id="epStartBtn" aria-label="${lang === 'es' ? 'Iniciar un episodio' : 'Start an episode'}">＋</button>`;
   const savedNote = ui.savedAt ? `<div class="muted small saved-tag">✓ ${T.saved} · ${ui.savedAt}</div>` : '';
-  const epCardHtml = getPref('hideEpisodes') ? '' : `<div class="card"><div class="card-h"><h2>${T.episodes}</h2><span class="hgrp">${epEditBtns}</span></div>${epEditing ? `<div class="muted small" style="margin:2px 0 6px">${lang === 'es' ? 'Elige cuál editar:' : 'Choose which to edit:'}</div>${epPick}` : `${ongoing.length ? `<div class="subhead">${T.ongoing}</div>${ongoingHtml}` : ''}${endedHtml}${epForm}`}</div>`;
+  const epInfoBtn = `<button class="infobtn" data-epinfo aria-label="${T.epInfoAria}"><svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="7.5" r="1.4" fill="currentColor"/><rect x="10.8" y="10.5" width="2.4" height="7" rx="1.2" fill="currentColor"/></svg></button>`;
+  const epCardHtml = getPref('hideEpisodes') ? '' : `<div class="card"><div class="card-h"><span class="hgrp"><h2>${T.episodes}</h2>${epInfoBtn}</span><span class="hgrp">${epEditBtns}</span></div>${epEditing ? `<div class="muted small" style="margin:2px 0 6px">${lang === 'es' ? 'Elige cuál editar:' : 'Choose which to edit:'}</div>${epPick}` : `${ongoing.length ? `<div class="subhead">${T.ongoing}</div>${ongoingHtml}` : ''}${endedHtml}${epForm}`}</div>`;
+  const infoModal = ui.infoOpen ? `<div class="modal-bg" data-infobg><div class="modal sym-info" role="dialog" aria-label="${T.symInfoAria}">
+      <div class="sym-info-top"><button class="sym-info-x" data-infoclose aria-label="${T.close}">✕</button></div>
+      <h2 class="sym-info-title">${T.symInfoTitle[0]}<b>${T.symInfoTitle[1]}</b></h2>
+      <p class="sym-info-body">${T.symInfoBody}</p>
+      <div class="sym-info-scale">${[0, 1, 2, 3, 4].map((n) => `<div class="sym-info-row"><span class="sev-chip sev-${n}">${n}</span><span class="sym-info-lbl">${T.scaleLabels[n]}</span></div>`).join('')}</div>
+    </div></div>` : '';
+  const epInfoModal = ui.epInfoOpen ? `<div class="modal-bg" data-epinfobg><div class="modal sym-info" role="dialog" aria-label="${T.epInfoAria}">
+      <div class="sym-info-top"><button class="sym-info-x" data-epinfoclose aria-label="${T.close}">✕</button></div>
+      <h2 class="sym-info-title">${T.epInfoTitle}</h2>
+      <p class="sym-info-body" style="margin:0 0 12px">${T.epInfoBody}</p>
+      <p class="sym-info-body" style="margin:0">${T.epInfoSettingsPre}<button class="linklike" data-opensettings>${T.settingsWord}</button>.</p>
+    </div></div>` : '';
+  // Optional daily mood (below Symptoms, above Medications) — 1 very low … 5 very good. Faces + number,
+  // coloured per level; the chosen one gets a 2px ring + tint in its own colour. Deliberately the
+  // opposite direction and a different control from the 0–4 severity pills so the two never confuse.
+  // Faces-only 1–5 (1 very low … 5 very good). Colour ramp runs red → orange → neutral gray → lime →
+  // deep green, so each step is a distinct hue and 5 (rich saturated green) clearly outranks 4 (lighter lime).
+  const moodCols = MOOD_COLORS;
+  const moodBgs = ['#fbeae9', '#fdefdd', '#f1efe8', '#eef6dc', '#e1f3e6'];
+  const curMood = (dayLog && typeof dayLog.mood === 'number') ? dayLog.mood : null;
+  const moodBtns = [1, 2, 3, 4, 5].map((n) => {
+    const on = curMood === n; const c = moodCols[n - 1];
+    const face = moodFaceSVG(n, 30);
+    return `<button type="button" class="mood${on ? ' is-on' : ''}" data-mood="${n}" aria-label="${T.mood} ${n}"${on ? ` style="border-color:${c};background:${moodBgs[n - 1]}"` : ''}>${face}</button>`;
+  }).join('');
+  // Option C: the journal note only appears once a mood is picked, in context with the chosen face.
+  const moodNote = curMood != null ? `<textarea class="moodnote" data-moodnote rows="1" placeholder="${T.moodNotePh}">${esc(DL.getMoodNote(date, data))}</textarea>` : '';
+  const moodCard = moodOn ? `<div class="card"><div class="card-h"><h2>${T.mood}</h2></div><div class="moodrow">${moodBtns}</div>${moodNote}</div>` : '';
   return `<div class="ds">${head}
     ${symptomsCard}
+    ${moodCard}
     <div class="card" id="medsCard"><div class="card-h"><h2>${T.meds}</h2><span class="hgrp">${medEditBtns}</span></div>${medEditing ? `<div class="muted small" style="margin:2px 0 6px">${lang === 'es' ? 'Elige cuál editar:' : 'Choose which to edit:'}</div>${medPick}` : medsBody}</div>
     ${completeBar}
     ${epCardHtml}
-    ${savedNote}</div>`;
+    ${savedNote}</div>${infoModal}${epInfoModal}`;
 }
 
 // Optimistic save: write the local cache synchronously (instant, crash-safe) and
@@ -1188,10 +1320,13 @@ function save() {
 }
 
 async function onClick(e, state, rerender) {
+  if (e.target.classList && e.target.classList.contains('modal-bg') && e.target.hasAttribute('data-infobg')) { ui.infoOpen = false; rerender(); return; }
+  if (e.target.classList && e.target.classList.contains('modal-bg') && e.target.hasAttribute('data-epinfobg')) { ui.epInfoOpen = false; rerender(); return; }
   const t = e.target.closest('button, .sym-head.expandable');
   if (!t) return;
   document.querySelectorAll('.rownote').forEach((el) => DL.setSymptomNote(state.date, el.dataset.sym, el.dataset.loc || null, el.value));
   document.querySelectorAll('.epnote').forEach((el) => DL.setEpisodeNote(el.dataset.epnote, 'en', el.value));
+  document.querySelectorAll('.moodnote').forEach((el) => DL.setMoodNote(state.date, el.value));
   if (t.dataset.editpick != null) { ui.editPick = ui.editPick === t.dataset.editpick ? null : t.dataset.editpick; rerender(); return; }
   // Per-row UI state is keyed by symptom, not date — clear it on any date change so expanded ratings
   // and open note boxes don't bleed from one day to another.
@@ -1200,11 +1335,17 @@ async function onClick(e, state, rerender) {
   if (t.dataset.day) { const dd = t.dataset.day; state.date = dd; ui.calView = 'week'; ui.savedAt = null; resetRowUI(); rerender(); return; }
   if (t.dataset.calview) { ui.calView = t.dataset.calview; if (ui.calView === 'month') ui.calMonth = state.date.slice(0, 7); rerender(); return; }
   if (t.dataset.calnav) { const base = ui.calMonth || state.date.slice(0, 7); const [yy, mm] = base.split('-').map(Number); const nd = new Date(Date.UTC(yy, mm - 1 + Number(t.dataset.calnav), 1)); ui.calMonth = nd.toISOString().slice(0, 7); rerender(); return; }
+  if (t.dataset.info != null) { ui.infoOpen = !ui.infoOpen; rerender(); return; }
+  if (t.dataset.infoclose != null) { ui.infoOpen = false; rerender(); return; }
+  if (t.dataset.epinfo != null) { ui.epInfoOpen = !ui.epInfoOpen; rerender(); return; }
+  if (t.dataset.epinfoclose != null) { ui.epInfoOpen = false; rerender(); return; }
+  if (t.dataset.opensettings != null) { ui.epInfoOpen = false; state.showData = true; rerender(); return; }
   if (t.dataset.reopen) { ui.scaleOpen.add(t.dataset.reopen); rerender(); return; }
   if (t.dataset.note) { const k = t.dataset.note; ui.noteOpen.has(k) ? ui.noteOpen.delete(k) : ui.noteOpen.add(k); rerender(); return; }
   if (t.dataset.noteclose) { ui.noteOpen.delete(t.dataset.noteclose); DL.persist({ silent: true }); rerender(); return; }
   if (t.dataset.expand) { const id = t.dataset.expand; ui.expanded.has(id) ? ui.expanded.delete(id) : ui.expanded.add(id); rerender(); return; }
   if (t.classList.contains('sev')) { const sym = t.dataset.sym, loc = t.dataset.loc || null, sev = Number(t.dataset.sev); const cur = DL.getSeverity(state.date, sym, loc, DL.getData()); DL.setSeverity(state.date, sym, loc, cur === sev ? null : sev); ui.scaleOpen.delete(rowKey(sym, loc)); save(); rerender(); return; }
+  if (t.dataset.mood != null) { const v = Number(t.dataset.mood); const cur = DL.getMood(state.date, DL.getData()); DL.setMood(state.date, cur === v ? null : v); save(); rerender(); return; }
   if (t.dataset.med) { const want = t.dataset.taken === 'yes'; const cur = DL.getMedTaken(state.date, t.dataset.med, DL.getData()); DL.setMedTaken(state.date, t.dataset.med, cur === want ? null : want); save(); rerender(); return; }
   if (t.dataset.medcount) { const cur = DL.getMedCount(state.date, t.dataset.medcount, DL.getData()); DL.setMedCount(state.date, t.dataset.medcount, cur + Number(t.dataset.delta)); save(); rerender(); return; }
   if (t.id === 'markZero') { DL.submitSymptoms(state.date); save(); rerender(); return; }
@@ -1218,6 +1359,7 @@ let _noteTimer = null;
 function onInput(e, state) {
   if (e.target.classList.contains('rownote')) { DL.setSymptomNote(state.date, e.target.dataset.sym, e.target.dataset.loc || null, e.target.value); }
   else if (e.target.classList.contains('epnote')) { DL.setEpisodeNote(e.target.dataset.epnote, 'en', e.target.value); }
+  else if (e.target.classList.contains('moodnote')) { DL.setMoodNote(state.date, e.target.value); e.target.style.height = 'auto'; e.target.style.height = e.target.scrollHeight + 'px'; }
   else { return; }
   DL.persistLocal();
   clearTimeout(_noteTimer); _noteTimer = setTimeout(() => { DL.persist({ silent: true }); }, 600);
@@ -1264,10 +1406,46 @@ function medSchedule(m, lang) {
   return { xxx, freq };
 }
 
+const Appt = (function(){
+const { tx, specialistLabel } = DL;
+
+
+
+const ui = { answering: null, editPick: null, postVisit: null, qExpanded: null, apptView: 'upcoming', apptNotesOpen: new Set(), condView: 'active' };
+
+const STR = {
+  en: { dx: 'Diagnosed', conditions: 'Active conditions', activeManaged: 'Conditions', since: 'Since', currentMeds: 'Current medications',
+        control: { treated: 'Treating', no_treatment: 'No treatment', adjusting: 'Adjusting' },
+        ruledOut: 'Ruled out', other: 'Other', provShort: 'Provisional', none: 'None', revisit: 'may re-test',
+        markAnswered: 'Mark answered', cont: 'Continue', answerNotePh: 'Add a note (optional)…', medStatus: { tapering: 'tapering off', prn: 'as needed', stopped: 'stopped' }, noQuestions: 'No open questions for this specialist.', noQuestionsAll: 'No open questions.', addQ: 'Add question', appointments: 'Upcoming appointments', pastAppts: 'Past appointments', addAppt: 'Add appointment', noAppt: 'No appointments yet',
+        secRegular: 'Regular', secSupplements: 'Supplements', secTherapies: 'Therapies', secPrn: 'As needed (PRN)',
+        prnLabel: 'PRN', everyOther: 'every other day', everyN: 'every {n} days',
+        wd: { mon: 'Mon', tue: 'Tue', wed: 'Wed', thu: 'Thu', fri: 'Fri', sat: 'Sat', sun: 'Sun' },
+        medLegend: 'X-X-X = morning · midday · evening (e.g. 0-0-1 = one at night).' },
+  es: { dx: 'Diagnóstico', conditions: 'Condiciones activas', activeManaged: 'Condiciones', since: 'Desde', currentMeds: 'Medicación actual',
+        control: { treated: 'En tratamiento', no_treatment: 'Sin tratamiento', adjusting: 'Ajustando' },
+        ruledOut: 'Descartado', other: 'Otros', provShort: 'Provisional', none: 'Ninguno', revisit: 'puede reevaluarse',
+        markAnswered: 'Marcar respondida', cont: 'Continuar', answerNotePh: 'Añadir una nota (opcional)…', medStatus: { tapering: 'en reducción', prn: 'según necesidad', stopped: 'suspendido' }, noQuestions: 'Sin preguntas pendientes para este especialista.', noQuestionsAll: 'Sin preguntas pendientes.', addQ: 'Añadir pregunta', appointments: 'Próximas citas', pastAppts: 'Citas anteriores', addAppt: 'Añadir cita', noAppt: 'Sin citas todavía',
+        secRegular: 'Pauta fija', secSupplements: 'Suplementos', secTherapies: 'Terapias', secPrn: 'Según necesidad (PRN)',
+        prnLabel: 'PRN', everyOther: 'días alternos', everyN: 'cada {n} días',
+        wd: { mon: 'Lun', tue: 'Mar', wed: 'Mié', thu: 'Jue', fri: 'Vie', sat: 'Sáb', sun: 'Dom' },
+        medLegend: 'X-X-X = mañana · mediodía · noche (p. ej. 0-0-1 = uno por la noche).' },
+};
+const STATUS = {
+  en: { current: 'Diagnosed', investigating: 'Investigating', excluded: 'Ruled out', provisionally_excluded: 'Provisionally excluded', resolved: 'Resolved' },
+  es: { current: 'Diagnosticado', investigating: 'En estudio', excluded: 'Descartado', provisionally_excluded: 'Excluido provisionalmente', resolved: 'Resuelto' },
+};
+const STATUS_CLS = { current: 'ok', investigating: 'warn', excluded: 'err', provisionally_excluded: 'prov', resolved: 'ok' };
+function docLine(sp) { const bits = []; if (sp.doctor) bits.push(sp.doctor); if (sp.clinic) bits.push(sp.clinic); return bits.join(' · '); }
+
+function fmtDate(iso, lang) { if (!iso) return ''; return new Date(iso + 'T00:00:00').toLocaleDateString(lang === 'es' ? 'es-ES' : 'en-GB', { day: 'numeric', month: 'short', year: 'numeric' }); }
+
 // Doctor-facing print sheet — a clean one-pager (conditions + medications) built
 // from current data, in the current language. Rendered into #printSheet, then
 // window.print() (native "Save as PDF"/print). Mirrors the Summary tab's own
 // condition labels + med grouping so it never drifts from what the app shows.
+// NOTE: defined inside the Appt module so it can reach STR / STATUS / fmtDate /
+// tx — moving it to global scope silently broke the Print / Save PDF button.
 function buildDoctorSheet(lang) {
   const data = DL.getData(); if (!data) return '';
   const T = STR[lang]; const bp = DL.bigPicture(data, lang);
@@ -1334,7 +1512,7 @@ function printDoctorSheet(lang) {
   if (!body) { setStatus('No data to print yet.', 'err'); return; }
   const title = lang === 'es' ? 'Resumen de salud' : 'Health summary';
   const btn = lang === 'es' ? 'Imprimir / Guardar PDF' : 'Print / Save PDF';
-  const doc = `<!doctype html><html lang="${lang}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(title)}</title><style>${PRINT_SHEET_CSS}</style></head><body>${body}<button class="ps-print-btn" onclick="window.print()">${esc(btn)}</button><script>window.addEventListener('load',function(){setTimeout(function(){try{window.print();}catch(e){}},350);});<\/script></body></html>`;
+  const doc = `<!doctype html><html lang="${lang}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(title)}</title><style>${PRINT_SHEET_CSS}</style><\/head><body>${body}<button class="ps-print-btn" onclick="window.print()">${esc(btn)}</button><script>window.addEventListener('load',function(){setTimeout(function(){try{window.print();}catch(e){}},350);});<\/script><\/body></html>`;
   let w = null;
   try { w = window.open('', '_blank'); } catch (e) { w = null; }
   if (w && w.document) { w.document.open(); w.document.write(doc); w.document.close(); w.focus(); return; }
@@ -1343,40 +1521,6 @@ function printDoctorSheet(lang) {
   if (el) { el.innerHTML = body; try { window.print(); } catch (e) {} }
   else { setStatus('Please allow pop-ups to print.', 'err'); }
 }
-
-const Appt = (function(){
-const { tx, specialistLabel } = DL;
-
-
-
-const ui = { answering: null, editPick: null, postVisit: null, qExpanded: null, apptView: 'upcoming', apptNotesOpen: new Set(), condView: 'active' };
-
-const STR = {
-  en: { dx: 'Diagnosed', conditions: 'Active conditions', activeManaged: 'Conditions', since: 'Since', currentMeds: 'Current medications',
-        control: { treated: 'Treating', no_treatment: 'No treatment', adjusting: 'Adjusting' },
-        ruledOut: 'Ruled out', other: 'Other', provShort: 'Provisional', none: 'None', revisit: 'may re-test',
-        markAnswered: 'Mark answered', cont: 'Continue', answerNotePh: 'Add a note (optional)…', medStatus: { tapering: 'tapering off', prn: 'as needed', stopped: 'stopped' }, noQuestions: 'No open questions for this specialist.', noQuestionsAll: 'No open questions.', addQ: 'Add question', appointments: 'Upcoming appointments', pastAppts: 'Past appointments', addAppt: 'Add appointment', noAppt: 'No appointments yet',
-        secRegular: 'Regular', secSupplements: 'Supplements', secTherapies: 'Therapies', secPrn: 'As needed (PRN)',
-        prnLabel: 'PRN', everyOther: 'every other day', everyN: 'every {n} days',
-        wd: { mon: 'Mon', tue: 'Tue', wed: 'Wed', thu: 'Thu', fri: 'Fri', sat: 'Sat', sun: 'Sun' },
-        medLegend: 'X-X-X = morning · midday · evening (e.g. 0-0-1 = one at night).' },
-  es: { dx: 'Diagnóstico', conditions: 'Condiciones activas', activeManaged: 'Condiciones', since: 'Desde', currentMeds: 'Medicación actual',
-        control: { treated: 'En tratamiento', no_treatment: 'Sin tratamiento', adjusting: 'Ajustando' },
-        ruledOut: 'Descartado', other: 'Otros', provShort: 'Provisional', none: 'Ninguno', revisit: 'puede reevaluarse',
-        markAnswered: 'Marcar respondida', cont: 'Continuar', answerNotePh: 'Añadir una nota (opcional)…', medStatus: { tapering: 'en reducción', prn: 'según necesidad', stopped: 'suspendido' }, noQuestions: 'Sin preguntas pendientes para este especialista.', noQuestionsAll: 'Sin preguntas pendientes.', addQ: 'Añadir pregunta', appointments: 'Próximas citas', pastAppts: 'Citas anteriores', addAppt: 'Añadir cita', noAppt: 'Sin citas todavía',
-        secRegular: 'Pauta fija', secSupplements: 'Suplementos', secTherapies: 'Terapias', secPrn: 'Según necesidad (PRN)',
-        prnLabel: 'PRN', everyOther: 'días alternos', everyN: 'cada {n} días',
-        wd: { mon: 'Lun', tue: 'Mar', wed: 'Mié', thu: 'Jue', fri: 'Vie', sat: 'Sáb', sun: 'Dom' },
-        medLegend: 'X-X-X = mañana · mediodía · noche (p. ej. 0-0-1 = uno por la noche).' },
-};
-const STATUS = {
-  en: { current: 'Diagnosed', investigating: 'Investigating', excluded: 'Ruled out', provisionally_excluded: 'Provisionally excluded', resolved: 'Resolved' },
-  es: { current: 'Diagnosticado', investigating: 'En estudio', excluded: 'Descartado', provisionally_excluded: 'Excluido provisionalmente', resolved: 'Resuelto' },
-};
-const STATUS_CLS = { current: 'ok', investigating: 'warn', excluded: 'err', provisionally_excluded: 'prov', resolved: 'ok' };
-function docLine(sp) { const bits = []; if (sp.doctor) bits.push(sp.doctor); if (sp.clinic) bits.push(sp.clinic); return bits.join(' · '); }
-
-function fmtDate(iso, lang) { if (!iso) return ''; return new Date(iso + 'T00:00:00').toLocaleDateString(lang === 'es' ? 'es-ES' : 'en-GB', { day: 'numeric', month: 'short', year: 'numeric' }); }
 
 // Overview (renderBig) and Next (renderQuestions) are rendered directly by the
 // router as their own tabs. medSchedule() is defined at top level (shared by
@@ -1461,6 +1605,7 @@ function renderBig(state) {
   return `<div class="ds">
     <div class="card"><div class="card-h"><h2>${T.activeManaged}</h2><span class="hgrp">${condHdr}</span></div>${condSeg}${condBody}</div>
     <div class="card" id="medsTable"><div class="card-h"><h2>${T.currentMeds}</h2><span class="hgrp">${editBtn('medications')}<button class="addmini" data-add="medications" aria-label="Add medication">＋</button></span></div>${ui.editPick === 'medications' ? pickList(allMeds, 'medications', (m) => tx(m.name, lang)) : meds}${pastSection}</div>
+    ${Records.renderProg(state)}
     <button class="printbtn" data-print><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>${lang === 'es' ? 'Imprimir / Guardar PDF' : 'Print / Save PDF'}</button>
   </div>`;
 }
@@ -1606,7 +1751,7 @@ const { todayISO } = Today;
 
 
 
-const ui = { labId: null, win: '1y', scoreWin: '3m', symTrend: null, labGroups: new Set(), editPick: null, adhOpen: false, badLines: { heavy: true, vh: true } };
+const ui = { labId: null, win: '1y', scoreWin: '3m', symTrend: null, labGroups: new Set(), editPick: null, medOpen: null, badLines: { heavy: true, vh: true }, histYear: null };
 
 const STR = {
   en: { conditions: 'Conditions', meds: 'Meds', symptoms: 'Symptoms', episodes: 'Episodes', labs: 'Labs', timeline: 'Map',
@@ -1638,8 +1783,8 @@ const MS_ICON = {
   new_symptom: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 3l0 7l6 0l-8 11l0 -7l-6 0l8 -11"/></svg>',
   diagnosis: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4h-1a1 1 0 0 0 -1 1v3.5a5.5 5.5 0 0 0 11 0v-3.5a1 1 0 0 0 -1 -1h-1"/><path d="M8 15a6 6 0 1 0 12 0v-2"/><path d="M20 12m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"/></svg>',
   medication: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12.5l8 -8a4.95 4.95 0 0 1 7 7l-8 8a4.95 4.95 0 0 1 -7 -7z"/><path d="M8.5 8.5l7 7"/></svg>',
-  episode: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/></svg>',
-  milestone: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/></svg>'
+  episode: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5a5 5 0 0 1 7 0a5 5 0 0 0 7 0v9a5 5 0 0 1 -7 0a5 5 0 0 0 -7 0v-9z"/><path d="M5 21v-7"/></svg>',
+  milestone: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5a5 5 0 0 1 7 0a5 5 0 0 0 7 0v9a5 5 0 0 1 -7 0a5 5 0 0 0 -7 0v-9z"/><path d="M5 21v-7"/></svg>'
 };
 
 function fmtDate(iso, lang) { if (!iso) return ''; return new Date(iso + 'T00:00:00').toLocaleDateString(lang === 'es' ? 'es-ES' : 'en-GB', { day: 'numeric', month: 'short', year: 'numeric' }); }
@@ -1657,6 +1802,7 @@ const TSS = {
         dayBalanceTitle: 'Good days vs bad days', badLineTitle: 'Bad days over time',
         heavyPlus: 'difficult or severe', areasUnit: 'areas', loadSub: 'severity + spread combined', bandW: ['clear', 'light', 'typical', 'difficult', 'severe'],
         mostProm: 'Most prominent',
+        moodTitle: 'Mood', moodOutOf5: 'avg / 5', moodNoData: 'No mood logged in this window.',
         labs: 'Labs', episodes: 'Episodes/Month',
         pos: 'Positive', neg: 'Negative', progression: 'Progression',
         onsetAll: 'Onset & progression', started: 'Started in the last', newBadge: 'new', catJoint: 'joint', catNerve: 'nerve', catOther: 'other', nothingNew: 'Nothing new started in this period.',
@@ -1671,6 +1817,7 @@ const TSS = {
         dayBalanceTitle: 'Días buenos vs malos', badLineTitle: 'Días malos con el tiempo',
         heavyPlus: 'difícil o grave', areasUnit: 'zonas', loadSub: 'gravedad + extensión combinadas', bandW: ['sin síntomas', 'leve', 'típico', 'difícil', 'grave'],
         mostProm: 'Más prominente',
+        moodTitle: 'Ánimo', moodOutOf5: 'media / 5', moodNoData: 'Sin ánimo registrado en este periodo.',
         labs: 'Analíticas', episodes: 'Episodios/Mes',
         pos: 'Positivo', neg: 'Negativo', progression: 'Progresión',
         onsetAll: 'Inicio y progresión', started: 'Empezó — últimos', newBadge: 'nuevo', catJoint: 'articular', catNerve: 'nervioso', catOther: 'otro', nothingNew: 'Nada nuevo empezó en este periodo.',
@@ -1807,30 +1954,36 @@ function adherenceCard(state, data, days, win, TT) {
   const isDaily = (m) => Array.isArray(m.scheduledDays) && m.scheduledDays.length >= 6;
   const regList = Object.values(info).filter((o) => !o.isPrn);
   const extraList = Object.values(info).filter((o) => o.isPrn);
-  const regBlocks = regList.map((o) => {
-    const name = esc(tx(o.m.name, lang));
+  const pctColor = (pct) => pct == null ? 'var(--muted)' : pct >= 80 ? '#15803d' : '#854f0b';
+  const regRows = regList.map((o) => {
+    const id = o.m.id, name = esc(tx(o.m.name, lang));
     const pct = o.sched ? Math.round(o.taken / o.sched * 100) : null;
-    const col = pct == null ? 'var(--muted)' : pct >= 80 ? '#15803d' : '#854f0b';
-    const line = `<span class="mpct" style="color:${col}">${o.sched ? `${o.taken}/${o.sched} · ${pct}%` : (lang === 'es' ? 'nada pautado' : 'none due')}</span>`;
+    const summary = o.sched ? `${o.taken}/${o.sched} · ${pct}%` : (lang === 'es' ? 'nada pautado' : 'none due');
+    const open = ui.medOpen === id;
     const daily = isDaily(o.m);
-    const dotsHtml = (daily && showDots) ? `<div class="adh-dots">${o.dots.map((d) => `<span class="adh-dot" style="background:${DOTCOL[d]}${d === 'x' ? ';border:1px solid #eef1f3' : ''}"></span>`).join('')}</div>` : '';
+    const dotsHtml = (open && daily && showDots) ? `<div class="adh-dots">${o.dots.map((d) => `<span class="adh-dot" style="background:${DOTCOL[d]}${d === 'x' ? ';border:1px solid #eef1f3' : ''}"></span>`).join('')}</div>` : '';
     let streak = '';
-    if (daily && showDots) { const st = streakOf(o); streak = `<div class="adh-streak">${st > 0 ? `${st}-${lang === 'es' ? 'día racha' : 'day streak'}` : (lang === 'es' ? 'sin racha actual' : 'no current streak')}</div>`; }
-    return `<div class="medblk"><div class="ml"><span class="mname">${name}</span>${line}</div>${dotsHtml}${streak}</div>`;
+    if (open && daily && showDots) { const st = streakOf(o); streak = `<div class="adh-streak">${st > 0 ? `${st}-${lang === 'es' ? 'día racha' : 'day streak'}` : (lang === 'es' ? 'sin racha actual' : 'no current streak')}</div>`; }
+    const detailTxt = o.sched
+      ? `<div class="muted small">${o.taken} ${lang === 'es' ? 'de' : 'of'} ${o.sched} ${lang === 'es' ? 'pautadas · tomadas' : 'scheduled · taken'} · ${pct}%</div>`
+      : `<div class="muted small">${lang === 'es' ? 'Nada pautado en este periodo' : 'Nothing scheduled this period'}</div>`;
+    const detail = open ? `<div class="adh-detail">${detailTxt}${dotsHtml}${streak}</div>` : '';
+    return `<button class="med-row${open ? ' open' : ''}" data-med="${id}"><span class="med-name"><span class="gcaret">${open ? '▾' : '▸'}</span>${name}</span><span class="med-sum" style="color:${pctColor(pct)}">${summary}${open ? '' : ' ›'}</span></button>${detail}`;
   }).join('');
-  const extraBlocks = extraList.map((o) => {
-    const name = esc(tx(o.m.name, lang));
-    const line = `<span class="mpct" style="color:var(--muted)">${o.prn} ${lang === 'es' ? 'tomas' : 'doses'}</span>`;
-    return `<div class="medblk"><div class="ml"><span class="mname">${name}</span>${line}</div><div class="adh-streak">${lang === 'es' ? 'según necesidad' : 'as needed'}</div></div>`;
+  const extraRows = extraList.map((o) => {
+    const id = o.m.id, name = esc(tx(o.m.name, lang));
+    const summary = `${o.prn} ${lang === 'es' ? 'tomas' : 'doses'}`;
+    const open = ui.medOpen === id;
+    const detail = open ? `<div class="adh-detail"><div class="muted small">${o.prn} ${lang === 'es' ? 'tomas en este periodo · según necesidad' : 'doses this period · as needed'}</div></div>` : '';
+    return `<button class="med-row${open ? ' open' : ''}" data-med="${id}"><span class="med-name"><span class="gcaret">${open ? '▾' : '▸'}</span>${name}</span><span class="med-sum muted">${summary}${open ? '' : ' ›'}</span></button>${detail}`;
   }).join('');
   const adhTitle = lang === 'es' ? 'Cumplimiento de medicación' : 'Medication adherence';
-  const adhOpen = ui.adhOpen;
-  const teaser = (!adhOpen && overall != null) ? `<span class="muted small" style="margin-left:auto;font-weight:400">${overall}% ${lang === 'es' ? 'tomadas' : 'taken'}</span>` : '';
-  const head = `<button class="card-h adhtoggle" data-adhtoggle style="width:100%;background:none;border:0;padding:0;margin:0;cursor:pointer;text-align:left;display:flex;align-items:center;gap:8px"><span class="gcaret">${adhOpen ? '▾' : '▸'}</span><h2 style="margin:0">${adhTitle}</h2>${teaser}</button>`;
-  const regSection = regList.length ? `<div class="subhead">${lang === 'es' ? 'Recordar mis medicamentos habituales' : 'Remembering my regular meds'}</div>${overall != null ? `<div class="adh-overall"><span class="bignum">${overall}%</span>${pill}<span class="muted small">${sub}</span></div>` : ''}${regBlocks}` : '';
-  const extraSection = extraList.length ? `<div class="subhead" style="margin-top:16px">${lang === 'es' ? 'Medicación adicional' : 'Relying on extra meds'}</div>${extraBlocks}` : '';
+  const head = `<div class="card-h"><h2>${adhTitle}</h2></div>`;
+  const overallBlock = overall != null ? `<div class="adh-overall"><span class="bignum">${overall}%</span>${pill}<span class="muted small">${sub}</span></div>` : '';
+  const regSection = regList.length ? `<div class="subhead">${lang === 'es' ? 'Recordar mis medicamentos habituales' : 'Remembering my regular meds'}</div>${overallBlock}${regRows}` : '';
+  const extraSection = extraList.length ? `<div class="subhead" style="margin-top:16px">${lang === 'es' ? 'Medicación adicional' : 'Relying on extra meds'}</div>${extraRows}` : '';
   if (!regList.length && !extraList.length) return '';
-  return `<div class="card">${head}${adhOpen ? `${regSection}${extraSection}` : ''}</div>`;
+  return `<div class="card">${head}${regSection}${extraSection}</div>`;
 }
 // Onset & progression: when each symptom/site clinically started (onsetDate), independent of when it began being tracked.
 const ONSET_CAT = { sym_jointpain: 'joint', sym_nervesensation: 'nerve' };
@@ -1852,15 +2005,13 @@ function onsetCard(state, data, days, win, TT) {
   const tISO = todayISO(); const cut90 = shiftDate(tISO, -90);
   if (win !== 'all') { const cut = shiftDate(tISO, -days); items = items.filter((o) => o.onset >= cut); }
   const title = win === 'all' ? TT.onsetAll : `${TT.started} ${TT.period[win]}`;
-  const C = { joint: '#0f766e', nerve: '#7c3aed', other: '#5b6b7a' };
   const head = `<div class="card-h"><h2>${title}</h2></div>`;
   if (!items.length) return `<div class="card">${head}<p class="muted small">${TT.nothingNew}</p></div>`;
-  const legend = [['joint', TT.catJoint], ['nerve', TT.catNerve], ['other', TT.catOther]].map(([c, lbl]) => `<span style="display:inline-flex;align-items:center;gap:5px;margin-right:12px"><span style="width:10px;height:10px;border-radius:50%;background:${C[c]}"></span>${lbl}</span>`).join('');
   const rows = items.map((o) => {
     const badge = o.onset >= cut90 ? ` <span style="border:1px solid #b91c1c;color:#b91c1c;border-radius:4px;padding:0 5px;font-size:10px;vertical-align:1px">${TT.newBadge}</span>` : '';
-    return `<div style="position:relative;display:flex;align-items:baseline;gap:10px;padding:5px 0"><span style="position:absolute;left:-16px;top:8px;width:10px;height:10px;border-radius:50%;background:${C[o.cat]};box-shadow:0 0 0 3px var(--card)"></span><span style="width:64px;flex:none;font-size:12px;color:var(--muted)">${fmtMonth(o.onset, lang)}</span><span style="font-size:14px;color:var(--ink)">${esc(tx(o.name, lang))}${badge}</span></div>`;
+    return `<div style="position:relative;display:flex;align-items:baseline;gap:10px;padding:5px 0"><span style="position:absolute;left:-16px;top:8px;width:10px;height:10px;border-radius:50%;background:var(--muted);box-shadow:0 0 0 3px var(--card)"></span><span style="width:64px;flex:none;font-size:12px;color:var(--muted)">${fmtMonth(o.onset, lang)}</span><span style="font-size:14px;color:var(--ink)">${esc(tx(o.name, lang))}${badge}</span></div>`;
   }).join('');
-  return `<div class="card">${head}<div class="muted small" style="margin:-2px 0 10px">${legend}</div><div style="position:relative;padding-left:16px"><span style="position:absolute;left:4px;top:4px;bottom:4px;width:2px;background:var(--line)"></span>${rows}</div></div>`;
+  return `<div class="card">${head}<div style="position:relative;padding-left:16px"><span style="position:absolute;left:4px;top:4px;bottom:4px;width:2px;background:var(--line)"></span>${rows}</div></div>`;
 }
 // ===== How-am-I-trending charts (window-aware; replace the old burden/severity headline pair) =====
 function dayLoad(iso, types, data) { const l = DL.getDailyLog(iso, data); return (l && dayLogged(l)) ? daySum(l, types) : null; }
@@ -2062,6 +2213,28 @@ function trendLoadCard(lang, TT, cur, prev, reliable, tb) {
   const max = Math.max(4, ...series.map((x) => x.v || 0));
   return `<div class="card"><div class="card-h"><h2>${TT.loadTitle}</h2></div><div class="bignum">${cur.loadMean != null ? cur.loadMean.toFixed(1) : '–'}${pill ? `<span style="margin-left:auto">${pill}</span>` : ''}</div><div class="muted small bn-sub">${TT.loadSub}</div>${trendSVG(series, max, cur.loadMean)}</div>`;
 }
+// Optional daily-mood trend (window-aware) — average over the window + a coloured-by-nothing line, plus a
+// change pill vs the equal prior period. Mood is 1–5 with higher = better, so higherIsWorse=false and the
+// line stays the neutral teal (the SEVHEX value-colouring is for the 0–4 severity charts where higher=worse).
+// Read straight from the daily log (not gated on dayLogged) so mood-only days still count. Empty window → '' (card hidden).
+function trendMoodCard(lang, TT, data, days, win, reliable) {
+  const by = logsByDate(data);
+  const moodOf = (l) => (l && typeof l.mood === 'number') ? l.mood : null;
+  const meanOver = (a, b) => { let s = 0, n = 0; for (let i = a; i < b; i++) { const v = moodOf(by[isoBack(i)]); if (v != null) { s += v; n++; } } return n ? s / n : null; };
+  const avg = meanOver(0, days);
+  if (avg == null) return '';
+  const prev = meanOver(days, 2 * days);
+  const pill = trendChg(avg, prev, false, reliable, TT, (v) => v.toFixed(1));
+  // Distribution — how the window's days split across the five mood faces (replaces the old sparkline).
+  // Bars scale to the most common mood so the shape stays legible; best mood sits on top.
+  const cnt = [0, 0, 0, 0, 0];
+  for (let i = 0; i < days; i++) { const v = moodOf(by[isoBack(i)]); if (v != null) cnt[v - 1]++; }
+  const maxc = Math.max(1, ...cnt);
+  const dayWord = (c) => c === 1 ? (lang === 'es' ? 'día' : 'day') : (lang === 'es' ? 'días' : 'days');
+  const distRows = [5, 4, 3, 2, 1].map((n) => { const c = cnt[n - 1]; return `<div class="mooddist-row">${moodFaceSVG(n, 20)}<span class="mooddist-track"><span style="display:block;height:100%;width:${(c / maxc * 100).toFixed(0)}%;background:${MOOD_COLORS[n - 1]}"></span></span><span class="mooddist-n">${c} ${dayWord(c)}</span></div>`; }).join('');
+  const spreadLbl = lang === 'es' ? 'Distribución de días' : 'Spread of days';
+  return `<div class="card"><div class="card-h"><h2>${TT.moodTitle}</h2></div><div class="bignum">${avg.toFixed(1)} <span class="muted small">${TT.moodOutOf5}</span>${pill ? `<span style="margin-left:auto">${pill}</span>` : ''}</div><div class="mooddist-lbl muted small">${spreadLbl}</div><div class="mooddist">${distRows}</div></div>`;
+}
 function renderTrends(state) {
   const lang = state.lang; const TT = TSS[lang]; const data = DL.getData();
   if (!data) return '<div class="card"><p class="muted">No data.</p></div>';
@@ -2081,8 +2254,6 @@ function renderTrends(state) {
   const badLineCard = trendBadLineCard(lang, TT, tb, win);
   const funcCard = trendFuncImpactCard(lang, TT, data, types, days, win, reliable);
   const symImpCard = trendSymImpactCard(lang, TT, data, types, days, win);
-  const mixCard = trendMixCard(lang, TT, curAgg, prevAgg, reliable, tb);
-  const areasCard = trendAreasCard(state, data, days, win, TT, reliable);
   const loadCard = trendLoadCard(lang, TT, curAgg, prevAgg, reliable, tb);
   // Most prominent = current level + change, tap to drill in
   const stats = symStats(data, types, days).filter((x) => x.cur > 0.05);
@@ -2117,14 +2288,12 @@ function renderTrends(state) {
   catch (err) { console.warn('adherence card failed', err); adhCard = `<div class="card"><div class="card-h"><h2>${lang === 'es' ? 'Cumplimiento de medicación' : 'Medication adherence'}</h2></div><p class="muted small">—</p></div>`; }
   const labsCard = `<div class="card"><div class="card-h"><h2>${TT.labs}</h2><button class="addmini" data-add="labs" aria-label="Add marker">＋</button></div>${labHtml}</div>`;
   const illCard = getPref('hideEpisodes') ? '' : `<div class="card"><div class="card-h"><h2>${TT.episodes}</h2></div>${illnessBars(data, lang)}</div>`;
-  return `<div class="ds">${winseg}${shiftCard}${badLineCard}${funcCard}${symImpCard}${mixCard}${areasCard}${loadCard}${promCard}${onsetHtml}${adhCard}${labsCard}${illCard}</div>`;
+  const moodCard = getPref('trackMood') ? trendMoodCard(lang, TT, data, days, win, reliable) : '';
+  return `<div class="ds">${winseg}${moodCard}${shiftCard}${badLineCard}${funcCard}${symImpCard}${loadCard}${promCard}${onsetHtml}${adhCard}${labsCard}${illCard}</div>`;
 }
 // Progression timeline in the new design-system style (keeps filters + tap-for-detail).
 function renderProg(state) {
   const lang = state.lang; const TT = TSS[lang]; const data = DL.getData();
-  const RM = STR[lang].msTypes;
-  const legendTypes = ['new_symptom', 'diagnosis', 'medication'];
-  const legend = legendTypes.map((ty) => { const [, color] = MS_TYPE[ty]; const ic = MS_ICON[ty] || MS_ICON.milestone; return `<span><span class="plegk" style="color:${color}">${ic}</span>${RM[ty]}</span>`; }).join('');
   // Timeline = symptom onsets DERIVED from each symptom's onsetDate (single source of truth — no drift) + curated non-onset milestones (diagnoses, medications, events). Onset rows are read-only; the rest stay editable.
   const onsetLabel = (o) => `${o.cat === 'joint' ? TT.newJointLoc : o.cat === 'nerve' ? TT.newNerve : TT.newSymptom} — ${tx(o.name, lang)}`;
   const onsetRows = collectOnsets(data).map((o) => ({ date: o.onset, label: onsetLabel(o), type: 'new_symptom', derived: true }));
@@ -2133,23 +2302,36 @@ function renderProg(state) {
   const derived = onsetRows.length > 0;
   const curated = derived ? (data.milestones || []).filter((m) => m.type !== 'new_symptom') : (data.milestones || []).slice();
   const ms = [...onsetRows, ...curated].sort((a, b) => (a.date < b.date ? 1 : -1));
+  // Year filter chips — multi-year histories show one year at a time (newest first) with an "All" option.
+  const years = [...new Set(ms.map((m) => m.date.slice(0, 4)))].sort((a, b) => (a < b ? 1 : -1));
+  const activeYear = (ui.histYear === 'all' || years.includes(ui.histYear)) ? ui.histYear : (years[0] || 'all');
+  const chips = (ui.editPick !== 'milestones' && years.length > 1)
+    ? `<div class="histchips">${years.map((y) => `<button class="histchip ${activeYear === y ? 'on' : ''}" data-histyear="${y}">${y}</button>`).join('')}<button class="histchip ${activeYear === 'all' ? 'on' : ''}" data-histyear="all">${STR[lang].all}</button></div>`
+    : '';
   let body = '';
   if (ui.editPick === 'milestones') {
     const editable = curated.slice().sort((a, b) => (a.date < b.date ? 1 : -1));
     body = `<div class="muted small" style="margin:2px 0 6px">${lang === 'es' ? 'Elige cuál editar:' : 'Choose which to edit:'}</div>` + (editable.length ? editable.map((m) => `<button class="pickrow" data-edit="milestones:${m.id}">${fmtMonth(m.date, lang)} — ${esc(tx(m.label, lang))}</button>`).join('') : `<p class="muted small">${STR[lang].noData}</p>`) + (derived ? `<p class="muted small" style="margin-top:8px">${lang === 'es' ? 'Los inicios de síntomas se derivan de la fecha de inicio de cada síntoma.' : 'Symptom onsets are derived from each symptom’s onset date.'}</p>` : '');
   } else {
+    const shown = activeYear === 'all' ? ms : ms.filter((m) => m.date.slice(0, 4) === activeYear);
+    // Year headers only make sense in the "All" view — when a single year is selected the chip already names it.
+    const showYearHeaders = activeYear === 'all';
     let curYear = null;
-    ms.forEach((m) => {
-      const y = m.date.slice(0, 4);
-      if (y !== curYear) { if (curYear !== null) body += '</div>'; body += `<div class="pyear">${y}</div><div class="prail">`; curYear = y; }
+    if (!showYearHeaders && shown.length) body += '<div class="prail">';
+    shown.forEach((m) => {
+      if (showYearHeaders) {
+        const y = m.date.slice(0, 4);
+        if (y !== curYear) { if (curYear !== null) body += '</div>'; body += `<div class="pyear">${y}</div><div class="prail">`; curYear = y; }
+      }
       const [, color] = MS_TYPE[m.type] || MS_TYPE.milestone; const ic = MS_ICON[m.type] || MS_ICON.milestone;
       body += `<div class="pitem"><span class="picon" style="color:${color}">${ic}</span><span class="pibody"><span class="pidate">${fmtMonth(m.date, lang)}</span><span class="pilabel">${esc(tx(m.label, lang))}</span></span></div>`;
     });
-    if (curYear !== null) body += '</div>';
-    if (!ms.length) body = `<p class="muted small" style="padding:10px 4px">${STR[lang].noData}</p>`;
+    if (showYearHeaders) { if (curYear !== null) body += '</div>'; }
+    else if (shown.length) body += '</div>';
+    if (!shown.length) body = `<p class="muted small" style="padding:10px 4px">${STR[lang].noData}</p>`;
   }
   const editBtn = `<button class="addmini" data-editpick="milestones" aria-label="${lang === 'es' ? 'Editar' : 'Edit'}">${ui.editPick === 'milestones' ? '✕' : '✎'}</button>`;
-  return `<div class="card"><div class="card-h"><h2>${TT.progression}</h2><span class="hgrp">${editBtn}<button class="addmini" data-add="milestones" aria-label="Add milestone">＋</button></span></div><div class="plegend">${legend}</div>${body}</div>`;
+  return `<div class="card"><div class="card-h"><h2>${TT.progression}</h2><span class="hgrp">${editBtn}<button class="addmini" data-add="milestones" aria-label="Add milestone">＋</button></span></div>${chips}${body}</div>`;
 }
 function renderRecords(state) { return renderTrends(state); }
 function renderTimeline(state) { return '<div class="ds">' + renderProg(state) + '</div>'; }
@@ -2198,14 +2380,15 @@ async function onClick(e, state, rerender) {
   if (t.dataset.scorewin) { ui.scoreWin = t.dataset.scorewin; rerender(); return; }
   if (t.dataset.areasym) { ui.areaSym = t.dataset.areasym; rerender(); return; }
   if (t.dataset.symtrend) { ui.symTrend = (ui.symTrend === t.dataset.symtrend) ? null : t.dataset.symtrend; rerender(); return; }
-  if (t.dataset.adhtoggle != null) { ui.adhOpen = !ui.adhOpen; rerender(); return; }
+  if (t.dataset.med != null) { ui.medOpen = ui.medOpen === t.dataset.med ? null : t.dataset.med; rerender(); return; }
   if (t.dataset.badline) { const b = t.dataset.badline, o = b === 'heavy' ? 'vh' : 'heavy'; if (ui.badLines[b] && !ui.badLines[o]) return; ui.badLines[b] = !ui.badLines[b]; rerender(); return; }
   if (t.dataset.labgrp) { const g = t.dataset.labgrp; ui.labGroups.has(g) ? ui.labGroups.delete(g) : ui.labGroups.add(g); rerender(); return; }
   if (t.dataset.lab) { ui.labId = t.dataset.lab === '__back' ? null : t.dataset.lab; ui.win = '1y'; rerender(); return; }
   if (t.dataset.win) { ui.win = t.dataset.win; rerender(); return; }
+  if (t.dataset.histyear != null) { ui.histYear = t.dataset.histyear; rerender(); return; }
 }
 
-return { ui, renderRecords, renderTimeline, onClick };
+return { ui, renderRecords, renderTimeline, renderProg, onClick };
 })();
 
 const Forms = (function(){
@@ -2268,7 +2451,7 @@ const SPECS = {
   ], defaults: { text: { en: '', es: '' }, specialismId: '', conditionIds: [], status: 'open', createdDate: new Date().toISOString().slice(0, 10), answerNote: { en: '', es: '' } } },
   milestones: { title: 'Milestone', fields: [
     { key: 'date', type: 'date', label: 'Date' },
-    { key: 'type', type: 'select', label: 'Type', options: ['diagnosis', 'medication', 'new_symptom', 'episode', 'milestone'] },
+    { key: 'type', type: 'select', label: 'Type', options: ['diagnosis', 'medication', 'new_symptom', 'milestone'] },
     { key: 'label', type: 'i18n', label: 'Short label' },
     { key: 'detail', type: 'i18n', label: 'Detail', textarea: true },
   ], defaults: { date: null, type: 'milestone', label: { en: '', es: '' }, detail: { en: '', es: '' }, linkedId: null } },
@@ -2728,7 +2911,12 @@ return { getClientId, setClientId, getFilePath, setFilePath, isConfigured, setTe
 const { loadData, getData, getLoadMeta, parseReport, subscribe, resetToSeed, exportJSON, importData, setActiveSource } = DL;
 const { COLLECTIONS } = SCHEMA;
 OneDrive.setTemplateProvider(function(){ return JSON.parse(JSON.stringify(__HT_TEMPLATE__)); });
-setActiveSource(OneDrive.oneDriveSource);
+// On a local preview (localhost) with no OneDrive client ID configured, leave the active source
+// unset so DL falls back to seedFetchSource, which reads the co-located health-data.json. Otherwise
+// (real deployed host, or a machine that has OneDrive configured) keep OneDrive as the source — this
+// preserves normal behaviour everywhere except an unconfigured local preview, which now shows the seed file.
+const _isLocalDev = ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname);
+if (!_isLocalDev || OneDrive.isConfigured()) setActiveSource(OneDrive.oneDriveSource);
 
 
 
@@ -2774,6 +2962,7 @@ function wireChrome() {
     if (ed) { if (ed.dataset.add) { const pf = ed.dataset.prefill ? JSON.parse(ed.dataset.prefill) : null; Forms.open(ed.dataset.add, null, pf); } else { const [c, id] = ed.dataset.edit.split(':'); Forms.open(c, id || null); } render(); return; }
     if (state.showData) return;
     if (state.tab === 'today') Today.onClick(e, state, render);
+    else if (state.tab === 'overview' && e.target.closest('[data-editpick="milestones"],[data-histyear]')) Records.onClick(e, state, render);
     else if (state.tab === 'overview' || state.tab === 'next') Appt.onClick(e, state, render);
     else if (state.tab === 'records' || state.tab === 'timeline') Records.onClick(e, state, render);
   });
@@ -2783,6 +2972,7 @@ function wireChrome() {
     if (e.target.id === 'importFile') { const f = e.target.files[0]; if (!f) return; try { const r = await importData(await f.text()); setStatus(r.ok ? 'Imported ✓ (' + r.warnings.length + ' notes)' : 'Imported with ' + r.errors.length + ' errors', r.ok ? 'ok' : 'err'); } catch (err) { setStatus('Import failed: ' + err.message, 'err'); } render(); return; }
     if (e.target.id === 'prefEnglishOnly') { setPref('englishOnly', e.target.checked); if (e.target.checked) setLang('en'); render(); return; }
     if (e.target.id === 'prefHideEpisodes') { setPref('hideEpisodes', e.target.checked); render(); return; }
+    if (e.target.id === 'prefTrackMood') { const on = e.target.checked; setPref('trackMood', on); if (on) setPrefStr('moodSince', new Date().toLocaleDateString('en-CA')); render(); return; }
     if (e.target.id === 'burdenK') { const k = Math.max(1, Math.round(Number(e.target.value) || 2)); const d = DL.getData(); if (d) { d.meta = d.meta || {}; d.meta.burdenBands = Object.assign({}, d.meta.burdenBands, { k }); DL.persistLocal(); DL.persist(); } render(); return; }
     if (e.target.id === 'burdenT') { const t = Math.max(0, Math.round(Number(e.target.value) || 1)); const d = DL.getData(); if (d) { d.meta = d.meta || {}; d.meta.burdenBands = Object.assign({}, d.meta.burdenBands, { t }); DL.persistLocal(); DL.persist(); } render(); return; }
     if (e.target.id === 'burdenTt') { const t = Math.max(0, Math.round(Number(e.target.value) || 2) - 1); const d = DL.getData(); if (d) { d.meta = d.meta || {}; d.meta.burdenBands = Object.assign({}, d.meta.burdenBands, { t }); DL.persistLocal(); DL.persist(); } render(); return; }
@@ -2919,6 +3109,8 @@ function render() {
   if (wd) { const sel = wd.querySelector('.wkday.sel'); wd.scrollLeft = sel ? Math.max(0, sel.offsetLeft - wd.clientWidth / 2 + sel.offsetWidth / 2) : wd.scrollWidth; attachDrag(wd); }
   const cg = screen.querySelector('.monthview'); if (cg) attachCalSwipe(cg);
   const symRe = screen.querySelector('#symReorder'); if (symRe) attachSymptomReorder(symRe);
+  // Auto-size the mood journal note to its content on (re)render; CSS max-height caps it and scrolls past that.
+  screen.querySelectorAll('.moodnote').forEach((el) => { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; });
 }
 function renderDataScreen() {
   const data = getData(); const meta = getLoadMeta();
@@ -2937,6 +3129,7 @@ function renderDataScreen() {
     '<div class="card"><h2>Display options</h2>' +
     '<div class="f f-row"><label><input type="checkbox" id="prefEnglishOnly"' + (getPref('englishOnly') ? ' checked' : '') + '> English only (hide the EN/ES switch)</label></div>' +
     '<div class="f f-row"><label><input type="checkbox" id="prefHideEpisodes"' + (getPref('hideEpisodes') ? ' checked' : '') + '> Hide episode tracking (Log &amp; Trends)</label></div>' +
+    '<div class="f f-row"><label><input type="checkbox" id="prefTrackMood"' + (getPref('trackMood') ? ' checked' : '') + '> Track daily mood (Log &amp; Trends)</label></div>' +
     '</div>' +
     '<div class="card"><h2>Burden scale</h2>' +
     '<p class="muted small" style="margin:0 0 12px">How each day’s level is set from your symptom ratings. The boxes are yours to adjust.</p>' +
@@ -2972,7 +3165,18 @@ function odPanel() {
     '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;"><button id="odSaveCfg" class="btn ghost">Save settings</button>' + authBtn + '</div></div>';
 }
 function downloadJSON() { const blob = new Blob([exportJSON()], { type: 'application/json' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'health-data.json'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(a.href); }
-function registerSW() { if ('serviceWorker' in navigator) { navigator.serviceWorker.register('sw.js').catch((e) => console.warn('SW register failed', e)); } }
+function registerSW() {
+  // Skip the service worker on local dev (localhost/127.0.0.1). The SW caches the whole app
+  // shell (network-first, cache-fallback), which fights local preview servers — especially
+  // live-reload tools like VS Code Live Server, whose injected reload snippet gets cached and
+  // leaves you looking at a stale shell. Off on localhost = plain static previews just work.
+  const host = location.hostname;
+  if (host === 'localhost' || host === '127.0.0.1' || host === '[::1]') {
+    if ('serviceWorker' in navigator) { navigator.serviceWorker.getRegistrations().then((rs) => rs.forEach((r) => r.unregister())).catch(() => {}); }
+    return;
+  }
+  if ('serviceWorker' in navigator) { navigator.serviceWorker.register('sw.js').catch((e) => console.warn('SW register failed', e)); }
+}
 
 })();
 </script>
