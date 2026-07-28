@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="apple-mobile-web-app-title" content="Atlast" />
   <style>
-:root { --teal:#0f766e; --teal-d:#0b5e57; --bg:#f6f7f8; --card:#fff; --ink:#16202a; --muted:#5b6b7a; --line:#e3e8ec; --ok:#15803d; --warn:#b45309; --err:#b91c1c; --chip:#eef2f4; --radius:14px; --tabbar-h:60px; }
+:root { --teal:#0f766e; --teal-d:#0b5e57; --bg:#f6f7f8; --card:#fff; --ink:#16202a; --muted:#5b6b7a; --line:#e3e8ec; --ok:#15803d; --warn:#b45309; --err:#b91c1c; --chip:#eef2f4; --radius:14px; --tabbar-h:60px; --us:#be185d; }
 * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
 html,body { margin:0; padding:0; }
 body { font:16px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; background:var(--bg); color:var(--ink); padding-bottom:calc(var(--tabbar-h) + env(safe-area-inset-bottom)); }
@@ -48,8 +48,11 @@ details.msgs { margin-top:8px; } details.msgs summary { cursor:pointer; font-siz
 .msglist { margin:8px 0 0; padding:0; list-style:none; font-size:12.5px; } .msglist li { padding:4px 0; border-bottom:1px solid var(--line); color:var(--muted); }
 .chips-row { display:flex; flex-wrap:wrap; gap:6px; } .pill { font-size:12px; background:var(--chip); border-radius:999px; padding:4px 10px; color:var(--ink); }
 .tabbar { position:fixed; left:0; right:0; bottom:0; z-index:10; height:calc(var(--tabbar-h) + env(safe-area-inset-bottom)); padding-bottom:env(safe-area-inset-bottom); display:grid; grid-template-columns:repeat(4,1fr); background:#fff; border-top:1px solid var(--line); }
+.tabbar.us-on { grid-template-columns:repeat(5,1fr); }
 .tab { border:0; background:transparent; cursor:pointer; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; color:var(--muted); font-size:11px; }
 .tab .tab-ico { font-size:20px; line-height:1; } .tab.is-active { color:var(--teal); font-weight:600; }
+.tab.is-active[data-tab="us"] { color:var(--us); }
+.tab[hidden] { display:none !important; }
 .btn { border:0; background:var(--teal); color:#fff; border-radius:10px; padding:10px 14px; font-size:14px; font-weight:600; cursor:pointer; touch-action:manipulation; -webkit-tap-highlight-color:transparent; }
 .btn.ghost { background:var(--chip); color:var(--ink); } .btn.wide { width:100%; }
 .btn-sm { border:1px solid var(--line); background:#fff; color:var(--err); border-radius:8px; padding:5px 10px; font-size:13px; cursor:pointer; }
@@ -262,6 +265,12 @@ ul.tight { margin: 4px 0 0; padding-left: 18px; } ul.tight li { padding: 1px 0; 
 .ds .winseg{display:inline-flex;background:var(--chip);border-radius:999px;padding:2px;}
 .ds .winseg button{border:0;background:transparent;color:var(--muted);font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px;cursor:pointer;}
 .ds .winseg button.on{background:var(--card);color:var(--teal-d);box-shadow:0 1px 2px rgba(0,0,0,.12);}
+.ds .trendbar{position:sticky;top:var(--topbar-h,56px);z-index:9;background:var(--bg);padding:8px 0 10px;margin:0 0 2px;border-bottom:1px solid var(--line);}
+.ds .trendgrp-h{display:flex;align-items:center;gap:9px;margin:26px 2px 12px;}
+.ds .trendgrp-h .gbar{width:4px;height:17px;background:var(--teal);border-radius:2px;flex:none;}
+.ds .trendgrp-h .gtxt{font-size:13px;font-weight:700;letter-spacing:.02em;text-transform:uppercase;color:var(--ink);}
+.ds .trendgrp-h .grule{flex:1;height:1px;background:var(--line);}
+.ds .trendbar + .trendgrp-h{margin-top:12px;}
 .ds .tr{font-weight:800;} .ds .tr.up{color:var(--err);} .ds .tr.down{color:var(--ok);} .ds .tr.flat{color:var(--muted);}
 .ds .sevbar{display:inline-flex;align-items:center;gap:8px;justify-content:flex-end;}
 .ds .sevbar .track{width:72px;height:8px;border-radius:999px;background:var(--chip);overflow:hidden;}
@@ -352,6 +361,8 @@ ul.tight { margin: 4px 0 0; padding-left: 18px; } ul.tight li { padding: 1px 0; 
 .ds .adh-back{border:0;background:transparent;font-size:20px;cursor:pointer;color:var(--ink);padding:0;line-height:1;}
 .ds .adh-overall{display:flex;align-items:baseline;gap:8px;margin-bottom:6px;}
 .ds .adh-overall .bignum{font-size:32px;font-weight:600;line-height:1;}
+.ds .adh-head{display:flex;align-items:center;gap:8px;}
+.ds .adh-pill{font-size:12px;font-weight:700;padding:2px 9px;border-radius:999px;line-height:1.4;}
 .ds .medblk{padding:12px 0;border-top:1px solid var(--line);}
 .ds .medblk:first-of-type{border-top:0;}
 .ds .medblk .ml{display:flex;justify-content:space-between;font-size:14px;margin-bottom:7px;}
@@ -359,9 +370,9 @@ ul.tight { margin: 4px 0 0; padding-left: 18px; } ul.tight li { padding: 1px 0; 
 .ds .medblk .mpct{font-size:13px;font-weight:600;}
 .ds .adh-dots{display:flex;flex-wrap:wrap;gap:3px;}
 .ds .adh-dot{width:11px;height:11px;border-radius:3px;}
-.ds .adh-streak{font-size:12px;color:var(--muted);margin-top:7px;}
 .ds .med-row{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;border:0;border-bottom:1px solid var(--line);background:transparent;padding:11px 0;cursor:pointer;text-align:left;font:inherit;}
 .ds .med-row.open{border-bottom:0;}
+.ds .med-row.med-static{cursor:default;}
 .ds .med-name{font-size:14px;font-weight:500;display:flex;align-items:center;gap:7px;}
 .ds .med-name .gcaret{color:var(--muted);font-size:12px;width:12px;flex:0 0 auto;}
 .ds .med-sum{font-size:14px;font-weight:600;white-space:nowrap;}
@@ -380,6 +391,10 @@ ul.tight { margin: 4px 0 0; padding-left: 18px; } ul.tight li { padding: 1px 0; 
 .ds .bars{display:flex;align-items:flex-end;gap:6px;height:80px;padding-top:6px;}
 .ds .bars .b{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;height:100%;justify-content:flex-end;}
 .ds .bars .b .bar{width:100%;max-width:24px;border-radius:5px 5px 0 0;background:var(--teal);}
+.ds .epstats{display:flex;gap:10px;}
+.ds .epstats .epstat{flex:1;min-width:0;background:var(--chip);border-radius:10px;padding:10px 12px;}
+.ds .epstats .epv{font-size:20px;font-weight:800;line-height:1.1;color:var(--ink);}
+.ds .epstats .epl{font-size:10.5px;color:var(--muted);margin-top:3px;line-height:1.25;}
 .ds .bars .b .bl{font-size:9px;color:var(--muted);font-weight:600;} .ds .bars .b .bv{font-size:10px;font-weight:700;}
 .ds .mini{width:100%;height:54px;display:block;}
 .ds .linkbtn{background:none;border:0;color:var(--teal);font:inherit;font-size:13px;cursor:pointer;text-decoration:underline;}
@@ -481,6 +496,7 @@ ul.tight { margin: 4px 0 0; padding-left: 18px; } ul.tight li { padding: 1px 0; 
     <button class="tab" data-tab="overview"><span class="tab-ico" aria-hidden="true">📋</span><span class="tab-label">Summary</span></button>
     <button class="tab" data-tab="records"><span class="tab-ico" aria-hidden="true">📈</span><span class="tab-label">Trends</span></button>
     <button class="tab" data-tab="next"><span class="tab-ico" aria-hidden="true">🗓</span><span class="tab-label">Visits</span></button>
+    <button class="tab" data-tab="us" id="tabUs" hidden><span class="tab-ico" aria-hidden="true">💗</span><span class="tab-label">Us</span></button>
   </nav>
   <div id="printSheet" aria-hidden="true"></div>
   <script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@3/lib/msal-browser.min.js"></script>
@@ -1271,7 +1287,7 @@ function renderToday(state) {
   const epEditBtns = `<button class="addmini" data-editpick="episodes" aria-label="${lang === 'es' ? 'Editar' : 'Edit'}">${epEditing ? '✕' : '✎'}</button><button class="addmini" id="epStartBtn" aria-label="${lang === 'es' ? 'Iniciar un episodio' : 'Start an episode'}">＋</button>`;
   const savedNote = ui.savedAt ? `<div class="muted small saved-tag">✓ ${T.saved} · ${ui.savedAt}</div>` : '';
   const epInfoBtn = `<button class="infobtn" data-epinfo aria-label="${T.epInfoAria}"><svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="7.5" r="1.4" fill="currentColor"/><rect x="10.8" y="10.5" width="2.4" height="7" rx="1.2" fill="currentColor"/></svg></button>`;
-  const epCardHtml = getPref('hideEpisodes') ? '' : `<div class="card"><div class="card-h"><span class="hgrp"><h2>${T.episodes}</h2>${epInfoBtn}</span><span class="hgrp">${epEditBtns}</span></div>${epEditing ? `<div class="muted small" style="margin:2px 0 6px">${lang === 'es' ? 'Elige cuál editar:' : 'Choose which to edit:'}</div>${epPick}` : `${ongoing.length ? `<div class="subhead">${T.ongoing}</div>${ongoingHtml}` : ''}${endedHtml}${epForm}`}</div>`;
+  const epCardHtml = getPref('trackEpisodes') ? `<div class="card"><div class="card-h"><span class="hgrp"><h2>${T.episodes}</h2>${epInfoBtn}</span><span class="hgrp">${epEditBtns}</span></div>${epEditing ? `<div class="muted small" style="margin:2px 0 6px">${lang === 'es' ? 'Elige cuál editar:' : 'Choose which to edit:'}</div>${epPick}` : `${ongoing.length ? `<div class="subhead">${T.ongoing}</div>${ongoingHtml}` : ''}${endedHtml}${epForm}`}</div>` : '';
   const infoModal = ui.infoOpen ? `<div class="modal-bg" data-infobg><div class="modal sym-info" role="dialog" aria-label="${T.symInfoAria}">
       <div class="sym-info-top"><button class="sym-info-x" data-infoclose aria-label="${T.close}">✕</button></div>
       <h2 class="sym-info-title">${T.symInfoTitle[0]}<b>${T.symInfoTitle[1]}</b></h2>
@@ -1800,32 +1816,38 @@ const TSS = {
         period: { '30d': '30 days', '3m': '3 months', '1y': 'year' }, was: 'was', vsPrev: 'vs previous', allTime: 'all time', past: 'past', partial: 'partial', mo: 'mo',
         mixTitle: 'Day mix over time', areasTitle: 'Areas affected', loadTitle: 'Overall load',
         dayBalanceTitle: 'Good days vs bad days', badLineTitle: 'Bad days over time',
-        heavyPlus: 'difficult or severe', areasUnit: 'areas', loadSub: 'severity + spread combined', bandW: ['clear', 'light', 'typical', 'difficult', 'severe'],
+        heavyPlus: 'difficult or severe', areasUnit: 'areas', loadSub: 'severity × spread', bandW: ['clear', 'light', 'typical', 'difficult', 'severe'],
+        sevTitle: 'Average severity', sevUnit: 'avg / 4', breadthTitle: 'Areas active', breadthUnit: 'per day',
+        groups: { overall: 'Overall status', driving: "What's driving it", context: 'Context', clinical: 'Clinical' },
         mostProm: 'Most prominent',
-        moodTitle: 'Mood', moodOutOf5: 'avg / 5', moodNoData: 'No mood logged in this window.',
-        labs: 'Labs', episodes: 'Episodes/Month',
+        moodTitle: 'Mood', moodOutOf5: 'avg', moodNoData: 'No mood logged in this window.',
+        labs: 'Labs', episodes: 'Episodes', epEpisode: 'episode', epEpisodes: 'episodes', epUnwell: 'unwell', epDay: 'day', epDays: 'days', epOfDays: 'of days', epSince: 'since last unwell', epNow: 'unwell right now', epNone: 'no episodes yet',
         pos: 'Positive', neg: 'Negative', progression: 'Progression',
         onsetAll: 'Onset & progression', started: 'Started in the last', newBadge: 'new', catJoint: 'joint', catNerve: 'nerve', catOther: 'other', nothingNew: 'Nothing new started in this period.',
         newJointLoc: 'New joint pain location', newNerve: 'New nerve sensation', newSymptom: 'New symptom',
-        funcTitle: 'How much it limits me', symImpTitle: 'What limits me most',
+        funcTitle: 'Disruption', symImpTitle: 'Most limiting symptoms',
         fiInterfered: 'Interfered with activities', fiPrevented: 'Prevented an activity',
         fiInterferedShort: 'interfered', fiPreventedShort: 'prevented', fiDays: 'days',
-        fiNone: 'No day a symptom interfered with or prevented an activity in this period.' },
+        fiNone: 'No day a symptom interfered with or prevented an activity in this period.',
+        fiOfLogged: 'of logged days', fiSubImpact: 'a symptom interfered with or prevented an activity' },
   es: { worse: 'peor', better: 'mejor', steady: 'estable', notEnough: 'Historial insuficiente.', noData: 'Sin datos aún.',
         period: { '30d': '30 días', '3m': '3 meses', '1y': 'año' }, was: 'antes', vsPrev: 'vs', allTime: 'todo el tiempo', past: 'últimos', partial: 'parcial', mo: 'm',
         mixTitle: 'Distribución de días', areasTitle: 'Zonas afectadas', loadTitle: 'Carga total',
         dayBalanceTitle: 'Días buenos vs malos', badLineTitle: 'Días malos con el tiempo',
-        heavyPlus: 'difícil o grave', areasUnit: 'zonas', loadSub: 'gravedad + extensión combinadas', bandW: ['sin síntomas', 'leve', 'típico', 'difícil', 'grave'],
+        heavyPlus: 'difícil o grave', areasUnit: 'zonas', loadSub: 'gravedad × extensión', bandW: ['sin síntomas', 'leve', 'típico', 'difícil', 'grave'],
+        sevTitle: 'Gravedad media', sevUnit: 'media / 4', breadthTitle: 'Zonas activas', breadthUnit: 'por día',
+        groups: { overall: 'Estado general', driving: 'Qué lo está causando', context: 'Contexto', clinical: 'Clínico' },
         mostProm: 'Más prominente',
-        moodTitle: 'Ánimo', moodOutOf5: 'media / 5', moodNoData: 'Sin ánimo registrado en este periodo.',
-        labs: 'Analíticas', episodes: 'Episodios/Mes',
+        moodTitle: 'Ánimo', moodOutOf5: 'media', moodNoData: 'Sin ánimo registrado en este periodo.',
+        labs: 'Analíticas', episodes: 'Episodios', epEpisode: 'episodio', epEpisodes: 'episodios', epUnwell: 'con malestar', epDay: 'día', epDays: 'días', epOfDays: 'de los días', epSince: 'desde el último', epNow: 'con malestar ahora', epNone: 'sin episodios aún',
         pos: 'Positivo', neg: 'Negativo', progression: 'Progresión',
         onsetAll: 'Inicio y progresión', started: 'Empezó — últimos', newBadge: 'nuevo', catJoint: 'articular', catNerve: 'nervioso', catOther: 'otro', nothingNew: 'Nada nuevo empezó en este periodo.',
         newJointLoc: 'Nueva zona de dolor articular', newNerve: 'Nueva sensación nerviosa', newSymptom: 'Nuevo síntoma',
-        funcTitle: 'Cuánto me limita', symImpTitle: 'Qué me limita más',
+        funcTitle: 'Interrupción', symImpTitle: 'Síntomas más limitantes',
         fiInterfered: 'Interfirió con mis actividades', fiPrevented: 'Me impidió una actividad',
         fiInterferedShort: 'interfirió', fiPreventedShort: 'impidió', fiDays: 'días',
-        fiNone: 'Ningún día un síntoma interfirió o impidió una actividad en este periodo.' },
+        fiNone: 'Ningún día un síntoma interfirió o impidió una actividad en este periodo.',
+        fiOfLogged: 'de días registrados', fiSubImpact: 'un síntoma interfirió o impidió una actividad' },
 };
 function dayLogged(log) { return !!log && (log.symptoms || []).some((r) => typeof r.severity === 'number'); }
 const WIN_DAYS = { '30d': 30, '3m': 90, '1y': 365 };
@@ -1904,12 +1926,50 @@ function trendSVG(series, max, avg, colorByValue) {
 const MON3 = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 function labHL(l) { const r = DL.latestLab(l); if (!r || typeof r.value !== 'number') return null; const rr = l.referenceRange || {}; if (l.displayMode === 'x_uln' && r.value > 1) return 'high'; if (rr.high != null && r.value > rr.high) return 'high'; if (rr.low != null && r.value < rr.low) return 'low'; return 'ok'; }
 function labPct(l) { const nums = [...(l.results || [])].filter((r) => typeof r.value === 'number').sort((a, b) => (a.date < b.date ? 1 : -1)); if (nums.length < 2 || nums[1].value === 0) return null; return Math.round((nums[0].value - nums[1].value) / Math.abs(nums[1].value) * 100); }
-function illnessBars(data, lang) {
-  const now = new Date(); const months = [];
-  for (let i = 5; i >= 0; i--) { const d = new Date(now.getFullYear(), now.getMonth() - i, 1); months.push({ y: d.getFullYear(), m: d.getMonth(), n: 0, lbl: d.toLocaleDateString(lang === 'es' ? 'es-ES' : 'en-GB', { month: 'short' }) }); }
-  (data.episodes || []).forEach((e) => { if (!e.startDate) return; const d = new Date(e.startDate + 'T00:00:00Z'); const b = months.find((x) => x.y === d.getUTCFullYear() && x.m === d.getUTCMonth()); if (b) b.n++; });
-  const max = Math.max(1, ...months.map((x) => x.n));
-  return `<div class="bars">${months.map((x) => `<div class="b"><div class="bv">${x.n}</div><div class="bar" style="height:${Math.round(x.n / max * 64)}px"></div><div class="bl">${x.lbl}</div></div>`).join('')}</div>`;
+// Episodes card for the Trends page — answers "how often am I ill?" with three stat tiles instead of a
+// chart, because episodes are sparse (mostly 0, occasionally 1–2 a month) and a bar chart wasted its ink
+// on empty months. Tile 1 (count) and tile 2 (days unwell + % of the window) follow the page toggle;
+// tile 3 (days since last unwell) is deliberately WINDOW-INDEPENDENT — it's an absolute "how long have I
+// been well right now" fact, so slaving it to a 30d view would hide a flare from months ago. Episodes with
+// no endDate are treated as ongoing (running to today) per the app's "blank = ongoing" convention, which
+// also flips tile 3 to "unwell right now". Days-unwell dedupes overlapping episodes so a day is counted once.
+function episodeStats(data, lang, win) {
+  const T = TSS[lang];
+  const eps = (data.episodes || []).filter((e) => e.startDate);
+  const t = new Date(); const today = new Date(Date.UTC(t.getFullYear(), t.getMonth(), t.getDate()));
+  const D = (s) => new Date(s + 'T00:00:00Z');
+  const dd = (a, b) => Math.round((b - a) / 86400000);
+  const E = eps.map((e) => { const sd = D(e.startDate); const ongoing = !e.endDate; let ed = ongoing ? today : D(e.endDate); if (ed < sd) ed = sd; if (ed > today) ed = today; return { sd, ed, ongoing }; });
+  // Window start: fixed lookback for 30d/3m/1y; for All, the earliest of first episode / first daily log.
+  let winStart;
+  if (win === 'all') {
+    const cands = E.map((x) => x.sd.getTime());
+    const firstLog = (data.dailyLogs || []).map((l) => l.date).filter(Boolean).sort()[0];
+    if (firstLog) cands.push(D(firstLog).getTime());
+    winStart = cands.length ? new Date(Math.min(...cands)) : today;
+  } else winStart = new Date(today.getTime() - (WIN_DAYS[win] || 30) * 86400000);
+  const winLen = Math.max(1, dd(winStart, today) + 1);
+  // Tile 1 — episodes overlapping the window.
+  const inWin = E.filter((x) => x.ed >= winStart);
+  // Tile 2 — distinct days unwell within the window (dedupe overlaps via a day set).
+  const set = new Set();
+  inWin.forEach((x) => { const a = Math.max(x.sd.getTime(), winStart.getTime()); for (let d = a; d <= x.ed.getTime(); d += 86400000) set.add(d); });
+  const unwellDays = set.size;
+  const pct = Math.round(unwellDays / winLen * 100);
+  // Tile 3 — absolute days since last unwell (independent of the toggle).
+  const currentlyUnwell = E.some((x) => x.ongoing || (x.sd <= today && x.ed >= today));
+  let t3v, t3l;
+  if (!E.length) { t3v = '—'; t3l = T.epNone; }
+  else if (currentlyUnwell) { t3v = '—'; t3l = T.epNow; }
+  const days = (n) => n + ' ' + (n === 1 ? T.epDay : T.epDays);
+  if (E.length && !currentlyUnwell) { const lastEnd = new Date(Math.max(...E.map((x) => x.ed.getTime()))); t3v = days(dd(lastEnd, today)); t3l = T.epSince; }
+  const timeframe = win === 'all' ? T.allTime : ((lang === 'es' ? (win === '1y' ? 'último ' : 'últimos ') : 'last ') + T.period[win]);
+  const tiles = [
+    { v: String(inWin.length), l: (inWin.length === 1 ? T.epEpisode : T.epEpisodes) + ' · ' + timeframe },
+    { v: days(unwellDays), l: T.epUnwell + ' · ' + pct + '% ' + T.epOfDays },
+    { v: t3v, l: t3l },
+  ];
+  return `<div class="epstats">${tiles.map((s) => `<div class="epstat"><div class="epv">${s.v}</div><div class="epl">${s.l}</div></div>`).join('')}</div>`;
 }
 // Medication adherence card for the Trends page. Follows the page's window (30d/3m/1y/All).
 // Overall % + change vs previous period; per-med strip+streak (dropped on long windows); PRN as dose count.
@@ -1931,59 +1991,73 @@ function adherenceCard(state, data, days, win, TT) {
       else if (showDots) o.dots.push('x');
     });
   }
-  let totS = 0, totT = 0; Object.values(info).forEach((o) => { if (!o.isPrn) { totS += o.sched; totT += o.taken; } });
-  const overall = totS ? Math.round(totT / totS * 100) : null;
-  // Previous equal-length window, for the change pill.
-  let pTotS = 0, pTotT = 0;
-  for (let i = days * 2 - 1; i >= days; i--) {
-    const iso = shiftDate(tISO, -i);
-    const sset = new Set(DL.medsForDate(iso, data).scheduled.map((x) => x.id));
-    meds.forEach((m) => { if (sset.has(m.id)) { pTotS++; if (DL.getMedTaken(iso, m.id, data) === true) pTotT++; } });
-  }
-  const prevPct = pTotS ? Math.round(pTotT / pTotS * 100) : null;
-  let pill = '';
-  if (overall != null && prevPct != null) {
-    const d = overall - prevPct;
-    if (d === 0) pill = `<span class="muted small">${lang === 'es' ? 'sin cambios' : 'no change'}</span>`;
-    else { const up = d > 0; const bg = up ? '#dcfce7' : '#fef3c7'; const fg = up ? '#15803d' : '#854f0b'; const word = up ? (lang === 'es' ? 'mejor' : 'better') : (lang === 'es' ? 'peor' : 'worse'); pill = `<span style="font-size:12px;padding:2px 8px;border-radius:999px;background:${bg};color:${fg}">${up ? '↑' : '↓'} ${Math.abs(d)} pts ${word}</span>`; }
-  }
-  const sub = `${lang === 'es' ? 'tomadas' : 'taken'} · ${win === 'all' ? TT.allTime : `${TT.past} ${TT.period[win]}`}`;
-  const streakOf = (o) => { let s = 0; for (let i = o.dots.length - 1; i >= 0; i--) { const d = o.dots[i]; if (d === 'x' || d === 'n') continue; if (d === 't') s++; else break; } return s; };
-  // A regular med is shown with a day-strip + streak only when it's an (almost) everyday med;
-  // sparser scheduled meds (e.g. every-other-day, every-15-days) show just the taken/due ratio.
+  // A med shows its day-strip only when it's an (almost) everyday med; sparser scheduled meds
+  // (e.g. every-other-day, every-15-days) show just the taken/due ratio.
   const isDaily = (m) => Array.isArray(m.scheduledDays) && m.scheduledDays.length >= 6;
   const regList = Object.values(info).filter((o) => !o.isPrn);
   const extraList = Object.values(info).filter((o) => o.isPrn);
-  const pctColor = (pct) => pct == null ? 'var(--muted)' : pct >= 80 ? '#15803d' : '#854f0b';
-  const regRows = regList.map((o) => {
+  // Colour band for the group roll-up score only (per-treatment rows stay neutral grey).
+  // Soft tinted pill for the group roll-up score only (light band bg + dark band text).
+  const bandPill = (pct) => { const c = pct >= 80 ? ['#dcfce7', '#15803d'] : pct >= 50 ? ['#fef3c7', '#854f0b'] : ['#fee2e2', '#b91c1c']; return `<span class="adh-pill" style="background:${c[0]};color:${c[1]}">${pct}%</span>`; };
+  const regRow = (o) => {
     const id = o.m.id, name = esc(tx(o.m.name, lang));
     const pct = o.sched ? Math.round(o.taken / o.sched * 100) : null;
-    const summary = o.sched ? `${o.taken}/${o.sched} · ${pct}%` : (lang === 'es' ? 'nada pautado' : 'none due');
+    const summary = o.sched ? `${o.taken}/${o.sched}` : (lang === 'es' ? 'nada pautado' : 'none due');
     const open = ui.medOpen === id;
     const daily = isDaily(o.m);
     const dotsHtml = (open && daily && showDots) ? `<div class="adh-dots">${o.dots.map((d) => `<span class="adh-dot" style="background:${DOTCOL[d]}${d === 'x' ? ';border:1px solid #eef1f3' : ''}"></span>`).join('')}</div>` : '';
-    let streak = '';
-    if (open && daily && showDots) { const st = streakOf(o); streak = `<div class="adh-streak">${st > 0 ? `${st}-${lang === 'es' ? 'día racha' : 'day streak'}` : (lang === 'es' ? 'sin racha actual' : 'no current streak')}</div>`; }
     const detailTxt = o.sched
-      ? `<div class="muted small">${o.taken} ${lang === 'es' ? 'de' : 'of'} ${o.sched} ${lang === 'es' ? 'pautadas · tomadas' : 'scheduled · taken'} · ${pct}%</div>`
+      ? `<div class="muted small">${pct}% ${lang === 'es' ? 'tomadas' : 'taken'}</div>`
       : `<div class="muted small">${lang === 'es' ? 'Nada pautado en este periodo' : 'Nothing scheduled this period'}</div>`;
-    const detail = open ? `<div class="adh-detail">${detailTxt}${dotsHtml}${streak}</div>` : '';
-    return `<button class="med-row${open ? ' open' : ''}" data-med="${id}"><span class="med-name"><span class="gcaret">${open ? '▾' : '▸'}</span>${name}</span><span class="med-sum" style="color:${pctColor(pct)}">${summary}${open ? '' : ' ›'}</span></button>${detail}`;
-  }).join('');
-  const extraRows = extraList.map((o) => {
-    const id = o.m.id, name = esc(tx(o.m.name, lang));
-    const summary = `${o.prn} ${lang === 'es' ? 'tomas' : 'doses'}`;
-    const open = ui.medOpen === id;
-    const detail = open ? `<div class="adh-detail"><div class="muted small">${o.prn} ${lang === 'es' ? 'tomas en este periodo · según necesidad' : 'doses this period · as needed'}</div></div>` : '';
+    const detail = open ? `<div class="adh-detail">${detailTxt}${dotsHtml}</div>` : '';
     return `<button class="med-row${open ? ' open' : ''}" data-med="${id}"><span class="med-name"><span class="gcaret">${open ? '▾' : '▸'}</span>${name}</span><span class="med-sum muted">${summary}${open ? '' : ' ›'}</span></button>${detail}`;
-  }).join('');
-  const adhTitle = lang === 'es' ? 'Cumplimiento de medicación' : 'Medication adherence';
+  };
+  // PRN "extra meds" are a static row — the dose count is the whole story, nothing to expand.
+  const extraRow = (o) => {
+    const name = esc(tx(o.m.name, lang));
+    const summary = `${o.prn} ${lang === 'es' ? 'tomas' : 'doses'}`;
+    return `<div class="med-row med-static"><span class="med-name"><span class="gcaret"></span>${name}</span><span class="med-sum muted">${summary}</span></div>`;
+  };
+  // Therapies (non-drug activities like physio / CBT / gym) have no compliance target — the ratio
+  // is the whole story, so the row only opens when there's a day-strip worth revealing (i.e. a
+  // daily therapy on a window that draws dots). No repeated "x of y days" text. Otherwise static.
+  const therRow = (o) => {
+    const id = o.m.id, name = esc(tx(o.m.name, lang));
+    const summary = `${o.taken}/${o.sched}`;
+    const canOpen = isDaily(o.m) && showDots;
+    if (!canOpen) return `<div class="med-row med-static"><span class="med-name"><span class="gcaret"></span>${name}</span><span class="med-sum muted">${summary}</span></div>`;
+    const open = ui.medOpen === id;
+    const dotsHtml = `<div class="adh-dots">${o.dots.map((d) => `<span class="adh-dot" style="background:${DOTCOL[d]}${d === 'x' ? ';border:1px solid #eef1f3' : ''}"></span>`).join('')}</div>`;
+    const detail = open ? `<div class="adh-detail">${dotsHtml}</div>` : '';
+    return `<button class="med-row${open ? ' open' : ''}" data-med="${id}"><span class="med-name"><span class="gcaret">${open ? '▾' : '▸'}</span>${name}</span><span class="med-sum muted">${summary}${open ? '' : ' ›'}</span></button>${detail}`;
+  };
+  // A grouped medication section (prescriptions / supplements): roll-up % on the header, no
+  // period-over-period comparison. Computed only over that group so supplements never dilute Rx.
+  const groupSection = (list, title, mt) => {
+    if (!list.length) return '';
+    let cS = 0, cT = 0;
+    list.forEach((o) => { cS += o.sched; cT += o.taken; });
+    const pct = cS ? Math.round(cT / cS * 100) : null;
+    const rollup = pct != null ? bandPill(pct) : '';
+    return `<div class="subhead adh-head"${mt ? ' style="margin-top:16px"' : ''}><span>${title}</span>${rollup}</div>${list.map(regRow).join('')}`;
+  };
+  // Split the regular (non-PRN) meds by category: prescriptions (incl. any non-PRN OTC),
+  // supplements, and therapies each get their own roll-up. Therapies are non-drug treatments
+  // (e.g. Daily Physio) — tracked here, but deliberately kept out of the medication numbers.
+  const rxList = regList.filter((o) => o.m.category !== 'supplement' && o.m.category !== 'therapy');
+  const suppList = regList.filter((o) => o.m.category === 'supplement');
+  const therList = regList.filter((o) => o.m.category === 'therapy');
+  const adhTitle = lang === 'es' ? 'Cumplimiento del tratamiento' : 'Treatment adherence';
   const head = `<div class="card-h"><h2>${adhTitle}</h2></div>`;
-  const overallBlock = overall != null ? `<div class="adh-overall"><span class="bignum">${overall}%</span>${pill}<span class="muted small">${sub}</span></div>` : '';
-  const regSection = regList.length ? `<div class="subhead">${lang === 'es' ? 'Recordar mis medicamentos habituales' : 'Remembering my regular meds'}</div>${overallBlock}${regRows}` : '';
-  const extraSection = extraList.length ? `<div class="subhead" style="margin-top:16px">${lang === 'es' ? 'Medicación adicional' : 'Relying on extra meds'}</div>${extraRows}` : '';
+  const rxTitle = lang === 'es' ? 'Mis medicamentos con receta' : 'My prescriptions';
+  const suppTitle = lang === 'es' ? 'Mis suplementos' : 'My supplements';
+  const therTitle = lang === 'es' ? 'Mantener mis terapias' : 'Keeping up with therapies';
+  const rxSection = groupSection(rxList, rxTitle, false);
+  const suppSection = groupSection(suppList, suppTitle, !!rxList.length);
+  const therSection = therList.length ? `<div class="subhead"${(rxList.length || suppList.length) ? ' style="margin-top:16px"' : ''}>${therTitle}</div>${therList.map(therRow).join('')}` : '';
+  const extraSection = extraList.length ? `<div class="subhead" style="margin-top:16px">${lang === 'es' ? 'Medicación adicional' : 'Relying on extra meds'}</div>${extraList.map(extraRow).join('')}` : '';
   if (!regList.length && !extraList.length) return '';
-  return `<div class="card">${head}${regSection}${extraSection}</div>`;
+  return `<div class="card">${head}${rxSection}${suppSection}${therSection}${extraSection}</div>`;
 }
 // Onset & progression: when each symptom/site clinically started (onsetDate), independent of when it began being tracked.
 const ONSET_CAT = { sym_jointpain: 'joint', sym_nervesensation: 'nerve' };
@@ -2097,24 +2171,28 @@ function periodPhrase(lang, win, TT) {
 // Option 1 — Functional impact headline. Big % of logged days a symptom limited me, "N days out of the last …" subline, change pill vs the equal prior period, then two tiers (interfered / prevented) as share-of-logged-days bars.
 function trendFuncImpactCard(lang, TT, data, types, days, win, reliable) {
   const period = win === 'all' ? TT.allTime : ((lang === 'es' ? (win === '1y' ? 'último ' : 'últimos ') : 'last ') + TT.period[win]);
-  const head = `<div class="card-h"><h2>${TT.funcTitle} <span class="muted small">— ${period}</span></h2></div>`;
+  const head = `<div class="card-h"><h2>${TT.funcTitle}</h2></div>`;
   const cur = funcImpactAgg(data, types, 0, days);
   if (!cur.logged) return `<div class="card">${head}<p class="muted small">${TT.noData}</p></div>`;
   const prev = funcImpactAgg(data, types, days, 2 * days);
   const pct = Math.round(cur.affected / cur.logged * 100);
   const prevPct = prev.logged ? Math.round(prev.affected / prev.logged * 100) : null;
-  const pill = trendChg(pct, prevPct, true, reliable, TT, (v) => Math.round(v) + '%');
-  const sub = `${cur.affected} ${TT.fiDays} ${periodPhrase(lang, win, TT)}`;
+  let pill = '';
+  if (reliable && prevPct != null) {
+    const d = pct - prevPct;
+    if (Math.abs(d) < 3) pill = `<span class="chgpill flat">${lang === 'es' ? 'igual' : 'same'}</span>`;
+    else pill = `<span class="chgpill ${d > 0 ? 'up' : 'down'}">${d > 0 ? '↑ ' : '↓ '}${Math.abs(d)} pts</span>`;
+  }
   const tier = (n, label, idx) => {
     const p = Math.round(n / cur.logged * 100);
     return `<div style="margin-top:10px"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px"><span>${label}</span><span class="muted">${n} ${TT.fiDays} · ${p}%</span></div><div style="height:9px;background:var(--chip);border-radius:999px;overflow:hidden"><div style="width:${p}%;height:100%;background:${SEVHEX[idx]}"></div></div></div>`;
   };
-  return `<div class="card">${head}<div class="bignum">${pct}%${pill ? `<span style="margin-left:auto">${pill}</span>` : ''}</div><div class="muted small bn-sub">${sub}</div>${tier(cur.interfered, TT.fiInterfered, 3)}${tier(cur.prevented, TT.fiPrevented, 4)}</div>`;
+  return `<div class="card">${head}<div class="bignum">${pct}% <span class="muted small">${TT.fiOfLogged}</span>${pill ? `<span style="margin-left:auto">${pill}</span>` : ''}</div>${tier(cur.interfered, TT.fiInterfered, 3)}${tier(cur.prevented, TT.fiPrevented, 4)}</div>`;
 }
 // Option 2 — What limits me most. Per-symptom split bar (interfered + prevented) as a share of logged days, ranked. Answers WHICH symptom costs function — the aggregate bad-days cards can't.
 function trendSymImpactCard(lang, TT, data, types, days, win) {
   const period = win === 'all' ? TT.allTime : ((lang === 'es' ? (win === '1y' ? 'último ' : 'últimos ') : 'last ') + TT.period[win]);
-  const head = `<div class="card-h"><h2>${TT.symImpTitle} <span class="muted small">— ${period}</span></h2></div>`;
+  const head = `<div class="card-h"><h2>${TT.symImpTitle}</h2></div>`;
   const si = symImpact(data, types, days);
   if (!si.rows.length) return `<div class="card">${head}<p class="muted small">${TT.fiNone}</p></div>`;
   const denom = Math.max(1, si.logged);
@@ -2157,10 +2235,10 @@ function trendShiftCard(lang, TT, cur, prev, reliable, days, win) {
   if (reliable && prevPct != null) {
     const d = pct - prevPct;
     if (Math.abs(d) < 3) pill = `<span class="chgpill flat">${lang === 'es' ? 'igual' : 'same'}</span>`;
-    else pill = `<span class="chgpill ${d > 0 ? 'up' : 'down'}">${d > 0 ? '↑ ' + TT.worse : '↓ ' + TT.better}</span>`;
+    else pill = `<span class="chgpill ${d > 0 ? 'up' : 'down'}">${d > 0 ? '↑ ' : '↓ '}${Math.abs(d)} pts</span>`;
   }
   const legend = [1, 2, 3, 4].map((i) => `<span class="lg"><span class="lgsw" style="background:${SEVHEX[i]}"></span>${TT.bandW[i]}</span>`).join('');
-  return `<div class="card"><div class="card-h"><h2>${TT.dayBalanceTitle} <span class="muted small">— ${period}</span></h2>${pill ? `<span style="margin-left:auto">${pill}</span>` : ''}</div>${row(curLabel, cur)}${row(prevLabel, prev)}<div class="lgrow" style="margin-top:10px">${legend}</div></div>`;
+  return `<div class="card"><div class="card-h"><h2>${TT.dayBalanceTitle}</h2>${pill ? `<span style="margin-left:auto">${pill}</span>` : ''}</div>${row(curLabel, cur)}${row(prevLabel, prev)}<div class="lgrow" style="margin-top:10px">${legend}</div></div>`;
 }
 // #2 Bad days over time — two lines (heavy = SEVHEX[3], very heavy = SEVHEX[4]) as % of each bucket's logged days across the window. Complements the distribution card by showing direction/slope (and, here, the recent *emergence* of very-heavy days). Uses the shared window-aware buckets (day/week/month) from trendBuckets.
 function trendBadLineCard(lang, TT, tb, win) {
@@ -2186,7 +2264,7 @@ function trendBadLineCard(lang, TT, tb, win) {
   const svg = `<svg class="trend" viewBox="0 0 ${w} ${h}" role="img" style="height:auto">${grid}${show.heavy ? line(3, SEVHEX[3]) : ''}${show.vh ? line(4, SEVHEX[4]) : ''}${xl}</svg>`;
   // Clickable legend: each band toggles its line. At least one line always stays on (see onClick guard). Off = hollow swatch + muted label.
   const legBtn = (idx, key) => { const on = show[key]; return `<button class="lg" data-badline="${key}" aria-pressed="${on}" style="border:0;background:none;padding:2px 0;cursor:pointer;font:inherit;font-size:11px;color:${on ? 'var(--ink)' : 'var(--muted)'}"><span class="lgsw" style="background:${on ? SEVHEX[idx] : 'transparent'};box-shadow:inset 0 0 0 1.5px ${SEVHEX[idx]}"></span>${TT.bandW[idx]}</button>`; };
-  return `<div class="card"><div class="card-h"><h2>${TT.badLineTitle} <span class="muted small">— ${period}</span></h2></div><div class="lgrow" style="margin:2px 0 4px">${legBtn(3, 'heavy')}${legBtn(4, 'vh')}</div>${svg}</div>`;
+  return `<div class="card"><div class="card-h"><h2>${TT.badLineTitle}</h2></div>${svg}<div class="lgrow" style="margin-top:10px">${legBtn(3, 'heavy')}${legBtn(4, 'vh')}</div></div>`;
 }
 // #4 Areas affected — spread of ONE located symptom (default: first located type, e.g. joint pain), i.e. how many of its sites are active per day.
 // Selectable when the person tracks >1 located symptom; hidden entirely for people who track none (e.g. a single-symptom-only user).
@@ -2206,12 +2284,42 @@ function trendAreasCard(state, data, days, win, TT, reliable) {
     : `<div class="muted small" style="margin:-2px 0 8px">${esc(tx(sym.name, lang))}</div>`;
   return `<div class="card"><div class="card-h"><h2>${TT.areasTitle}</h2></div>${sel}<div class="bignum">${cur != null ? cur.toFixed(1) : '–'} <span class="muted small">${TT.areasUnit}</span>${pill ? `<span style="margin-left:auto">${pill}</span>` : ''}</div>${trendSVG(series, max, cur)}</div>`;
 }
+// Average severity — the severity half of Overall load, isolated. Mean 0–4 intensity across ACTIVE symptoms (intensity>0) per day, then meaned over the window. Bounded 0–4 so it reads on the same scale as the daily log; rises only when symptoms intensify, not when more of them switch on.
+function trendSeverityCard(lang, TT, data, types, days, win, reliable) {
+  const valFn = (iso) => {
+    const l = DL.getDailyLog(iso, data); if (!l || !dayLogged(l)) return null;
+    const vals = types.map((s) => symIntensity(s, l)).filter((v) => v > 0);
+    return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : 0;
+  };
+  const cur = winMean(valFn, 0, days), prev = winMean(valFn, days, 2 * days);
+  const series = bucketMeans(days, valFn).buckets.map((b) => ({ iso: b.iso, v: b.v }));
+  const pill = trendChg(cur, prev, true, reliable, TT, (v) => v.toFixed(1));
+  return `<div class="card"><div class="card-h"><h2>${TT.sevTitle}</h2></div><div class="bignum">${cur != null ? cur.toFixed(1) : '–'} <span class="muted small">${TT.sevUnit}</span>${pill ? `<span style="margin-left:auto">${pill}</span>` : ''}</div>${trendSVG(series, 4, cur)}</div>`;
+}
+// Areas active — the breadth/spread half of Overall load, isolated. Counts ACTIVE sites per day: each logged joint location (severity>0) for located symptoms + each active simple symptom. Mean over the window; rises only when symptoms spread, not when existing ones worsen.
+function trendBreadthCard(lang, TT, data, types, days, win, reliable) {
+  const valFn = (iso) => {
+    const l = DL.getDailyLog(iso, data); if (!l || !dayLogged(l)) return null;
+    const rows = l.symptoms || []; let n = 0;
+    types.forEach((s) => {
+      if (s.trackBy === 'locations') {
+        (s.locations || []).filter((x) => !x.archived).forEach((loc) => { if (rows.find((x) => x.symptomId === s.id && x.locationId === loc.id && typeof x.severity === 'number' && x.severity > 0)) n++; });
+      } else { const r = rows.find((x) => x.symptomId === s.id && x.locationId == null && typeof x.severity === 'number'); if (r && r.severity > 0) n++; }
+    });
+    return n;
+  };
+  const cur = winMean(valFn, 0, days), prev = winMean(valFn, days, 2 * days);
+  const series = bucketMeans(days, valFn).buckets.map((b) => ({ iso: b.iso, v: b.v }));
+  const max = Math.max(2, ...series.map((x) => x.v || 0));
+  const pill = trendChg(cur, prev, true, reliable, TT, (v) => v.toFixed(1));
+  return `<div class="card"><div class="card-h"><h2>${TT.breadthTitle}</h2></div><div class="bignum">${cur != null ? cur.toFixed(1) : '–'} <span class="muted small">${TT.breadthUnit}</span>${pill ? `<span style="margin-left:auto">${pill}</span>` : ''}</div>${trendSVG(series, max, cur)}</div>`;
+}
 // #3 Overall load — severity+spread combined (the old burden sum), mean per bucket; line.
 function trendLoadCard(lang, TT, cur, prev, reliable, tb) {
   const pill = trendChg(cur.loadMean, prev.loadMean, true, reliable, TT, (v) => v.toFixed(1));
   const series = tb.buckets.map((b) => ({ iso: b.iso, v: b.loadMean }));
   const max = Math.max(4, ...series.map((x) => x.v || 0));
-  return `<div class="card"><div class="card-h"><h2>${TT.loadTitle}</h2></div><div class="bignum">${cur.loadMean != null ? cur.loadMean.toFixed(1) : '–'}${pill ? `<span style="margin-left:auto">${pill}</span>` : ''}</div><div class="muted small bn-sub">${TT.loadSub}</div>${trendSVG(series, max, cur.loadMean)}</div>`;
+  return `<div class="card"><div class="card-h"><h2>${TT.loadTitle}</h2></div><div class="bignum">${cur.loadMean != null ? cur.loadMean.toFixed(1) : '–'} <span class="muted small">${TT.loadSub}</span>${pill ? `<span style="margin-left:auto">${pill}</span>` : ''}</div>${trendSVG(series, max, cur.loadMean)}</div>`;
 }
 // Optional daily-mood trend (window-aware) — average over the window + a coloured-by-nothing line, plus a
 // change pill vs the equal prior period. Mood is 1–5 with higher = better, so higherIsWorse=false and the
@@ -2232,8 +2340,7 @@ function trendMoodCard(lang, TT, data, days, win, reliable) {
   const maxc = Math.max(1, ...cnt);
   const dayWord = (c) => c === 1 ? (lang === 'es' ? 'día' : 'day') : (lang === 'es' ? 'días' : 'days');
   const distRows = [5, 4, 3, 2, 1].map((n) => { const c = cnt[n - 1]; return `<div class="mooddist-row">${moodFaceSVG(n, 20)}<span class="mooddist-track"><span style="display:block;height:100%;width:${(c / maxc * 100).toFixed(0)}%;background:${MOOD_COLORS[n - 1]}"></span></span><span class="mooddist-n">${c} ${dayWord(c)}</span></div>`; }).join('');
-  const spreadLbl = lang === 'es' ? 'Distribución de días' : 'Spread of days';
-  return `<div class="card"><div class="card-h"><h2>${TT.moodTitle}</h2></div><div class="bignum">${avg.toFixed(1)} <span class="muted small">${TT.moodOutOf5}</span>${pill ? `<span style="margin-left:auto">${pill}</span>` : ''}</div><div class="mooddist-lbl muted small">${spreadLbl}</div><div class="mooddist">${distRows}</div></div>`;
+  return `<div class="card"><div class="card-h"><h2>${TT.moodTitle}</h2></div><div class="bignum">${avg.toFixed(1)} <span class="muted small">${TT.moodOutOf5}</span>${pill ? `<span style="margin-left:auto">${pill}</span>` : ''}</div><div class="mooddist">${distRows}</div></div>`;
 }
 function renderTrends(state) {
   const lang = state.lang; const TT = TSS[lang]; const data = DL.getData();
@@ -2243,7 +2350,7 @@ function renderTrends(state) {
   const win = ui.scoreWin || '3m';
   const allDays = (() => { const ds = (data.dailyLogs || []).map((l) => l.date).filter(Boolean).sort(); if (!ds.length) return 365; return Math.round((Date.now() - new Date(ds[0] + 'T00:00:00Z').getTime()) / 86400000) + 1; })();
   const days = win === 'all' ? allDays : (WIN_DAYS[win] || 30);
-  const winseg = `<div class="winseg">${[['30d', '30d'], ['3m', '3m'], ['1y', '1y'], ['all', 'All']].map(([k, lbl]) => `<button class="${win === k ? 'on' : ''}" data-scorewin="${k}">${lbl}</button>`).join('')}</div>`;
+  const winseg = `<div class="trendbar"><div class="winseg">${[['30d', '30d'], ['3m', '3m'], ['1y', '1y'], ['all', 'All']].map(([k, lbl]) => `<button class="${win === k ? 'on' : ''}" data-scorewin="${k}">${lbl}</button>`).join('')}</div></div>`;
   // How am I trending — four window-aware charts (helpers above). Comparison pills hide when the prior period predates tracking.
   const firstLog = (data.dailyLogs || []).map((l) => l.date).filter(Boolean).sort()[0];
   const reliable = win !== 'all' && !!firstLog && firstLog <= isoBack(2 * days - 1);
@@ -2255,6 +2362,8 @@ function renderTrends(state) {
   const funcCard = trendFuncImpactCard(lang, TT, data, types, days, win, reliable);
   const symImpCard = trendSymImpactCard(lang, TT, data, types, days, win);
   const loadCard = trendLoadCard(lang, TT, curAgg, prevAgg, reliable, tb);
+  const sevCard = trendSeverityCard(lang, TT, data, types, days, win, reliable);
+  const breadthCard = trendBreadthCard(lang, TT, data, types, days, win, reliable);
   // Most prominent = current level + change, tap to drill in
   const stats = symStats(data, types, days).filter((x) => x.cur > 0.05);
   const promRows = stats.map((x) => {
@@ -2287,9 +2396,19 @@ function renderTrends(state) {
   try { adhCard = adherenceCard(state, data, days, win, TT); }
   catch (err) { console.warn('adherence card failed', err); adhCard = `<div class="card"><div class="card-h"><h2>${lang === 'es' ? 'Cumplimiento de medicación' : 'Medication adherence'}</h2></div><p class="muted small">—</p></div>`; }
   const labsCard = `<div class="card"><div class="card-h"><h2>${TT.labs}</h2><button class="addmini" data-add="labs" aria-label="Add marker">＋</button></div>${labHtml}</div>`;
-  const illCard = getPref('hideEpisodes') ? '' : `<div class="card"><div class="card-h"><h2>${TT.episodes}</h2></div>${illnessBars(data, lang)}</div>`;
+  const illCard = getPref('trackEpisodes') ? `<div class="card"><div class="card-h"><h2>${TT.episodes}</h2></div>${episodeStats(data, lang, win)}</div>` : '';
   const moodCard = getPref('trackMood') ? trendMoodCard(lang, TT, data, days, win, reliable) : '';
-  return `<div class="ds">${winseg}${moodCard}${shiftCard}${badLineCard}${funcCard}${symImpCard}${loadCard}${promCard}${onsetHtml}${adhCard}${labsCard}${illCard}</div>`;
+  const trendGroups = [
+    [TT.groups.overall, [shiftCard, badLineCard, funcCard]],
+    [TT.groups.driving, [loadCard, sevCard, breadthCard, symImpCard, promCard, onsetHtml]],
+    [TT.groups.context, [moodCard, illCard]],
+    [TT.groups.clinical, [adhCard, labsCard]],
+  ];
+  const groupsHtml = trendGroups.map(([title, cards]) => {
+    const body = cards.join('');
+    return body.trim() ? `<div class="trendgrp-h"><span class="gbar"></span><span class="gtxt">${title}</span><span class="grule"></span></div>${body}` : '';
+  }).join('');
+  return `<div class="ds">${winseg}${groupsHtml}</div>`;
 }
 // Progression timeline in the new design-system style (keeps filters + tap-for-detail).
 function renderProg(state) {
@@ -2928,7 +3047,7 @@ const state = { lang: 'en', tab: 'today', showData: false, date: Today.todayISO(
 const screen = document.getElementById('screen');
 const titleEl = document.getElementById('screenTitle');
 const statusStrip = document.getElementById('statusStrip');
-const TAB_TITLES = { today: 'Log', overview: 'Summary', records: 'Trends', timeline: 'Timeline', next: 'Visits' };
+const TAB_TITLES = { today: 'Log', overview: 'Summary', records: 'Trends', timeline: 'Timeline', next: 'Visits', us: 'Us' };
 (async function boot() {
   registerSW(); wireChrome();
   if (OneDrive.isConfigured()) { setActiveSource(OneDrive.oneDriveSource); try { await OneDrive.refreshAccount(); } catch {} setStatus('Loading from OneDrive …'); }
@@ -2971,8 +3090,9 @@ function wireChrome() {
   screen.addEventListener('change', async (e) => {
     if (e.target.id === 'importFile') { const f = e.target.files[0]; if (!f) return; try { const r = await importData(await f.text()); setStatus(r.ok ? 'Imported ✓ (' + r.warnings.length + ' notes)' : 'Imported with ' + r.errors.length + ' errors', r.ok ? 'ok' : 'err'); } catch (err) { setStatus('Import failed: ' + err.message, 'err'); } render(); return; }
     if (e.target.id === 'prefEnglishOnly') { setPref('englishOnly', e.target.checked); if (e.target.checked) setLang('en'); render(); return; }
-    if (e.target.id === 'prefHideEpisodes') { setPref('hideEpisodes', e.target.checked); render(); return; }
+    if (e.target.id === 'prefTrackEpisodes') { setPref('trackEpisodes', e.target.checked); render(); return; }
     if (e.target.id === 'prefTrackMood') { const on = e.target.checked; setPref('trackMood', on); if (on) setPrefStr('moodSince', new Date().toLocaleDateString('en-CA')); render(); return; }
+    if (e.target.id === 'prefShowUs') { const on = e.target.checked; setPref('showUs', on); if (!on && state.tab === 'us') setTab('today'); else render(); return; }
     if (e.target.id === 'burdenK') { const k = Math.max(1, Math.round(Number(e.target.value) || 2)); const d = DL.getData(); if (d) { d.meta = d.meta || {}; d.meta.burdenBands = Object.assign({}, d.meta.burdenBands, { k }); DL.persistLocal(); DL.persist(); } render(); return; }
     if (e.target.id === 'burdenT') { const t = Math.max(0, Math.round(Number(e.target.value) || 1)); const d = DL.getData(); if (d) { d.meta = d.meta || {}; d.meta.burdenBands = Object.assign({}, d.meta.burdenBands, { t }); DL.persistLocal(); DL.persist(); } render(); return; }
     if (e.target.id === 'burdenTt') { const t = Math.max(0, Math.round(Number(e.target.value) || 2) - 1); const d = DL.getData(); if (d) { d.meta = d.meta || {}; d.meta.burdenBands = Object.assign({}, d.meta.burdenBands, { t }); DL.persistLocal(); DL.persist(); } render(); return; }
@@ -3082,12 +3202,23 @@ function attachSymptomReorder(container) {
     grip.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); }, true);
   });
 }
+function renderUsScreen() {
+  return '<div class="card"><div class="placeholder">' +
+    '<div class="big">💗</div>' +
+    '<h2 style="margin:0 0 6px">Us — coming soon</h2>' +
+    '<p class="muted small" style="margin:0 auto;max-width:280px">Daily relationship check-ins and trends will live here.</p>' +
+    '</div></div>';
+}
 function render() {
   const titles = TAB_TITLES;
   const englishOnly = getPref('englishOnly');
   const langToggle = document.querySelector('.lang-toggle'); if (langToggle) langToggle.hidden = englishOnly;
   if (englishOnly && state.lang !== 'en') { state.lang = 'en'; document.documentElement.lang = 'en'; document.querySelectorAll('.lang-btn').forEach((b) => b.classList.toggle('is-active', b.dataset.lang === 'en')); }
   document.querySelectorAll('.tab').forEach((b) => { const el = b.querySelector('.tab-label'); if (el && titles[b.dataset.tab]) el.textContent = titles[b.dataset.tab]; });
+  const showUs = getPref('showUs');
+  if (!showUs && state.tab === 'us') state.tab = 'today';
+  const usTab = document.getElementById('tabUs'); if (usTab) usTab.hidden = !showUs;
+  const tabbarEl = document.querySelector('.tabbar'); if (tabbarEl) tabbarEl.classList.toggle('us-on', showUs);
   let content;
   try {
     if (state.showData) { titleEl.textContent = 'Data'; content = renderDataScreen(); }
@@ -3097,6 +3228,7 @@ function render() {
       else if (state.tab === 'next') content = Appt.renderQuestions(state);
       else if (state.tab === 'records') content = Records.renderRecords(state);
       else if (state.tab === 'timeline') content = Records.renderTimeline(state);
+      else if (state.tab === 'us') content = renderUsScreen();
       else content = '';
     }
   } catch (err) {
@@ -3127,9 +3259,10 @@ function renderDataScreen() {
   const bInput = (id, min, val) => '<input type="number" id="' + id + '" min="' + min + '" step="1" value="' + val + '" style="width:46px;display:inline-block;text-align:center;vertical-align:baseline;margin:0 2px">';
   return odPanel() +
     '<div class="card"><h2>Display options</h2>' +
-    '<div class="f f-row"><label><input type="checkbox" id="prefEnglishOnly"' + (getPref('englishOnly') ? ' checked' : '') + '> English only (hide the EN/ES switch)</label></div>' +
-    '<div class="f f-row"><label><input type="checkbox" id="prefHideEpisodes"' + (getPref('hideEpisodes') ? ' checked' : '') + '> Hide episode tracking (Log &amp; Trends)</label></div>' +
-    '<div class="f f-row"><label><input type="checkbox" id="prefTrackMood"' + (getPref('trackMood') ? ' checked' : '') + '> Track daily mood (Log &amp; Trends)</label></div>' +
+    '<div class="f f-row"><label><input type="checkbox" id="prefEnglishOnly"' + (getPref('englishOnly') ? ' checked' : '') + '> English only (hide EN/ES switch)</label></div>' +
+    '<div class="f f-row"><label><input type="checkbox" id="prefTrackEpisodes"' + (getPref('trackEpisodes') ? ' checked' : '') + '> Enable episode tracking</label></div>' +
+    '<div class="f f-row"><label><input type="checkbox" id="prefTrackMood"' + (getPref('trackMood') ? ' checked' : '') + '> Enable mood tracking</label></div>' +
+    '<div class="f f-row"><label><input type="checkbox" id="prefShowUs"' + (getPref('showUs') ? ' checked' : '') + '> Enable relationship tracking</label></div>' +
     '</div>' +
     '<div class="card"><h2>Burden scale</h2>' +
     '<p class="muted small" style="margin:0 0 12px">How each day’s level is set from your symptom ratings. The boxes are yours to adjust.</p>' +

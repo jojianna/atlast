@@ -1,0 +1,10 @@
+# Normalize line endings: store text files with LF in the repo,
+# check them out with LF on all platforms. Stops CRLF/LF churn.
+* text=auto eol=lf
+
+# Treat images as binary so Git never touches their contents.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.ico binary
+*.webp binary
