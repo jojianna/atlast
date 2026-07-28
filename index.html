@@ -475,6 +475,30 @@ ul.tight { margin: 4px 0 0; padding-left: 18px; } ul.tight li { padding: 1px 0; 
   html,body{background:#fff !important;}
   @page{margin:14mm;}
 }
+/* Us — optional relationship tab (off by default). Pink experience: topbar + accents use --us. */
+body.tab-us .topbar { background:var(--us); }
+body.tab-us .cogbtn { color:var(--us); }
+.us-chips { display:grid; grid-template-columns:repeat(7,1fr); gap:5px; }
+.us-chip { height:38px; border:1px solid var(--line); background:#fff; color:var(--muted); border-radius:9px; font-weight:700; font-size:15px; cursor:pointer; touch-action:manipulation; -webkit-tap-highlight-color:transparent; user-select:none; }
+.us-chip.on { background:var(--us); color:#fff; border-color:transparent; }
+.us-ends { display:flex; justify-content:space-between; font-size:11px; color:var(--muted); margin-top:5px; }
+.us-q { font-size:14px; font-weight:600; margin:0 0 8px; }
+.us-ta { width:100%; box-sizing:border-box; border:1px solid var(--line); border-radius:8px; padding:8px; font:inherit; font-size:14px; line-height:1.45; resize:vertical; min-height:56px; max-height:240px; overflow-y:auto; }
+.us-qt { display:flex; gap:6px; }
+.us-tgl { width:46px; height:38px; border:1px solid var(--line); background:#fff; border-radius:8px; font-size:16px; color:var(--muted); cursor:pointer; touch-action:manipulation; -webkit-tap-highlight-color:transparent; }
+.us-tgl.on { background:var(--us); color:#fff; border-color:transparent; }
+.us-dn { display:flex; align-items:center; gap:10px; }
+.us-dn-ic { width:38px; height:38px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:18px; flex:0 0 auto; }
+.us-seg { display:inline-flex; background:#f6d9e7; border-radius:999px; padding:2px; }
+.us-seg button { border:0; background:transparent; color:#9d4d74; font-size:12px; font-weight:700; padding:4px 11px; border-radius:999px; cursor:pointer; }
+.us-seg button.on { background:#fff; color:var(--us); box-shadow:0 1px 2px rgba(0,0,0,.12); }
+.us-chart { background:#fdf2f8; border-color:#f3cfe0; }
+.us-note { border-bottom:1px solid #f0e3ea; padding:9px 0; } .us-note:last-child { border-bottom:0; }
+.us-date { font-size:11px; font-weight:700; color:var(--us); background:#fbe4ee; border-radius:999px; padding:2px 8px; }
+.us-strip { display:flex; gap:6px; overflow-x:auto; padding:2px 0 12px; }
+.us-day { flex:0 0 auto; width:46px; text-align:center; border:1px solid var(--line); background:#fff; border-radius:9px; padding:6px 0; font-size:12px; font-weight:600; color:var(--ink); cursor:pointer; }
+.us-day.sel { background:var(--us); color:#fff; border-color:transparent; }
+.us-sec { font-size:12px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.03em; }
 </style>
   <title>Atlast</title>
 </head>
@@ -814,6 +838,16 @@ function setMoodNote(date, text) {
   return log;
 }
 function getMoodNote(date, data = _data) { const l = getDailyLog(date, data); return (l && typeof l.moodNote === 'string') ? l.moodNote : ''; }
+// Us — optional daily relationship check-in (off by default; gated by the `showUs` pref + `usSince`
+// stamp, English-only, never doctor-facing). Stored per day as an optional `us` object on the daily
+// log; every field optional and the object is pruned when empty, so days without it are untouched
+// (mirrors the mood precedent). Fields: satisfaction/friction (0–6), qualityTime (bool),
+// grateful/improve (strings), dateNight ({ had:true, initiator?:'me'|'partner' }).
+function ensureUs(date) { const log = ensureLog(date); if (!log.us) log.us = {}; return log; }
+function getUs(date, data = _data) { const l = getDailyLog(date, data); return (l && l.us) ? l.us : null; }
+function _pruneUs(log) { if (log && log.us && Object.keys(log.us).length === 0) delete log.us; return log; }
+function setUsField(date, key, value) { const log = ensureUs(date); if (value == null || value === '') delete log.us[key]; else log.us[key] = value; return _pruneUs(log); }
+function setUsDateNight(date, had, initiator) { const log = ensureUs(date); if (!had) delete log.us.dateNight; else log.us.dateNight = initiator ? { had: true, initiator } : { had: true }; return _pruneUs(log); }
 function setMedTaken(date, medId, taken) {
   const log = ensureLog(date); const i = log.medsTaken.findIndex((r) => r.medId === medId);
   if (taken == null) { if (i >= 0) log.medsTaken.splice(i, 1); delete log.symptomsSubmittedAt; } else { const row = { medId, taken }; if (i >= 0) log.medsTaken[i] = row; else log.medsTaken.push(row); } // clearing an answer un-submits the day
@@ -965,7 +999,7 @@ async function importData(text) {
   return report;
 }
 
-return { CONFIG, getData, getLoadMeta, subscribe, setActiveSource, getActiveSource, loadData, resetToSeed, saveData, t, tx, specialistLabel, derivedOverall, derivedIntensity, activeSymptomTypes, activeLocations, latestLab, labWindow, activeConditions, excludedList, bigPicture, labStatus, labTrend, labPosNeg, labGroups, parseReport, weekdayOf, getDailyLog, setSeverity, getSeverity, setSymptomNote, getSymptomNote, setMood, getMood, setMoodNote, getMoodNote, setMedTaken, getMedTaken, setMedCount, getMedCount, medDueOn, medTimeOfDay, medsForDate, submitSymptoms, requiredMedsOn, symptomsSubmitted, startEpisode, endEpisode, reopenEpisode, setEpisodeNote, ongoingEpisodes, episodesEndedOn, persist, persistLocal, markQuestionAnswered, genId, getRecord, upsert, remove, archiveSymptomType, deleteSymptomType, addSymptomType, renameSymptomType, setSymptomOverall, addLocation, renameLocation, archiveLocation, reorderSymptomTypes, addLabResult, removeLabResult, recordDoseChange, exportJSON, importData };
+return { CONFIG, getData, getLoadMeta, subscribe, setActiveSource, getActiveSource, loadData, resetToSeed, saveData, t, tx, specialistLabel, derivedOverall, derivedIntensity, activeSymptomTypes, activeLocations, latestLab, labWindow, activeConditions, excludedList, bigPicture, labStatus, labTrend, labPosNeg, labGroups, parseReport, weekdayOf, getDailyLog, setSeverity, getSeverity, setSymptomNote, getSymptomNote, setMood, getMood, setMoodNote, getMoodNote, getUs, setUsField, setUsDateNight, setMedTaken, getMedTaken, setMedCount, getMedCount, medDueOn, medTimeOfDay, medsForDate, submitSymptoms, requiredMedsOn, symptomsSubmitted, startEpisode, endEpisode, reopenEpisode, setEpisodeNote, ongoingEpisodes, episodesEndedOn, persist, persistLocal, markQuestionAnswered, genId, getRecord, upsert, remove, archiveSymptomType, deleteSymptomType, addSymptomType, renameSymptomType, setSymptomOverall, addLocation, renameLocation, archiveLocation, reorderSymptomTypes, addLabResult, removeLabResult, recordDoseChange, exportJSON, importData };
 })();
 
 const Today = (function(){
@@ -1966,7 +2000,7 @@ function episodeStats(data, lang, win) {
   const timeframe = win === 'all' ? T.allTime : ((lang === 'es' ? (win === '1y' ? 'último ' : 'últimos ') : 'last ') + T.period[win]);
   const tiles = [
     { v: String(inWin.length), l: (inWin.length === 1 ? T.epEpisode : T.epEpisodes) + ' · ' + timeframe },
-    { v: days(unwellDays), l: T.epUnwell + ' · ' + pct + '% ' + T.epOfDays },
+    { v: days(unwellDays), l: T.epUnwell + ' · ' + pct + '% ' + T.epOfDays + ' · ' + timeframe },
     { v: t3v, l: t3l },
   ];
   return `<div class="epstats">${tiles.map((s) => `<div class="epstat"><div class="epv">${s.v}</div><div class="epl">${s.l}</div></div>`).join('')}</div>`;
@@ -2534,7 +2568,7 @@ const SPECS = {
     { key: 'anchorDate', type: 'date', label: 'Anchor date (a day it is due)' },
     { key: 'timeOfDay', type: 'seg', label: 'Time of day', options: [{ v: 'morning', l: 'Morning' }, { v: 'midday', l: 'Midday' }, { v: 'evening', l: 'Evening' }] },
     { key: 'track', type: 'checkbox', label: 'Track daily (show in the daily check-off)' },
-    { key: 'category', type: 'radio', label: 'Category', options: [{ v: 'prescription', l: 'Prescription' }, { v: 'supplement', l: 'Supplement' }, { v: 'otc', l: 'OTC (over-the-counter)' }, { v: 'therapy', l: 'Therapy' }] },
+    { key: 'category', type: 'radio', label: 'Category', rerender: true, options: [{ v: 'prescription', l: 'Prescription' }, { v: 'supplement', l: 'Supplement' }, { v: 'otc', l: 'OTC (over-the-counter)' }, { v: 'therapy', l: 'Therapy' }] },
     { key: 'purpose', type: 'i18n', label: 'Purpose' },
     { key: 'status', type: 'select', label: 'Status', options: ['active', 'tapering', 'stopped'] },
     { key: 'startDate', type: 'date', label: 'Started' },
@@ -2628,7 +2662,7 @@ function field(f) {
   if (f.type === 'date') return `<div class="f">${L}<input type="date" data-fkey="${f.key}" value="${esc(gv(fs, f.key) ?? '')}"></div>`;
   if (f.type === 'checkbox') return `<div class="f f-row"><label><input type="checkbox" data-fkey="${f.key}" data-bool ${gv(fs, f.key) ? 'checked' : ''}> ${f.label}</label></div>`;
   if (f.type === 'seg') { const cur = gv(fs, f.key); const btns = (f.options || []).map((o) => { const v = typeof o === 'string' ? o : o.v; const l = typeof o === 'string' ? o : o.l; return `<button type="button" class="${cur === v ? 'on' : ''}" data-formaction="segpick" data-segkey="${f.key}" data-segval="${v}">${esc(l)}</button>`; }).join(''); return `<div class="f">${L}<div class="medseg" style="flex-wrap:wrap">${btns}</div></div>`; }
-  if (f.type === 'radio') { const cur = gv(fs, f.key); const items = (f.options || []).map((o) => { const v = typeof o === 'string' ? o : o.v; const l = typeof o === 'string' ? o : o.l; return `<label class="f-radio"><input type="radio" name="rf_${f.key}" data-fkey="${f.key}" value="${v}" ${cur === v ? 'checked' : ''}> <span>${esc(l)}</span></label>`; }).join(''); return `<div class="f">${L}<div class="f-radios">${items}</div></div>`; }
+  if (f.type === 'radio') { const cur = gv(fs, f.key); const items = (f.options || []).map((o) => { const v = typeof o === 'string' ? o : o.v; const l = typeof o === 'string' ? o : o.l; return `<label class="f-radio"><input type="radio" name="rf_${f.key}" data-fkey="${f.key}" value="${v}" ${f.rerender ? 'data-rerender ' : ''}${cur === v ? 'checked' : ''}> <span>${esc(l)}</span></label>`; }).join(''); return `<div class="f">${L}<div class="f-radios">${items}</div></div>`; }
   if (f.type === 'i18n') { const v = gv(fs, f.key) || { en: '', es: '' }; const mk = (lang) => f.textarea ? `<textarea data-fkey="${f.key}" data-lang="${lang}" rows="2" placeholder="${esc(f.ph || '')}">${esc(v[lang])}</textarea>` : `<input type="text" data-fkey="${f.key}" data-lang="${lang}" value="${esc(v[lang])}" placeholder="${esc(f.ph || '')}">`; return `<div class="f">${L}${mk('en')}</div>`; }
   if (f.type === 'datalist') { const opts = (f.source === 'labGroups' ? DL.labGroups() : []).map((g) => `<option value="${esc(g)}"></option>`).join(''); const id = 'dl_' + f.key.replace(/\./g, '_'); return `<div class="f">${L}<input type="text" list="${id}" data-fkey="${f.key}" value="${esc(gv(fs, f.key) ?? '')}"><datalist id="${id}">${opts}</datalist></div>`; }
   if (f.type === 'select') { const cur = gv(fs, f.key); const blank = (f.required && !cur) ? '<option value="" selected disabled>— Choose —</option>' : (f.optional ? '<option value="">—</option>' : ''); const opts = f.options ? f.options.map((o) => `<option value="${o}" ${cur === o ? 'selected' : ''}>${o}</option>`).join('') : srcOptions(f.source).map((o) => `<option value="${o.v}" ${cur === o.v ? 'selected' : ''}>${esc(o.l)}</option>`).join(''); return `<div class="f">${L}<select data-fkey="${f.key}">${blank}${opts}</select></div>`; }
@@ -2667,6 +2701,10 @@ function medFreqControlHtml(F) {
   const everyn = cur === 'everyn' ? field(Object.assign({}, F.everyNDays, { label: 'Every how many days', showIf: null })) : '';
   return `<div class="f"><div class="f-label">How often</div>${opts}${days}${everyn}</div>`;
 }
+// Therapy has no schedule/PRN picker: it's an optional once-a-day check-off, held to a daily schedule internally so it shows every day, and reported in Trends as a count of days done (no adherence %). See DATA-MODEL.md.
+function therapyScheduleNote() {
+  return `<div class="f"><div class="f-label">How often</div><div class="muted small">Available to check off once a day. Therapies aren't scheduled or scored for adherence — Trends just shows how many days you did it.</div></div>`;
+}
 function medFormBody(spec) {
   const F = {}; spec.fields.forEach((f) => { F[f.key] = f; });
   const isAdd = fmode === 'add';
@@ -2693,6 +2731,9 @@ function medFormBody(spec) {
   const stoppedDate = (!isAdd && st === 'stopped')
     ? field(Object.assign({}, F.stopDate, { label: 'Stopped on' })) + `<div class="muted small" style="margin:-4px 0 10px">Set to today — tap to change it if you stopped on a different day.</div>`
     : '';
+  // Therapy = optional daily check-off: force a daily schedule and hide the med-style frequency picker.
+  const isTherapy = fs.category === 'therapy';
+  if (isTherapy) { fs.scheduledDays = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']; fs.everyNDays = undefined; fs.anchorDate = undefined; if (fs.timeOfDay === 'prn') fs.timeOfDay = 'morning'; }
   const simple = [
     field(F.name),
     isAdd ? '' : medStatusBadge(st),
@@ -2701,7 +2742,7 @@ function medFormBody(spec) {
     stoppedDate,
     field(F.category),
     field(F.dose),
-    medFreqControlHtml(F),
+    isTherapy ? therapyScheduleNote() : medFreqControlHtml(F),
     field(F.track),
     field(Object.assign({}, F.purpose, { label: "What it's for", ph: 'free text — e.g. NSAID for joint pain' })),
     fs.scheduledDays === 'prn' ? '' : field(F.timeOfDay),
@@ -3067,6 +3108,7 @@ function wireChrome() {
     else { Today.ui.calView = 'month'; Today.ui.calMonth = state.date.slice(0, 7); }
     render();
   });
+  titleEl.addEventListener('click', (e) => { if (state.showData || state.tab !== 'us') return; if (e.target.closest('#usDate')) { Us.toggleCal(); render(); } });
   screen.addEventListener('click', async (e) => {
     if (e.target.id === 'resetSeedBtn') { resetToSeed().then(render); return; }
     if (e.target.id === 'exportBtn') { downloadJSON(); return; }
@@ -3084,15 +3126,16 @@ function wireChrome() {
     else if (state.tab === 'overview' && e.target.closest('[data-editpick="milestones"],[data-histyear]')) Records.onClick(e, state, render);
     else if (state.tab === 'overview' || state.tab === 'next') Appt.onClick(e, state, render);
     else if (state.tab === 'records' || state.tab === 'timeline') Records.onClick(e, state, render);
+    else if (state.tab === 'us') Us.onClick(e, state, render);
   });
-  const onEdit = (e) => { if (Forms.isOpen()) { Forms.onInput(e); return; } if (!state.showData && state.tab === 'today') Today.onInput(e, state, render); };
+  const onEdit = (e) => { if (Forms.isOpen()) { Forms.onInput(e); return; } if (state.showData) return; if (state.tab === 'today') Today.onInput(e, state, render); else if (state.tab === 'us') Us.onInput(e, state, render); };
   screen.addEventListener('input', onEdit);
   screen.addEventListener('change', async (e) => {
     if (e.target.id === 'importFile') { const f = e.target.files[0]; if (!f) return; try { const r = await importData(await f.text()); setStatus(r.ok ? 'Imported ✓ (' + r.warnings.length + ' notes)' : 'Imported with ' + r.errors.length + ' errors', r.ok ? 'ok' : 'err'); } catch (err) { setStatus('Import failed: ' + err.message, 'err'); } render(); return; }
     if (e.target.id === 'prefEnglishOnly') { setPref('englishOnly', e.target.checked); if (e.target.checked) setLang('en'); render(); return; }
     if (e.target.id === 'prefTrackEpisodes') { setPref('trackEpisodes', e.target.checked); render(); return; }
     if (e.target.id === 'prefTrackMood') { const on = e.target.checked; setPref('trackMood', on); if (on) setPrefStr('moodSince', new Date().toLocaleDateString('en-CA')); render(); return; }
-    if (e.target.id === 'prefShowUs') { const on = e.target.checked; setPref('showUs', on); if (!on && state.tab === 'us') setTab('today'); else render(); return; }
+    if (e.target.id === 'prefShowUs') { const on = e.target.checked; setPref('showUs', on); if (on && !getPrefStr('usSince')) setPrefStr('usSince', new Date().toLocaleDateString('en-CA')); if (!on && state.tab === 'us') setTab('today'); else render(); return; }
     if (e.target.id === 'burdenK') { const k = Math.max(1, Math.round(Number(e.target.value) || 2)); const d = DL.getData(); if (d) { d.meta = d.meta || {}; d.meta.burdenBands = Object.assign({}, d.meta.burdenBands, { k }); DL.persistLocal(); DL.persist(); } render(); return; }
     if (e.target.id === 'burdenT') { const t = Math.max(0, Math.round(Number(e.target.value) || 1)); const d = DL.getData(); if (d) { d.meta = d.meta || {}; d.meta.burdenBands = Object.assign({}, d.meta.burdenBands, { t }); DL.persistLocal(); DL.persist(); } render(); return; }
     if (e.target.id === 'burdenTt') { const t = Math.max(0, Math.round(Number(e.target.value) || 2) - 1); const d = DL.getData(); if (d) { d.meta = d.meta || {}; d.meta.burdenBands = Object.assign({}, d.meta.burdenBands, { t }); DL.persistLocal(); DL.persist(); } render(); return; }
@@ -3202,13 +3245,123 @@ function attachSymptomReorder(container) {
     grip.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); }, true);
   });
 }
-function renderUsScreen() {
-  return '<div class="card"><div class="placeholder">' +
-    '<div class="big">💗</div>' +
-    '<h2 style="margin:0 0 6px">Us — coming soon</h2>' +
-    '<p class="muted small" style="margin:0 auto;max-width:280px">Daily relationship check-ins and trends will live here.</p>' +
-    '</div></div>';
-}
+const Us = (function () {
+  const ui = { win: '30d', nf: 'all', calOpen: false };
+  const WD = { '30d': 30, '3m': 90, '1y': 365 };
+  let _pushTimer = null;
+  function save() { DL.persistLocal(); clearTimeout(_pushTimer); _pushTimer = setTimeout(() => { DL.persist(); }, 1000); }
+  function toggleCal() { ui.calOpen = !ui.calOpen; }
+  function daysAgo(iso, n) { const d = new Date(iso + 'T00:00:00'); d.setDate(d.getDate() - n); return d.toLocaleDateString('en-CA'); }
+  function fmtShort(iso, lang) { const d = new Date(iso + 'T00:00:00'); return d.toLocaleDateString(lang === 'es' ? 'es-ES' : 'en-GB', { weekday: 'short', day: 'numeric', month: 'short' }); }
+  function fmtDay(iso, lang) { const d = new Date(iso + 'T00:00:00'); return d.toLocaleDateString(lang === 'es' ? 'es-ES' : 'en-GB', { weekday: 'short', day: 'numeric' }); }
+  function allDays() { const ds = ((DL.getData() || {}).dailyLogs || []).map((l) => l.date).filter(Boolean).sort(); if (!ds.length) return 30; return Math.round((Date.now() - new Date(ds[0] + 'T00:00:00').getTime()) / 86400000) + 1; }
+  function curNum(date, key) { const u = DL.getUs(date, DL.getData()); return (u && typeof u[key] === 'number') ? u[key] : null; }
+  function meanRange(key, startBack, span) { const today = Today.todayISO(); let s = 0, n = 0; for (let i = startBack; i < startBack + span; i++) { const u = DL.getUs(daysAgo(today, i), DL.getData()); const v = (u && typeof u[key] === 'number') ? u[key] : null; if (v != null) { s += v; n++; } } return n ? s / n : null; }
+  function deltaPill(cur, prev, higherBetter) { if (cur == null || prev == null) return ''; const d = cur - prev; if (Math.abs(d) < 0.05) return ''; const better = higherBetter ? d > 0 : d < 0; return `<span style="color:${better ? 'var(--ok)' : 'var(--err)'}">${d > 0 ? '▲' : '▼'} ${Math.abs(d).toFixed(1)}</span>`; }
+  function spark(key, days, color) {
+    const today = Today.todayISO(); const w = 320, h = 42, pad = 4; const pts = [];
+    for (let i = days - 1; i >= 0; i--) { const u = DL.getUs(daysAgo(today, i), DL.getData()); const v = (u && typeof u[key] === 'number') ? u[key] : null; if (v == null) continue; const idx = days - 1 - i; const x = pad + (days > 1 ? idx / (days - 1) : 0) * (w - 2 * pad); const y = pad + (1 - v / 6) * (h - 2 * pad); pts.push(x.toFixed(1) + ',' + y.toFixed(1)); }
+    let inner = ''; if (pts.length) { const last = pts[pts.length - 1].split(','); inner = `<polyline points="${pts.join(' ')}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><circle cx="${last[0]}" cy="${last[1]}" r="3" fill="${color}"/>`; }
+    return `<svg class="chart us-chart" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" style="height:42px;margin-top:8px">${inner}</svg>`;
+  }
+  function chips(key, cur) { let h = ''; for (let v = 0; v <= 6; v++) h += `<button type="button" class="us-chip${cur === v ? ' on' : ''}" data-${key}="${v}">${v}</button>`; return `<div class="us-chips">${h}</div>`; }
+  function headerHTML(state) { return `<button class="datettl" id="usDate" aria-label="Choose day"><span class="dttxt">${fmtShort(state.date, state.lang)}</span><span class="dtchev${ui.calOpen ? ' up' : ''}">▾</span></button>`; }
+
+  function renderUsScreen(state) {
+    const data = DL.getData(); if (!data) return '<div class="card"><p class="muted">No data loaded.</p></div>';
+    const lang = state.lang, date = state.date;
+    const u = DL.getUs(date, data) || {};
+    const sat = typeof u.satisfaction === 'number' ? u.satisfaction : null;
+    const fri = typeof u.friction === 'number' ? u.friction : null;
+    const qt = typeof u.qualityTime === 'boolean' ? u.qualityTime : null;
+    let strip = '';
+    if (ui.calOpen) { const today = Today.todayISO(); let cells = ''; for (let i = 6; i >= 0; i--) { const iso = daysAgo(today, i); cells += `<button type="button" class="us-day${iso === date ? ' sel' : ''}" data-usday="${iso}">${fmtDay(iso, lang)}</button>`; } strip = `<div class="us-strip">${cells}</div>`; }
+    const logCard = `<div class="card">${strip}
+      <p class="us-q">How satisfied were you with your relationship today?</p>
+      ${chips('ussat', sat)}
+      <div class="us-ends"><span>Not at all</span><span>Completely</span></div>
+      <p class="us-q" style="margin-top:16px">How much friction was there between us today?</p>
+      ${chips('usfri', fri)}
+      <div class="us-ends"><span>None</span><span>Constant</span></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:16px">
+        <span class="us-q" style="margin:0">Quality time together today?</span>
+        <span class="us-qt"><button type="button" class="us-tgl${qt === true ? ' on' : ''}" data-usqt="yes" aria-label="Yes">✓</button><button type="button" class="us-tgl${qt === false ? ' on' : ''}" data-usqt="no" aria-label="No">✕</button></span>
+      </div>
+      <p class="us-q" style="margin:16px 0 6px">What are you grateful for today?</p>
+      <textarea class="us-ta" data-usnote="grateful" rows="2" placeholder="Something they did, a moment together…">${esc(u.grateful || '')}</textarea>
+      <p class="us-q" style="margin:12px 0 6px">What could have been improved?</p>
+      <textarea class="us-ta" data-usnote="improve" rows="2" placeholder="A friction point, something to raise…">${esc(u.improve || '')}</textarea>
+      <div class="muted small" style="margin-top:12px">✓ Saved automatically</div>
+    </div>`;
+    const dn = u.dateNight; let dnCard;
+    if (!dn) {
+      dnCard = `<div class="card" style="padding:0"><button type="button" data-usdn="on" style="all:unset;cursor:pointer;display:block;width:100%;box-sizing:border-box;padding:14px"><div class="us-dn"><span class="us-dn-ic" style="background:var(--chip)">🥂</span><div style="flex:1"><div style="font-weight:600">Date night</div><div class="muted small">None today · tap to log</div></div><span style="width:26px;height:26px;border-radius:50%;border:1.5px solid #cbd5d8;display:inline-block"></span></div></button></div>`;
+    } else {
+      const init = dn.initiator || null;
+      dnCard = `<div class="card" style="border-color:#f3cfe0;background:#fdf2f8">
+        <div class="us-dn"><span class="us-dn-ic" style="background:var(--us);color:#fff">🥂</span><div style="flex:1"><div style="font-weight:600;color:var(--us)">Date night</div><div class="small" style="color:#9d4d74">Logged for today</div></div><button type="button" data-usdn="off" style="width:26px;height:26px;border-radius:50%;border:0;background:var(--us);color:#fff;cursor:pointer">✓</button></div>
+        <div style="display:flex;align-items:center;gap:10px;margin-top:12px"><span class="small" style="color:#9d4d74">Who initiated?</span><span class="us-seg"><button type="button" class="${init === 'me' ? 'on' : ''}" data-usinit="me">Me</button><button type="button" class="${init === 'partner' ? 'on' : ''}" data-usinit="partner">Partner</button></span></div>
+      </div>`;
+    }
+    const days = ui.win === 'all' ? allDays() : (WD[ui.win] || 30);
+    const satAvg = meanRange('satisfaction', 0, days), satPrev = meanRange('satisfaction', days, days);
+    const friAvg = meanRange('friction', 0, days), friPrev = meanRange('friction', days, days);
+    const today = Today.todayISO(); let qtYes = 0, qtLogged = 0, dnCount = 0, dnMe = 0, dnPartner = 0;
+    for (let i = 0; i < days; i++) { const du = DL.getUs(daysAgo(today, i), data); if (!du) continue; if (typeof du.qualityTime === 'boolean') { qtLogged++; if (du.qualityTime) qtYes++; } if (du.dateNight && du.dateNight.had) { dnCount++; if (du.dateNight.initiator === 'me') dnMe++; else if (du.dateNight.initiator === 'partner') dnPartner++; } }
+    const winseg = `<div class="winseg">${[['30d', '30d'], ['3m', '3m'], ['1y', '1y'], ['all', 'All']].map(([k, l]) => `<button class="${ui.win === k ? 'on' : ''}" data-uswin="${k}">${l}</button>`).join('')}</div>`;
+    const trendsCard = `<div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px"><span class="us-sec">Trends</span>${winseg}</div>
+      <div style="padding:6px 0;border-bottom:1px solid var(--line)">
+        <div style="display:flex;align-items:baseline;justify-content:space-between"><span style="font-weight:600;font-size:13px">Satisfaction</span><span class="muted small">${satAvg != null ? satAvg.toFixed(1) : '—'}/6 avg ${deltaPill(satAvg, satPrev, true)}</span></div>
+        ${spark('satisfaction', days, '#0f766e')}
+      </div>
+      <div style="padding:6px 0">
+        <div style="display:flex;align-items:baseline;justify-content:space-between"><span style="font-weight:600;font-size:13px">Friction</span><span class="muted small">${friAvg != null ? friAvg.toFixed(1) : '—'}/6 avg ${deltaPill(friAvg, friPrev, false)}</span></div>
+        ${spark('friction', days, '#be185d')}
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px">
+        <div class="stat" style="text-align:left"><div class="muted small">Quality time</div><div style="font-size:20px;font-weight:700">${qtYes}<span class="muted small"> of ${qtLogged}</span></div></div>
+        <div class="stat" style="text-align:left"><div class="muted small">Date nights</div><div style="font-size:20px;font-weight:700">${dnCount}</div><div class="muted small">You ${dnMe} · partner ${dnPartner}</div></div>
+      </div>
+    </div>`;
+    const cutoff = ui.win === 'all' ? '0000-00-00' : daysAgo(today, days - 1);
+    const rows = [];
+    ((data.dailyLogs || []).slice().sort((a, b) => (a.date < b.date ? 1 : -1))).forEach((l) => {
+      if (!l.us || l.date < cutoff) return; const g = l.us.grateful, im = l.us.improve; if (!g && !im) return;
+      if (ui.nf === 'grateful' && !g) return; if (ui.nf === 'improve' && !im) return;
+      let inner = `<div style="margin-bottom:5px"><span class="us-date">${fmtDay(l.date, lang)}</span></div>`;
+      if (g && ui.nf !== 'improve') inner += `<div class="small" style="display:flex;gap:6px;margin:3px 0"><span style="color:var(--us)">♥</span><span>${esc(g)}</span></div>`;
+      if (im && ui.nf !== 'grateful') inner += `<div class="small" style="display:flex;gap:6px;margin:3px 0;color:var(--muted)"><span>→</span><span>${esc(im)}</span></div>`;
+      rows.push(`<div class="us-note">${inner}</div>`);
+    });
+    const nfSeg = `<div class="us-seg">${[['all', 'All'], ['grateful', 'Grateful'], ['improve', 'Improve']].map(([k, l]) => `<button type="button" class="${ui.nf === k ? 'on' : ''}" data-usnf="${k}">${l}</button>`).join('')}</div>`;
+    const notesCard = `<div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><span class="us-sec">Notes</span>${nfSeg}</div>
+      ${rows.length ? rows.join('') : '<p class="muted small" style="margin:0">No notes in this window yet.</p>'}
+    </div>`;
+    return `<div class="ds">${logCard}${dnCard}${trendsCard}${notesCard}</div>`;
+  }
+
+  function onClick(e, state, rerender) {
+    const t = e.target.closest('button'); if (!t) return;
+    document.querySelectorAll('.us-ta').forEach((el) => DL.setUsField(state.date, el.dataset.usnote, el.value));
+    if (t.dataset.usday) { state.date = t.dataset.usday; ui.calOpen = false; rerender(); return; }
+    if (t.dataset.ussat != null) { const v = Number(t.dataset.ussat); DL.setUsField(state.date, 'satisfaction', curNum(state.date, 'satisfaction') === v ? null : v); save(); rerender(); return; }
+    if (t.dataset.usfri != null) { const v = Number(t.dataset.usfri); DL.setUsField(state.date, 'friction', curNum(state.date, 'friction') === v ? null : v); save(); rerender(); return; }
+    if (t.dataset.usqt) { const want = t.dataset.usqt === 'yes'; const cu = DL.getUs(state.date, DL.getData()); const cur = (cu && typeof cu.qualityTime === 'boolean') ? cu.qualityTime : null; DL.setUsField(state.date, 'qualityTime', cur === want ? null : want); save(); rerender(); return; }
+    if (t.dataset.usdn) { DL.setUsDateNight(state.date, t.dataset.usdn === 'on'); save(); rerender(); return; }
+    if (t.dataset.usinit) { DL.setUsDateNight(state.date, true, t.dataset.usinit); save(); rerender(); return; }
+    if (t.dataset.uswin) { ui.win = t.dataset.uswin; rerender(); return; }
+    if (t.dataset.usnf) { ui.nf = t.dataset.usnf; rerender(); return; }
+  }
+  function onInput(e, state, rerender) {
+    if (!e.target.classList || !e.target.classList.contains('us-ta')) return;
+    DL.setUsField(state.date, e.target.dataset.usnote, e.target.value);
+    e.target.style.height = 'auto'; e.target.style.height = e.target.scrollHeight + 'px';
+    DL.persistLocal(); clearTimeout(_pushTimer); _pushTimer = setTimeout(() => DL.persist({ silent: true }), 600);
+  }
+  return { headerHTML, renderUsScreen, onClick, onInput, toggleCal };
+})();
 function render() {
   const titles = TAB_TITLES;
   const englishOnly = getPref('englishOnly');
@@ -3219,6 +3372,7 @@ function render() {
   if (!showUs && state.tab === 'us') state.tab = 'today';
   const usTab = document.getElementById('tabUs'); if (usTab) usTab.hidden = !showUs;
   const tabbarEl = document.querySelector('.tabbar'); if (tabbarEl) tabbarEl.classList.toggle('us-on', showUs);
+  document.body.classList.toggle('tab-us', !state.showData && state.tab === 'us');
   let content;
   try {
     if (state.showData) { titleEl.textContent = 'Data'; content = renderDataScreen(); }
@@ -3228,7 +3382,7 @@ function render() {
       else if (state.tab === 'next') content = Appt.renderQuestions(state);
       else if (state.tab === 'records') content = Records.renderRecords(state);
       else if (state.tab === 'timeline') content = Records.renderTimeline(state);
-      else if (state.tab === 'us') content = renderUsScreen();
+      else if (state.tab === 'us') { titleEl.innerHTML = Us.headerHTML(state); content = Us.renderUsScreen(state); }
       else content = '';
     }
   } catch (err) {
@@ -3243,6 +3397,7 @@ function render() {
   const symRe = screen.querySelector('#symReorder'); if (symRe) attachSymptomReorder(symRe);
   // Auto-size the mood journal note to its content on (re)render; CSS max-height caps it and scrolls past that.
   screen.querySelectorAll('.moodnote').forEach((el) => { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; });
+  screen.querySelectorAll('.us-ta').forEach((el) => { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; });
 }
 function renderDataScreen() {
   const data = getData(); const meta = getLoadMeta();
