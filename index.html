@@ -12,7 +12,20 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="apple-mobile-web-app-title" content="Atlast" />
   <style>
-:root { --teal:#0f766e; --teal-d:#0b5e57; --bg:#f6f7f8; --card:#fff; --ink:#16202a; --muted:#5b6b7a; --line:#e3e8ec; --ok:#15803d; --warn:#b45309; --err:#b91c1c; --chip:#eef2f4; --radius:14px; --tabbar-h:60px; --us:#be185d; }
+:root {
+  --teal:#0f766e; --teal-d:#0b5e57; --bg:#f6f7f8; --card:#fff; --ink:#16202a; --muted:#5b6b7a; --line:#e3e8ec;
+  --ok:#15803d; --warn:#b45309; --err:#b91c1c; --info:#1d4ed8; --chip:#eef2f4; --tabbar-h:60px; --us:#be185d;
+  /* status tints (pale fills that pair with the solid role colors above) */
+  --teal-tint:#e1f5ee; --ok-tint:#dcfce7; --warn-tint:#fef3c7; --err-tint:#fee2e2; --info-tint:#dbeafe; --us-tint:#fbe4ee;
+  /* 5-step symptom severity scale — the single source for .sev-*, .fill*, .calb* and the burden swatches */
+  --sev-0:#94a3b8; --sev-1:#fde047; --sev-2:#f59e0b; --sev-3:#f97316; --sev-4:#b91c1c;
+  --sev-0-ink:#fff; --sev-1-ink:#422006; --sev-2-ink:#fff; --sev-3-ink:#fff; --sev-4-ink:#fff;
+  /* radius scale — sm inputs/small buttons · md buttons · lg cards/sheets · pill chips/toggles */
+  --r-sm:8px; --r-md:12px; --r-lg:16px; --r-pill:999px; --radius:var(--r-lg);
+}
+/* Type scale (px) — stick to these steps; no half-pixels:
+   11 micro-labels/eyebrows · 12 captions/meta · 13 secondary · 14 body · 15 card body
+   16 base · 17–18 controls · 20/22 stat numbers · 32 hero numbers */
 * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
 html,body { margin:0; padding:0; }
 body { font:16px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; background:var(--bg); color:var(--ink); padding-bottom:calc(var(--tabbar-h) + env(safe-area-inset-bottom)); }
@@ -42,20 +55,28 @@ body { font:16px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helveti
 .stat .n { font-size:22px; font-weight:700; color:var(--teal-d); } .stat .k { font-size:11px; color:var(--muted); text-transform:uppercase; }
 .kv { display:flex; justify-content:space-between; gap:10px; padding:5px 0; border-bottom:1px dashed var(--line); }
 .kv:last-child { border-bottom:0; } .kv .k { color:var(--muted); } .kv .v { font-weight:600; text-align:right; }
-.badge { display:inline-block; font-size:12px; font-weight:700; padding:2px 8px; border-radius:999px; white-space:nowrap; }
-.badge.ok { background:#dcfce7; color:var(--ok); } .badge.err { background:#fee2e2; color:var(--err); }
+/* ---- badge: the one status/count pill component. Base + semantic color modifiers + optional .lg size. ---- */
+.badge { display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:700; padding:3px 9px; border-radius:var(--r-pill); white-space:nowrap; border:0; line-height:1.4; }
+.badge.good { background:var(--ok-tint); color:var(--ok); }
+.badge.watch { background:var(--warn-tint); color:var(--warn); }
+.badge.alert { background:var(--err-tint); color:var(--err); }
+.badge.info { background:var(--info-tint); color:var(--info); }
+.badge.neutral { background:var(--chip); color:var(--muted); }
+.badge.accent { background:var(--teal-tint); color:var(--teal-d); }
+.badge.us { background:var(--us-tint); color:var(--us); }
+.badge.lg { font-size:13px; font-weight:600; padding:2px 10px; }
 details.msgs { margin-top:8px; } details.msgs summary { cursor:pointer; font-size:13px; color:var(--muted); }
-.msglist { margin:8px 0 0; padding:0; list-style:none; font-size:12.5px; } .msglist li { padding:4px 0; border-bottom:1px solid var(--line); color:var(--muted); }
-.chips-row { display:flex; flex-wrap:wrap; gap:6px; } .pill { font-size:12px; background:var(--chip); border-radius:999px; padding:4px 10px; color:var(--ink); }
+.msglist { margin:8px 0 0; padding:0; list-style:none; font-size:12px; } .msglist li { padding:4px 0; border-bottom:1px solid var(--line); color:var(--muted); }
+.chips-row { display:flex; flex-wrap:wrap; gap:6px; }
 .tabbar { position:fixed; left:0; right:0; bottom:0; z-index:10; height:calc(var(--tabbar-h) + env(safe-area-inset-bottom)); padding-bottom:env(safe-area-inset-bottom); display:grid; grid-template-columns:repeat(4,1fr); background:#fff; border-top:1px solid var(--line); }
 .tabbar.us-on { grid-template-columns:repeat(5,1fr); }
 .tab { border:0; background:transparent; cursor:pointer; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; color:var(--muted); font-size:11px; }
 .tab .tab-ico { font-size:20px; line-height:1; } .tab.is-active { color:var(--teal); font-weight:600; }
 .tab.is-active[data-tab="us"] { color:var(--us); }
 .tab[hidden] { display:none !important; }
-.btn { border:0; background:var(--teal); color:#fff; border-radius:10px; padding:10px 14px; font-size:14px; font-weight:600; cursor:pointer; touch-action:manipulation; -webkit-tap-highlight-color:transparent; }
+.btn { border:0; background:var(--teal); color:#fff; border-radius:var(--r-md); padding:10px 14px; font-size:14px; font-weight:600; cursor:pointer; touch-action:manipulation; -webkit-tap-highlight-color:transparent; }
 .btn.ghost { background:var(--chip); color:var(--ink); } .btn.wide { width:100%; }
-.btn-sm { border:1px solid var(--line); background:#fff; color:var(--err); border-radius:8px; padding:5px 10px; font-size:13px; cursor:pointer; }
+.btn-sm { border:1px solid var(--line); background:#fff; color:var(--err); border-radius:var(--r-sm); padding:5px 10px; font-size:13px; cursor:pointer; }
 .subhead { font-size:12px; text-transform:uppercase; letter-spacing:.03em; color:var(--muted); margin:10px 0 6px; }
 .saved-tag { text-align:center; padding:4px; } h2 .small { font-weight:400; text-transform:none; }
 .daynav { display:flex; align-items:center; justify-content:space-between; gap:10px; } .daynav .dayname { text-align:center; flex:1; }
@@ -69,15 +90,15 @@ button.sym-head { background:none; border-left:0; border-right:0; border-bottom:
 .sev-row { display:grid; grid-template-columns:repeat(5,1fr); gap:6px; }
 .sev { border:1px solid var(--line); background:#fff; color:var(--muted); border-radius:9px; padding:9px 0; font-size:15px; font-weight:700; cursor:pointer; touch-action:manipulation; -webkit-tap-highlight-color:transparent; user-select:none; }
 .sev.is-on { color:#fff; border-color:transparent; }
-.sev-0.is-on,.sev-chip.sev-0 { background:#94a3b8; color:#fff; } .sev-1.is-on,.sev-chip.sev-1 { background:#fde047; color:#422006; }
-.sev-2.is-on,.sev-chip.sev-2 { background:#f59e0b; } .sev-3.is-on,.sev-chip.sev-3 { background:#f97316; } .sev-4.is-on,.sev-chip.sev-4 { background:#b91c1c; }
+.sev-0.is-on,.sev-chip.sev-0 { background:var(--sev-0); color:var(--sev-0-ink); } .sev-1.is-on,.sev-chip.sev-1 { background:var(--sev-1); color:var(--sev-1-ink); }
+.sev-2.is-on,.sev-chip.sev-2 { background:var(--sev-2); } .sev-3.is-on,.sev-chip.sev-3 { background:var(--sev-3); } .sev-4.is-on,.sev-chip.sev-4 { background:var(--sev-4); }
 .sev-chip { display:inline-block; min-width:22px; text-align:center; color:#fff; border-radius:999px; padding:2px 9px; font-weight:700; font-size:13px; } .sev-chip .small { color:rgba(255,255,255,.85); }
 .moodrow { display:grid; grid-template-columns:repeat(5,1fr); gap:6px; }
 .mood { border:1px solid var(--line); background:#fff; border-radius:9px; padding:10px 0; display:flex; align-items:center; justify-content:center; cursor:pointer; touch-action:manipulation; -webkit-tap-highlight-color:transparent; user-select:none; }
 .mood.is-on { border-width:2px; padding:9px 0; }
 .mood svg { display:block; }
 .moodnote { width:100%; margin-top:11px; border:1px solid var(--line); border-radius:8px; padding:8px; font:inherit; font-size:14px; line-height:1.45; resize:vertical; box-sizing:border-box; min-height:64px; max-height:240px; overflow-y:auto; }
-.med { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:8px 0; border-bottom:1px solid var(--line); } .med:last-child { border-bottom:0; }
+.med { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 0; border-bottom:1px solid var(--line); } .med:last-child { border-bottom:0; }
 .med-name { font-weight:600; } .med-toggle { display:flex; gap:6px; }
 .tgl { width:38px; height:38px; border:1px solid var(--line); background:#fff; border-radius:8px; font-size:15px; cursor:pointer; color:var(--muted); touch-action:manipulation; -webkit-tap-highlight-color:transparent; user-select:none; }
 .tgl.is-yes { background:var(--ok); color:#fff; border-color:transparent; } .tgl.is-no { background:var(--err); color:#fff; border-color:transparent; }
@@ -86,7 +107,7 @@ button.sym-head { background:none; border-left:0; border-right:0; border-bottom:
 .stepbtn.plus { background:var(--teal); color:#fff; border-color:transparent; }
 .stepbtn:disabled { opacity:.35; cursor:default; }
 .stepcount { min-width:22px; text-align:center; font-size:17px; font-weight:700; color:var(--teal-d); }
-#noteBox { width:100%; border:1px solid var(--line); border-radius:10px; padding:10px; font:inherit; resize:vertical; }
+#noteBox { width:100%; border:1px solid var(--line); border-radius:var(--r-sm); padding:10px; font:inherit; resize:vertical; }
 .ep-ongoing { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:6px 0; }
 .ep-form { display:flex; flex-direction:column; gap:8px; } .ep-form input,.ep-form select { border:1px solid var(--line); border-radius:9px; padding:9px; font:inherit; }
 .ep-form-row { display:grid; grid-template-columns:1fr 1fr; gap:8px; } .ep-form-actions { display:flex; gap:8px; }
@@ -103,13 +124,13 @@ button.sym-head { background:none; border-left:0; border-right:0; border-bottom:
 .rownote { width:100%; margin-top:8px; border:1px solid var(--line); border-radius:9px; padding:8px 34px 8px 8px; font:inherit; font-size:14px; resize:vertical; }
 .rownote-wrap { margin-top:8px; position:relative; }
 .rownote-wrap .rownote { margin-top:0; }
-.rownote-done { position:absolute; top:6px; right:6px; width:24px; height:24px; display:inline-flex; align-items:center; justify-content:center; border:0; background:#0f766e; color:#fff; border-radius:50%; padding:0; cursor:pointer; touch-action:manipulation; -webkit-tap-highlight-color:transparent; }
+.rownote-done { position:absolute; top:6px; right:6px; width:24px; height:24px; display:inline-flex; align-items:center; justify-content:center; border:0; background:var(--teal); color:#fff; border-radius:50%; padding:0; cursor:pointer; touch-action:manipulation; -webkit-tap-highlight-color:transparent; }
 .rownote-done:active { opacity:.85; }
 .appt-head { display:flex; align-items:center; justify-content:space-between; gap:10px; }
 .appt-sp { font-size:18px; font-weight:700; color:var(--teal-d); }
 .subtabs { display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:12px; }
-.subtab { border:1px solid var(--line); background:#fff; color:var(--muted); border-radius:10px; padding:9px; font-weight:600; cursor:pointer; }
-.subtab.is-active { background:var(--teal); color:#fff; border-color:transparent; }
+.subtab { border:1px solid var(--line); background:#fff; color:var(--muted); border-radius:var(--r-md); padding:9px; font-weight:600; cursor:pointer; }
+.subtab.is-active { background:var(--teal-d); color:#fff; border-color:transparent; }
 .bp-row { display:flex; align-items:flex-start; justify-content:space-between; gap:10px; padding:10px 0; border-bottom:1px solid var(--line); }
 .bp-row:last-child { border-bottom:0; }
 .bp-name { font-weight:600; }
@@ -122,11 +143,11 @@ ul.tight { margin: 4px 0 0; padding-left: 18px; } ul.tight li { padding: 1px 0; 
 .lab-val { color: var(--teal-d); font-weight: 600; white-space: nowrap; }
 .chart { width: 100%; height: auto; margin-top: 8px; background: #fbfdfd; border: 1px solid var(--line); border-radius: 10px; }
 .modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,.4); display: flex; align-items: center; justify-content: center; padding: 20px; z-index: 50; }
-.modal { background: #fff; border-radius: 16px; padding: 18px; max-width: 420px; width: 100%; }
+.modal { background: #fff; border-radius: var(--r-lg); padding: 18px; max-width: 420px; width: 100%; }
 .modal h2 { margin: 4px 0 8px; } .modal p { margin: 0 0 14px; }
 .ed-btn { border:1px solid var(--line); background:#fff; border-radius:8px; padding:8px 10px; font-size:14px; cursor:pointer; color:var(--muted); touch-action:manipulation; -webkit-tap-highlight-color:transparent; }
 .addbtn { width:100%; margin-bottom:12px; }
-.linkbtn { background:none; border:0; color:var(--muted); text-decoration:underline; font-size:13px; cursor:pointer; padding:6px; }
+.linkbtn { background:none; border:0; color:var(--teal); font:inherit; font-size:13px; text-decoration:underline; cursor:pointer; padding:6px; }
 .linkbtn.danger { color:var(--err); font-weight:600; }
 .modal-form { max-width:520px; max-height:88vh; display:flex; flex-direction:column; }
 .form-body { overflow:auto; }
@@ -146,9 +167,6 @@ ul.tight { margin: 4px 0 0; padding-left: 18px; } ul.tight li { padding: 1px 0; 
 .medseg button.on { background:var(--teal-d); color:#fff; font-weight:600; }
 
 /* ---- feedback round 1 additions ---- */
-.badge.warn { background:#fef3c7; color:var(--warn); }
-.badge.prov { background:#e0e7ff; color:#3730a3; }
-.badge.cond-tag { background:var(--chip); color:var(--muted); font-weight:600; }
 .lab-dot { display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:7px; vertical-align:middle; }
 .lab-dot.lab-ok { background:var(--ok); } .lab-dot.lab-warn { background:var(--warn); } .lab-dot.lab-err { background:var(--err); }
 .lab-trend { color:var(--muted); font-weight:700; }
@@ -158,7 +176,7 @@ ul.tight { margin: 4px 0 0; padding-left: 18px; } ul.tight li { padding: 1px 0; 
 .epnote { width:100%; margin-top:6px; border:1px solid var(--line); border-radius:8px; padding:7px; font:inherit; font-size:14px; resize:vertical; }
 .tl-chev { margin-left:auto; color:var(--muted); font-size:18px; align-self:center; }
 .sheet-bg { position:fixed; inset:0; background:rgba(0,0,0,.4); display:flex; align-items:flex-end; justify-content:center; z-index:50; }
-.sheet { background:#fff; border-radius:18px 18px 0 0; padding:16px 18px calc(20px + env(safe-area-inset-bottom)); width:100%; max-width:720px; box-shadow:0 -4px 24px rgba(0,0,0,.18); animation:sheetUp .18s ease-out; }
+.sheet { background:#fff; border-radius:var(--r-lg) var(--r-lg) 0 0; padding:16px 18px calc(20px + env(safe-area-inset-bottom)); width:100%; max-width:720px; box-shadow:0 -4px 24px rgba(0,0,0,.18); animation:sheetUp .18s ease-out; }
 .sheet h2 { margin:6px 0 8px; } .sheet p { margin:0 0 14px; }
 .sheet-handle { width:40px; height:4px; border-radius:999px; background:var(--line); margin:0 auto 12px; }
 @keyframes sheetUp { from { transform:translateY(100%); } to { transform:translateY(0); } }
@@ -168,7 +186,6 @@ ul.tight { margin: 4px 0 0; padding-left: 18px; } ul.tight li { padding: 1px 0; 
 .daynav.past .navbtn { background:#fff; border:1px solid #f3e2b3; color:#b45309; }
 .sec-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; }
 .sec-head h2 { margin:0; }
-.prog-chip { font-size:12px; color:var(--teal-d); background:#e1f5ee; border-radius:999px; padding:2px 9px; font-weight:600; }
 .symrow { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:7px 0; border-top:1px solid #eef1f3; }
 .symrow.loc { padding:5px 0; }
 .symrow-name { background:none; border:0; padding:0; font:inherit; font-weight:600; font-size:14px; color:var(--ink); text-align:left; cursor:pointer; flex:1; min-width:0; display:flex; align-items:center; gap:6px; }
@@ -179,17 +196,13 @@ ul.tight { margin: 4px 0 0; padding-left: 18px; } ul.tight li { padding: 1px 0; 
 .loc-list { border-left:2px solid var(--chip); padding-left:10px; margin:2px 0 2px 4px; }
 .scale-foot { text-align:center; border-top:1px solid var(--line); padding-top:8px; margin-top:6px; font-size:11px; }
 .scale-head { border-bottom:1px solid var(--line); padding-bottom:8px; margin-bottom:4px; font-size:11px; line-height:1.5; }
-.med { padding:10px 0; }
-.linkbtn { background:none; border:0; color:var(--teal); font:inherit; font-size:13px; cursor:pointer; text-decoration:underline; }
-.linkbtn.danger { color:var(--err); }
-.med-group-label { font-size:11px; text-transform:uppercase; letter-spacing:.04em; color:var(--teal-d); font-weight:600; margin:9px 0 1px; }
+.med-group-label { font-size:11px; text-transform:uppercase; letter-spacing:.07em; color:var(--teal-d); font-weight:800; margin:9px 0 1px; }
 .bp-med { display:flex; align-items:baseline; justify-content:space-between; gap:10px; padding:4px 0; border-top:1px solid #f4f6f7; }
 .bp-med:first-of-type { border-top:0; }
 .bp-med-name { font-weight:600; font-size:14px; }
-.bp-med-dose { font-size:13.5px; color:var(--ink); text-align:right; }
-.med-status { font-size:11px; background:#fef3c7; color:var(--warn); border-radius:999px; padding:1px 8px; margin-left:7px; font-weight:600; }
+.bp-med-dose { font-size:13px; color:var(--ink); text-align:right; }
 .med-l { min-width:0; }
-.med-sub { font-size:12.5px; color:var(--muted); margin-top:1px; }
+.med-sub { font-size:12px; color:var(--muted); margin-top:1px; }
 .med-sub .med-dose { color:var(--ink); font-weight:600; }
 .med-sched { white-space:nowrap; text-align:right; color:var(--ink); flex-shrink:0; }
 .med-sched .sched-x { font-size:14px; font-weight:600; font-variant-numeric:tabular-nums; }
@@ -202,11 +215,10 @@ ul.tight { margin: 4px 0 0; padding-left: 18px; } ul.tight li { padding: 1px 0; 
 .q-continue { background:var(--ok); }
 
 /* ===== redesign design-system (scoped to .ds during incremental rollout) ===== */
-.ds .card{box-shadow:0 1px 2px rgba(30,40,50,.04),0 2px 8px rgba(30,40,50,.05);border-radius:16px;border:1px solid var(--line);}
+.ds .card{box-shadow:0 1px 2px rgba(30,40,50,.04),0 2px 8px rgba(30,40,50,.05);border-radius:var(--r-lg);border:1px solid var(--line);}
 .ds .card-h{display:flex;align-items:center;justify-content:space-between;margin:0 0 12px;}
 .ds .card-h h2{font-size:15px;font-weight:700;margin:0;}
 .ds .hgrp{display:flex;align-items:center;gap:8px;}
-.ds .count{font-size:11px;font-weight:700;color:var(--teal-d);background:#e1f5ee;border-radius:999px;padding:2px 9px;}
 .ds .drow{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;padding:10px 0;border-top:1px solid var(--line);}
 .ds .drow:first-of-type{border-top:0;}
 .ds .dname{font-weight:600;}
@@ -214,7 +226,7 @@ ul.tight { margin: 4px 0 0; padding-left: 18px; } ul.tight li { padding: 1px 0; 
 .ds .ct-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 14px;margin-top:8px;}
 .ds .ct-grid .dmeta{line-height:1.35;}
 .ds .appt-seg, .ds .seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;padding:2px;margin:0 0 12px;}
-.ds .appt-seg button, .ds .seg button{border:0;background:none;font:inherit;font-size:12.5px;color:var(--muted);padding:5px 14px;border-radius:999px;cursor:pointer;}
+.ds .appt-seg button, .ds .seg button{border:0;background:none;font:inherit;font-size:12px;color:var(--muted);padding:5px 14px;border-radius:999px;cursor:pointer;}
 .ds .appt-seg button.on, .ds .seg button.on{background:var(--teal-d);color:#fff;font-weight:600;}
 .ds .appt-cols{column-count:2;column-gap:16px;}
 .ds .appt-cell{break-inside:avoid;margin-bottom:14px;}
@@ -222,15 +234,12 @@ ul.tight { margin: 4px 0 0; padding-left: 18px; } ul.tight li { padding: 1px 0; 
 .ds .appt-notechev{color:var(--muted);font-size:10px;}
 .ds .appt-note{margin-top:4px;padding-left:2px;}
 .ds .dright{flex:none;display:flex;align-items:center;gap:8px;}
-.ds .chip{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;border-radius:999px;padding:3px 9px;white-space:nowrap;border:0;cursor:default;}
-.ds .chip.good{background:#dcfce7;color:#15803d;} .ds .chip.watch{background:#fef3c7;color:#b45309;}
-.ds .chip.alert{background:#fee2e2;color:#b91c1c;} .ds .chip.info{background:#dbeafe;color:#1d4ed8;} .ds .chip.neutral{background:var(--chip);color:var(--muted);}
-.ds .subsec{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--teal-d);font-weight:800;margin:16px 0 8px;padding-bottom:4px;border-bottom:1.5px solid #e1f5ee;}
+.ds .subsec{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--teal-d);font-weight:800;margin:16px 0 8px;padding-bottom:4px;border-bottom:1.5px solid var(--teal-tint);}
 .ds .subsec:first-child{margin-top:0;}
 .ds .sched{font-variant-numeric:tabular-nums;font-weight:700;white-space:nowrap;text-align:right;}
 .ds .sched .f{display:block;font-weight:500;color:var(--muted);font-size:11px;}
-.ds .addmini{border:0;width:28px;height:28px;border-radius:50%;background:#e1f5ee;color:var(--teal-d);font-size:18px;font-weight:700;line-height:1;cursor:pointer;}
-.ds .infobtn{border:0;width:20px;height:20px;padding:0;border-radius:50%;background:#e1f5ee;color:var(--teal-d);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;flex:none;}
+.ds .addmini{border:0;width:28px;height:28px;border-radius:50%;background:var(--teal-tint);color:var(--teal-d);font-size:18px;font-weight:700;line-height:1;cursor:pointer;}
+.ds .infobtn{border:0;width:20px;height:20px;padding:0;border-radius:50%;background:var(--teal-tint);color:var(--teal-d);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;flex:none;}
 .ds .card-h .hgrp h2{margin:0;}
 .modal.sym-info{max-width:360px;}
 .sym-info-top{display:flex;justify-content:flex-end;margin:-6px -6px 0 0;}
@@ -256,7 +265,7 @@ ul.tight { margin: 4px 0 0; padding-left: 18px; } ul.tight li { padding: 1px 0; 
 .ds details.ro{border-top:1px solid var(--line);} .ds details.ro:first-of-type{border-top:0;}
 .ds details.ro>summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 0;}
 .ds details.ro>summary::-webkit-details-marker{display:none;}
-.ds .ro-why{padding:0 0 11px;font-size:12.5px;color:var(--muted);}
+.ds .ro-why{padding:0 0 11px;font-size:12px;color:var(--muted);}
 .ds .ro-fold>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:8px;}
 .ds .ro-fold>summary::-webkit-details-marker{display:none;}
 .ds .ro-fold>summary h2{margin:0;font-size:15px;}
@@ -276,7 +285,7 @@ ul.tight { margin: 4px 0 0; padding-left: 18px; } ul.tight li { padding: 1px 0; 
 .ds .sevbar .track{width:72px;height:8px;border-radius:999px;background:var(--chip);overflow:hidden;}
 .ds .sevbar .fill{height:100%;border-radius:999px;}
 .ds .sevbar .sevval{font-weight:700;font-size:13px;min-width:22px;text-align:right;font-variant-numeric:tabular-nums;}
-.ds .fill0{background:#94a3b8;}.ds .fill1{background:#fde047;}.ds .fill2{background:#f59e0b;}.ds .fill3{background:#f97316;}.ds .fill4{background:#b91c1c;}
+.ds .fill0{background:var(--sev-0);}.ds .fill1{background:var(--sev-1);}.ds .fill2{background:var(--sev-2);}.ds .fill3{background:var(--sev-3);}.ds .fill4{background:var(--sev-4);}
 .ds .wkstrip{display:block;position:sticky;top:var(--topbar-h,56px);z-index:9;background:var(--bg);padding:8px 0 6px;border-bottom:1px solid var(--line);}
 .ds .wknav{width:28px;height:34px;border:0;background:transparent;color:var(--muted);font-size:20px;cursor:pointer;flex:0 0 auto;touch-action:manipulation;}
 .ds .wknav:disabled{opacity:.3;}
@@ -312,10 +321,10 @@ ul.tight { margin: 4px 0 0; padding-left: 18px; } ul.tight li { padding: 1px 0; 
 .ds .calday.tod::after{content:'';position:absolute;bottom:5px;left:50%;transform:translateX(-50%);width:5px;height:5px;border-radius:50%;background:currentColor;}
 .ds .calday.sel{box-shadow:inset 0 0 0 2px #fff, 0 1px 5px rgba(0,0,0,.30);}
 .ds .calb0{background:#f1f5f9;border-color:#f1f5f9;color:#243027;}
-.ds .calb1{background:#fde047;border-color:#fde047;color:#243027;}
-.ds .calb2{background:#f59e0b;border-color:#f59e0b;color:#243027;}
-.ds .calb3{background:#f97316;border-color:#f97316;color:#fff;}
-.ds .calb4{background:#b91c1c;border-color:#b91c1c;color:#fff;}
+.ds .calb1{background:var(--sev-1);border-color:var(--sev-1);color:#243027;}
+.ds .calb2{background:var(--sev-2);border-color:var(--sev-2);color:#243027;}
+.ds .calb3{background:var(--sev-3);border-color:var(--sev-3);color:#fff;}
+.ds .calb4{background:var(--sev-4);border-color:var(--sev-4);color:#fff;}
 .ds .callegend{display:flex;flex-wrap:wrap;gap:7px 12px;margin-top:12px;font-size:11px;color:var(--muted);align-items:center;}
 .ds .callegend .lgsw{width:12px;height:12px;border-radius:3px;display:inline-block;vertical-align:-1px;margin-right:4px;}
 .ds .calnote{font-size:11px;color:var(--muted);margin-top:8px;line-height:1.5;}
@@ -324,13 +333,9 @@ ul.tight { margin: 4px 0 0; padding-left: 18px; } ul.tight li { padding: 1px 0; 
 .ds .sevpick,.ds .sev-chip.sevsq{display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;min-width:38px;padding:0;border:0;border-radius:9px;font-size:15px;font-weight:700;cursor:pointer;}
 .ds .chipgrp{display:flex;align-items:center;gap:6px;} .ds .sev-chip.sumsq{background:var(--teal);color:#fff;cursor:default;}
 .ds .noteicon{width:38px;height:38px;display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--line);background:#fff;border-radius:9px;cursor:pointer;color:var(--muted);touch-action:manipulation;-webkit-tap-highlight-color:transparent;position:relative;}
-.ds .noteicon.has{color:#0f766e;}
-.ds .noteicon.has::after{content:'';position:absolute;top:-3px;right:-3px;width:10px;height:10px;border-radius:50%;background:#0f766e;border:2px solid var(--card);}
-.ds .noteicon.on{color:#0f766e;border-color:#0f766e;}
-.ds .chgpill{font-size:13px;font-weight:600;border-radius:999px;padding:2px 10px;white-space:nowrap;}
-.ds .chgpill.up{background:#fde8e8;color:#b91c1c;}
-.ds .chgpill.down{background:#dcfce7;color:#15803d;}
-.ds .chgpill.flat{background:var(--chip);color:var(--muted);}
+.ds .noteicon.has{color:var(--teal);}
+.ds .noteicon.has::after{content:'';position:absolute;top:-3px;right:-3px;width:10px;height:10px;border-radius:50%;background:var(--teal);border:2px solid var(--card);}
+.ds .noteicon.on{color:var(--teal);border-color:var(--teal);}
 .ds .bignum{display:flex;align-items:baseline;gap:8px;font-size:32px;font-weight:600;line-height:1;}
 .ds .bn-sub{margin:4px 0 10px;}
 .ds .trend{width:100%;height:auto;display:block;}
@@ -362,7 +367,6 @@ ul.tight { margin: 4px 0 0; padding-left: 18px; } ul.tight li { padding: 1px 0; 
 .ds .adh-overall{display:flex;align-items:baseline;gap:8px;margin-bottom:6px;}
 .ds .adh-overall .bignum{font-size:32px;font-weight:600;line-height:1;}
 .ds .adh-head{display:flex;align-items:center;gap:8px;}
-.ds .adh-pill{font-size:12px;font-weight:700;padding:2px 9px;border-radius:999px;line-height:1.4;}
 .ds .medblk{padding:12px 0;border-top:1px solid var(--line);}
 .ds .medblk:first-of-type{border-top:0;}
 .ds .medblk .ml{display:flex;justify-content:space-between;font-size:14px;margin-bottom:7px;}
@@ -382,10 +386,10 @@ ul.tight { margin: 4px 0 0; padding-left: 18px; } ul.tight li { padding: 1px 0; 
 .ds .btn-mark{border:1px solid var(--teal);background:var(--teal);color:#fff;border-radius:999px;padding:5px 14px;font-size:13px;font-weight:600;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;}
 .ds .btn-mark.wide{display:block;width:100%;padding:11px;border-radius:12px;font-size:14px;}
 .ds .daybar{text-align:center;margin:6px 0 16px;}
-.ds .prog-chip.done{background:#dcfce7;color:#15803d;}
 .ds .loc-count{margin-left:2px;white-space:nowrap;}
-.ds .card-h h2, .sec-head h2, .ds .ro-fold>summary h2 { font-size:11.5px; font-weight:700; letter-spacing:.07em; text-transform:uppercase; color:var(--teal-d); margin:0; }
-.ds .card-h, .sec-head { border-bottom:2px solid #e1f5ee; padding-bottom:7px; margin-bottom:10px; }
+.ds .card-h h2, .sec-head h2, .ds .ro-fold>summary h2 { font-size:11px; font-weight:700; letter-spacing:.07em; text-transform:uppercase; color:var(--teal-d); margin:0; }
+.ds .card > h2 { font-size:11px; font-weight:700; letter-spacing:.07em; text-transform:uppercase; color:var(--teal-d); margin:0 0 10px; }
+.ds .card-h, .sec-head { border-bottom:2px solid var(--teal-tint); padding-bottom:7px; margin-bottom:10px; }
 .med-name, .q-text, .ds .dname, .bp-name { font-size:14px; }
 .ds .symclick{cursor:pointer;}
 .ds .bars{display:flex;align-items:flex-end;gap:6px;height:80px;padding-top:6px;}
@@ -394,7 +398,7 @@ ul.tight { margin: 4px 0 0; padding-left: 18px; } ul.tight li { padding: 1px 0; 
 .ds .epstats{display:flex;gap:10px;}
 .ds .epstats .epstat{flex:1;min-width:0;background:var(--chip);border-radius:10px;padding:10px 12px;}
 .ds .epstats .epv{font-size:20px;font-weight:800;line-height:1.1;color:var(--ink);}
-.ds .epstats .epl{font-size:10.5px;color:var(--muted);margin-top:3px;line-height:1.25;}
+.ds .epstats .epl{font-size:10px;color:var(--muted);margin-top:3px;line-height:1.25;}
 .ds .bars .b .bl{font-size:9px;color:var(--muted);font-weight:600;} .ds .bars .b .bv{font-size:10px;font-weight:700;}
 .ds .mini{width:100%;height:54px;display:block;}
 .ds .linkbtn{background:none;border:0;color:var(--teal);font:inherit;font-size:13px;cursor:pointer;text-decoration:underline;}
@@ -413,7 +417,7 @@ ul.tight { margin: 4px 0 0; padding-left: 18px; } ul.tight li { padding: 1px 0; 
 .ds .picon svg{width:14px;height:14px;}
 .ds .pibody{display:flex;flex-direction:column;flex:1;}
 .ds .pidate{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;}
-.ds .pilabel{font-weight:500;font-size:13.5px;line-height:1.3;}.ds .vhero{background:linear-gradient(135deg,var(--teal),var(--teal-d));color:#fff;border-radius:16px;padding:16px;margin-bottom:12px;box-shadow:0 2px 8px rgba(15,118,110,.25);}
+.ds .pilabel{font-weight:500;font-size:13px;line-height:1.3;}.ds .vhero{background:linear-gradient(135deg,var(--teal),var(--teal-d));color:#fff;border-radius:16px;padding:16px;margin-bottom:12px;box-shadow:0 2px 8px rgba(15,118,110,.25);}
 .ds .vhero .vlbl{font-size:11px;text-transform:uppercase;letter-spacing:.08em;opacity:.85;font-weight:700;}
 .ds .vhero .vwhen{font-size:22px;font-weight:800;margin:3px 0 1px;}
 .ds .vhero .vwho{font-size:14px;opacity:.95;}
@@ -434,7 +438,7 @@ ul.tight { margin: 4px 0 0; padding-left: 18px; } ul.tight li { padding: 1px 0; 
 .ds .q-answered[open] .ro-caret{transform:rotate(90deg);}
 .ds .qg-sum{width:100%;background:none;border:0;border-top:1px solid #eef1f3;padding:11px 0;margin:6px 0 0;display:flex;align-items:center;gap:8px;cursor:pointer;font:inherit;font-size:13px;font-weight:600;color:var(--teal-d);text-align:left;}
 .ds .qg:first-of-type .qg-sum{border-top:0;margin-top:0;}
-.ds .qg-count{margin-left:auto;background:var(--chip);color:var(--muted);border-radius:999px;padding:1px 9px;font-size:11px;font-weight:700;}
+.ds .qg-count{margin-left:auto;}
 .ds .qg-caret{color:var(--muted);font-size:11px;width:10px;text-align:center;}
 .ds .qg-body{padding:2px 0 4px;}
 .ds .qrow.answered{align-items:flex-start;}
@@ -461,8 +465,8 @@ ul.tight { margin: 4px 0 0; padding-left: 18px; } ul.tight li { padding: 1px 0; 
 .ps-title{font-size:19px;font-weight:600;}
 .ps-date{font-size:11px;color:#555;}
 .ps-h{font-size:13px;font-weight:600;color:#0f6e56;margin:0 0 6px;}
-.ps-legend{font-size:10.5px;color:#888;margin-bottom:6px;}
-.ps-tbl{width:100%;border-collapse:collapse;font-size:12.5px;margin-bottom:20px;}
+.ps-legend{font-size:10px;color:#888;margin-bottom:6px;}
+.ps-tbl{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:20px;}
 .ps-tbl td,.ps-tbl th{padding:4px 8px 4px 0;text-align:left;vertical-align:top;border-bottom:0.5px solid #eee;}
 .ps-tbl td.ps-right{text-align:right;color:#555;white-space:nowrap;}
 .ps-meds th{border-bottom:1.5px solid #1a1a1a;font-weight:600;}
@@ -478,6 +482,10 @@ ul.tight { margin: 4px 0 0; padding-left: 18px; } ul.tight li { padding: 1px 0; 
 /* Us — optional relationship tab (off by default). Pink experience: topbar + accents use --us. */
 body.tab-us .topbar { background:var(--us); }
 body.tab-us .cogbtn { color:var(--us); }
+body.tab-us .lang-btn.is-active { color:var(--us); }
+body.tab-us .ds .trendgrp-h .gbar { background:var(--us); }
+body.tab-us .ds .trendgrp-h:first-child { margin-top:4px; }
+body.tab-us .ds .winseg button.on { color:var(--us); }
 .us-chips { display:grid; grid-template-columns:repeat(7,1fr); gap:5px; }
 .us-chip { height:38px; border:1px solid var(--line); background:#fff; color:var(--muted); border-radius:9px; font-weight:700; font-size:15px; cursor:pointer; touch-action:manipulation; -webkit-tap-highlight-color:transparent; user-select:none; }
 .us-chip.on { background:var(--us); color:#fff; border-color:transparent; }
@@ -494,11 +502,60 @@ body.tab-us .cogbtn { color:var(--us); }
 .us-seg button.on { background:#fff; color:var(--us); box-shadow:0 1px 2px rgba(0,0,0,.12); }
 .us-chart { background:#fdf2f8; border-color:#f3cfe0; }
 .us-note { border-bottom:1px solid #f0e3ea; padding:9px 0; } .us-note:last-child { border-bottom:0; }
-.us-date { font-size:11px; font-weight:700; color:var(--us); background:#fbe4ee; border-radius:999px; padding:2px 8px; }
 .us-strip { display:flex; gap:6px; overflow-x:auto; padding:2px 0 12px; }
 .us-day { flex:0 0 auto; width:46px; text-align:center; border:1px solid var(--line); background:#fff; border-radius:9px; padding:6px 0; font-size:12px; font-weight:600; color:var(--ink); cursor:pointer; }
 .us-day.sel { background:var(--us); color:#fff; border-color:transparent; }
 .us-sec { font-size:12px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.03em; }
+/* Us — 2026-07 redesign: faces, 3-state pills, weekly scale, count/face trends */
+.us-row { display:flex; gap:6px; }
+.us-faces .us-lab { display:flex; flex-direction:column; align-items:center; gap:3px; }
+.us-lab { flex:1; border:1px solid var(--line); background:#fafafa; border-radius:12px; padding:9px 2px 7px; font-size:11px; font-weight:600; color:var(--muted); line-height:1.2; cursor:pointer; touch-action:manipulation; -webkit-tap-highlight-color:transparent; user-select:none; }
+.us-lab.sel { background:#fff7fb; border-color:var(--us); box-shadow:0 0 0 1px var(--us) inset; color:var(--ink); }
+.us-lab svg { display:block; }
+.us-state { flex:1; border:1px solid var(--line); background:#fafafa; border-radius:11px; padding:11px 4px; font-size:12.5px; font-weight:600; color:var(--muted); line-height:1.2; cursor:pointer; touch-action:manipulation; -webkit-tap-highlight-color:transparent; user-select:none; }
+.us-state.sel { background:var(--us); color:#fff; border-color:transparent; }
+.us-cond { border-left:3px solid #f8bbd0; padding-left:13px; margin-top:16px; }
+.us-plabs { gap:5px; }
+.us-plab { flex:1; border:1px solid var(--line); background:#fafafa; border-radius:11px; padding:8px 2px; font-size:11px; font-weight:600; color:var(--muted); line-height:1.2; cursor:pointer; touch-action:manipulation; -webkit-tap-highlight-color:transparent; user-select:none; }
+.us-plab .n { display:block; font-size:15px; margin-bottom:2px; }
+.us-plab.sel { background:var(--us); color:#fff; border-color:transparent; }
+.us-grat { background:#fffafc; border-color:#f3c6dd; }
+.mt16 { margin-top:16px; }
+body.tab-us .metric { border:1px solid var(--line); border-radius:14px; padding:14px; margin-top:12px; }
+body.tab-us .metric:first-child { margin-top:0; }
+body.tab-us .metric .mtop { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:11px; }
+body.tab-us .metric .mname { font-size:13.5px; font-weight:600; }
+body.tab-us .metric .msub { font-size:11px; color:var(--muted); }
+body.tab-us .metric .dow { display:flex; gap:5px; margin-bottom:5px; }
+body.tab-us .metric .dow span { flex:1; text-align:center; font-size:9.5px; color:var(--faint,#9aa3b2); font-weight:600; }
+.us-wk { display:flex; gap:5px; margin-bottom:5px; }
+.us-cell { flex:1; display:flex; justify-content:center; align-items:center; }
+.us-cell svg { display:block; }
+.us-face-none { display:inline-block; width:8px; height:8px; border-radius:50%; background:#eef0f2; }
+.us-bar { display:flex; height:26px; border-radius:7px; overflow:hidden; font-size:10px; color:#fff; font-weight:600; }
+.us-bar div { display:flex; align-items:center; justify-content:center; min-width:0; white-space:nowrap; }
+.us-insight { font-size:11.5px; background:#faf7f9; color:#5a4b53; border-radius:9px; padding:9px 11px; margin-top:11px; line-height:1.5; }
+.us-insight.good { background:#eef7f0; color:#2e7d52; }
+.us-counts { display:flex; gap:10px; }
+.us-count { flex:1; background:#faf7f9; border-radius:11px; padding:11px; text-align:center; }
+.us-count .big { font-size:23px; font-weight:700; color:var(--us); }
+.us-count .cl { font-size:11px; color:var(--muted); margin-top:2px; }
+.us-wkpills { display:flex; flex-wrap:wrap; gap:6px; }
+.us-wkpill { width:26px; height:26px; border-radius:50%; background:var(--us); color:#fff; font-size:12px; font-weight:700; display:flex; align-items:center; justify-content:center; }
+.us-wkpill.empty { background:#f1e6ec; color:#c9a7bb; }
+body.tab-us .us-metric-hi { border-color:#f3c6dd; background:#fffafc; }
+.us-resurf { font-size:12.5px; color:#40485a; background:#fffafc; border:1px solid #f3c6dd; border-radius:11px; padding:11px 12px; line-height:1.5; margin-bottom:10px; }
+.us-resurf .date { font-size:10.5px; color:var(--faint,#9aa3b2); display:block; margin-bottom:3px; }
+.us-cmp-head { display:flex; align-items:baseline; gap:8px; margin-bottom:12px; }
+.us-cmp-head .big { font-size:28px; font-weight:700; color:var(--us); line-height:1; }
+.us-cmp-head .lab { font-size:13px; color:var(--muted); }
+.us-cmp { display:flex; align-items:center; gap:8px; margin-top:6px; }
+.us-cmp-lab { flex:0 0 74px; font-size:11px; color:var(--muted); }
+.us-distbar { flex:1; height:22px; }
+.us-cmp-sub { font-size:12px; color:var(--muted); margin-top:9px; }
+.us-distlegend { display:flex; flex-wrap:wrap; gap:10px; margin-top:11px; }
+.us-distlegend span { display:flex; align-items:center; gap:5px; font-size:11px; color:var(--muted); }
+.us-distlegend i { width:10px; height:10px; border-radius:50%; display:inline-block; }
 </style>
   <title>Atlast</title>
 </head>
@@ -656,7 +713,7 @@ function getLoadMeta() { return _meta; }
 function subscribe(fn) { _subs.add(fn); return () => _subs.delete(fn); }
 function _notify() { _subs.forEach((fn) => { try { fn(_data); } catch (e) { console.error(e); } }); }
 function seedFetchSource() {
-  return { name: 'seed (local file)',
+  return { name: 'seed (local file)', isSeed: true,
     async read() { const res = await fetch(CONFIG.seedFileName, { cache: 'no-store' }); if (!res.ok) throw new Error('Could not load ' + CONFIG.seedFileName + ' (HTTP ' + res.status + ')'); return { data: await res.json(), etag: res.headers.get('etag') || null }; },
     async write() { throw new Error('Seed source is read-only in step 1; OneDrive write arrives in step 7.'); } };
 }
@@ -673,7 +730,9 @@ async function loadData(source = defaultSource()) {
   try { ({ data, etag } = await source.read()); }
   catch (err) { const cached = localCache.read(); if (!cached) throw err; data = cached; from = 'offline cache'; }
   const cached = localCache.read();
-  if (cached && from === source.name) { const cu = cached?.meta?.updatedAt || ''; const su = data?.meta?.updatedAt || ''; if (cu && cu >= su) { data = cached; from = 'local edits (cache)'; } }
+  // Cache-preference protects offline local edits in the OneDrive workflow. The seed source has no
+  // edits worth keeping — always show the file — so it skips this and never needs a timestamp bump.
+  if (cached && from === source.name && !source.isSeed) { const cu = cached?.meta?.updatedAt || ''; const su = data?.meta?.updatedAt || ''; if (cu && cu >= su) { data = cached; from = 'local edits (cache)'; } }
   const report = validate(data); _data = data;
   _meta = { source: from, loadedAt: new Date().toISOString(), etag, validation: report };
   localCache.write(_data); _notify(); return { data: _data, report, meta: _meta };
@@ -838,16 +897,21 @@ function setMoodNote(date, text) {
   return log;
 }
 function getMoodNote(date, data = _data) { const l = getDailyLog(date, data); return (l && typeof l.moodNote === 'string') ? l.moodNote : ''; }
-// Us — optional daily relationship check-in (off by default; gated by the `showUs` pref + `usSince`
-// stamp, English-only, never doctor-facing). Stored per day as an optional `us` object on the daily
-// log; every field optional and the object is pruned when empty, so days without it are untouched
-// (mirrors the mood precedent). Fields: satisfaction/friction (0–6), qualityTime (bool),
-// grateful/improve (strings), dateNight ({ had:true, initiator?:'me'|'partner' }).
+// Us — optional daily + weekly relationship check-in (off by default; gated by the `showUs` pref +
+// `usSince` stamp, English-only, never doctor-facing). Stored per day as an optional `us` object on the
+// daily log; every field optional and the object is pruned when empty, so days without it are untouched
+// (mirrors the mood precedent). Each partner runs their own copy of the app, so entries are private —
+// there is no sharing; comparison happens in person at the weekly check-in.
+// Daily fields: connection (1–5 ordinal: Distant/Off/Okay/Warm/Close), time ('none'|'quality'|'date',
+// ordered by effort — date outranks quality), friction ('none'|'little'|'argument'), repair
+// ('resolved'|'partial'|'dropped', only meaningful when friction≠'none'), grateful/improve (strings).
+// Weekly fields nested under us.week (written on Fridays): satisfaction (1–5: Not much→Thriving),
+// appreciated ('rarely'|'sometimes'|'often'), wantMore (string). Deliberately no overall score anywhere.
 function ensureUs(date) { const log = ensureLog(date); if (!log.us) log.us = {}; return log; }
 function getUs(date, data = _data) { const l = getDailyLog(date, data); return (l && l.us) ? l.us : null; }
-function _pruneUs(log) { if (log && log.us && Object.keys(log.us).length === 0) delete log.us; return log; }
+function _pruneUs(log) { if (log && log.us) { if (log.us.week && Object.keys(log.us.week).length === 0) delete log.us.week; if (Object.keys(log.us).length === 0) delete log.us; } return log; }
 function setUsField(date, key, value) { const log = ensureUs(date); if (value == null || value === '') delete log.us[key]; else log.us[key] = value; return _pruneUs(log); }
-function setUsDateNight(date, had, initiator) { const log = ensureUs(date); if (!had) delete log.us.dateNight; else log.us.dateNight = initiator ? { had: true, initiator } : { had: true }; return _pruneUs(log); }
+function setUsWeek(date, key, value) { const log = ensureUs(date); if (!log.us.week) log.us.week = {}; if (value == null || value === '') delete log.us.week[key]; else log.us.week[key] = value; return _pruneUs(log); }
 function setMedTaken(date, medId, taken) {
   const log = ensureLog(date); const i = log.medsTaken.findIndex((r) => r.medId === medId);
   if (taken == null) { if (i >= 0) log.medsTaken.splice(i, 1); delete log.symptomsSubmittedAt; } else { const row = { medId, taken }; if (i >= 0) log.medsTaken[i] = row; else log.medsTaken.push(row); } // clearing an answer un-submits the day
@@ -999,7 +1063,7 @@ async function importData(text) {
   return report;
 }
 
-return { CONFIG, getData, getLoadMeta, subscribe, setActiveSource, getActiveSource, loadData, resetToSeed, saveData, t, tx, specialistLabel, derivedOverall, derivedIntensity, activeSymptomTypes, activeLocations, latestLab, labWindow, activeConditions, excludedList, bigPicture, labStatus, labTrend, labPosNeg, labGroups, parseReport, weekdayOf, getDailyLog, setSeverity, getSeverity, setSymptomNote, getSymptomNote, setMood, getMood, setMoodNote, getMoodNote, getUs, setUsField, setUsDateNight, setMedTaken, getMedTaken, setMedCount, getMedCount, medDueOn, medTimeOfDay, medsForDate, submitSymptoms, requiredMedsOn, symptomsSubmitted, startEpisode, endEpisode, reopenEpisode, setEpisodeNote, ongoingEpisodes, episodesEndedOn, persist, persistLocal, markQuestionAnswered, genId, getRecord, upsert, remove, archiveSymptomType, deleteSymptomType, addSymptomType, renameSymptomType, setSymptomOverall, addLocation, renameLocation, archiveLocation, reorderSymptomTypes, addLabResult, removeLabResult, recordDoseChange, exportJSON, importData };
+return { CONFIG, getData, getLoadMeta, subscribe, setActiveSource, getActiveSource, loadData, resetToSeed, saveData, t, tx, specialistLabel, derivedOverall, derivedIntensity, activeSymptomTypes, activeLocations, latestLab, labWindow, activeConditions, excludedList, bigPicture, labStatus, labTrend, labPosNeg, labGroups, parseReport, weekdayOf, getDailyLog, setSeverity, getSeverity, setSymptomNote, getSymptomNote, setMood, getMood, setMoodNote, getMoodNote, getUs, setUsField, setUsWeek, setMedTaken, getMedTaken, setMedCount, getMedCount, medDueOn, medTimeOfDay, medsForDate, submitSymptoms, requiredMedsOn, symptomsSubmitted, startEpisode, endEpisode, reopenEpisode, setEpisodeNote, ongoingEpisodes, episodesEndedOn, persist, persistLocal, markQuestionAnswered, genId, getRecord, upsert, remove, archiveSymptomType, deleteSymptomType, addSymptomType, renameSymptomType, setSymptomOverall, addLocation, renameLocation, archiveLocation, reorderSymptomTypes, addLabResult, removeLabResult, recordDoseChange, exportJSON, importData };
 })();
 
 const Today = (function(){
@@ -1258,8 +1322,8 @@ function renderToday(state) {
   const bWords = lang === 'es' ? ['sin síntomas', 'leve', 'típico', 'difícil', 'grave'] : ['clear', 'light', 'typical', 'difficult', 'severe'];
   const bCols = ['#94a3b8', '#fde047', '#f59e0b', '#f97316', '#b91c1c'];
   const bTextCols = ['#fff', '#422006', '#422006', '#fff', '#fff'];
-  const burdenChip = bBand < 0 ? '' : `<span class="prog-chip burden-chip" style="background:${bCols[bBand]};color:${bTextCols[bBand]}">${bWords[bBand]}</span>`;
-  const doneChip = `<span class="prog-chip done">✓ ${lang === 'en' ? 'Complete' : 'Completado'}</span>`;
+  const burdenChip = bBand < 0 ? '' : `<span class="badge" style="background:${bCols[bBand]};color:${bTextCols[bBand]}">${bWords[bBand]}</span>`;
+  const doneChip = `<span class="badge good">✓ ${lang === 'en' ? 'Complete' : 'Completado'}</span>`;
   // Burden depends only on symptom severities, so show it once all symptoms are logged — not gated on meds (which don't affect burden).
   const symComplete = dayTypes.length > 0 && dayTypes.every(isLogged);
   const headStatus = symComplete ? (burdenChip || doneChip) : '';
@@ -1307,11 +1371,11 @@ function renderToday(state) {
   const ongoing = (data.episodes || []).filter((e) => e.startDate && e.startDate <= date && (e.endDate == null || e.endDate > date));
   const epNote = (e) => esc((e.note && (e.note.en || e.note.es)) || '');
   const ongoingHtml = ongoing.map((e) => { const live = e.endDate == null; return `<div class="ep-ongoing-block">
-      <div class="ep-ongoing"><span>${esc(tx(e.name, lang) || EP_TYPES[lang][e.type])} <span class="pill">${EP_TYPES[lang][e.type] || e.type}</span> <span class="muted small">${e.startDate}→${live ? '' : ' ' + e.endDate}</span></span>${live ? `<button class="btn-sm" data-end-ep="${e.id}">${T.end}</button>` : ''}</div>
+      <div class="ep-ongoing"><span>${esc(tx(e.name, lang) || EP_TYPES[lang][e.type])} <span class="badge neutral">${EP_TYPES[lang][e.type] || e.type}</span> <span class="muted small">${e.startDate}→${live ? '' : ' ' + e.endDate}</span></span>${live ? `<button class="btn-sm" data-end-ep="${e.id}">${T.end}</button>` : ''}</div>
       <textarea class="epnote" data-epnote="${e.id}" rows="1" placeholder="${T.epNotePh}">${epNote(e)}</textarea>
     </div>`; }).join('');
   const endedToday = DL.episodesEndedOn(date, data);
-  const endedHtml = endedToday.map((e) => `<div class="ep-ongoing"><span class="muted">${esc(tx(e.name, lang) || EP_TYPES[lang][e.type])} <span class="pill">${EP_TYPES[lang][e.type] || e.type}</span> <span class="small">${T.endedToday} ${e.endDate}</span></span><button class="btn-sm" data-reopen-ep="${e.id}">↺ ${T.reopen}</button></div>`).join('');
+  const endedHtml = endedToday.map((e) => `<div class="ep-ongoing"><span class="muted">${esc(tx(e.name, lang) || EP_TYPES[lang][e.type])} <span class="badge neutral">${EP_TYPES[lang][e.type] || e.type}</span> <span class="small">${T.endedToday} ${e.endDate}</span></span><button class="btn-sm" data-reopen-ep="${e.id}">↺ ${T.reopen}</button></div>`).join('');
   const typeOpts = Object.entries(EP_TYPES[lang]).map(([k, v]) => `<option value="${k}">${v}</option>`).join('');
   // Episode add form is opened by the header ＋ (mirrors Symptoms/Meds) — no separate wide button.
   const epForm = ui.epFormOpen ? `<div class="ep-form"><input id="epName" placeholder="${T.name}" /><div class="ep-form-row"><select id="epType">${typeOpts}</select><input type="date" id="epStart" value="${date}" /></div><div class="ep-form-actions"><button class="btn" id="epSave">${T.start2}</button><button class="btn ghost" id="epCancel">${T.cancel}</button></div></div>` : '';
@@ -1541,8 +1605,8 @@ const PRINT_SHEET_CSS = `body{font-family:system-ui,-apple-system,'Segoe UI',Rob
 .ps-title{font-size:19px;font-weight:600;}
 .ps-date{font-size:11px;color:#555;}
 .ps-h{font-size:13px;font-weight:600;color:#0f6e56;margin:0 0 6px;}
-.ps-legend{font-size:10.5px;color:#888;margin-bottom:6px;}
-.ps-tbl{width:100%;border-collapse:collapse;font-size:12.5px;margin-bottom:20px;}
+.ps-legend{font-size:10px;color:#888;margin-bottom:6px;}
+.ps-tbl{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:20px;}
 .ps-tbl td,.ps-tbl th{padding:4px 8px 4px 0;text-align:left;vertical-align:top;border-bottom:0.5px solid #eee;}
 .ps-tbl td.ps-right{text-align:right;color:#555;white-space:nowrap;}
 .ps-meds th{border-bottom:1.5px solid #1a1a1a;font-weight:600;}
@@ -1592,8 +1656,8 @@ function renderBig(state) {
   };
   // ONE chip per condition: investigating → "Investigating"; otherwise the control state.
   const condChip = (c) => c.status === 'investigating'
-    ? `<span class="chip info">${STATUS[lang].investigating}</span>`
-    : (c.control && c.control !== 'no_treatment' && T.control && T.control[c.control] ? `<span class="chip ${CTRL_CLS[c.control] || 'neutral'}">${T.control[c.control]}</span>` : '');
+    ? `<span class="badge info">${STATUS[lang].investigating}</span>`
+    : (c.control && c.control !== 'no_treatment' && T.control && T.control[c.control] ? `<span class="badge ${CTRL_CLS[c.control] || 'neutral'}">${T.control[c.control]}</span>` : '');
   const condRow = (c) => {
     const sub = condSub(c);
     return `<div class="drow"><div><div class="dname">${esc(tx(c.name, lang))}</div>${sub ? `<div class="dmeta">${esc(sub)}</div>` : ''}</div><div class="dright">${condChip(c)}</div></div>`;
@@ -1630,7 +1694,7 @@ function renderBig(state) {
     const reason = tx(r.reason, lang);
     const revisit = r.revisitNote ? tx(r.revisitNote, lang) : '';
     const why = [reason, revisit ? ('↺ ' + revisit) : ''].filter(Boolean).join(' — ');
-    return `<details class="ro"><summary><span class="chip ${prov ? 'info' : 'neutral'}">${esc(tx(r.name, lang))}${prov ? ' ↺' : ''}</span><span class="muted small">${r.date ? fmtDate(r.date, lang) : ''} ›</span></summary><div class="ro-why">${esc(why || '—')}</div></details>`;
+    return `<details class="ro"><summary><span class="badge ${prov ? 'info' : 'neutral'}">${esc(tx(r.name, lang))}${prov ? ' ↺' : ''}</span><span class="muted small">${r.date ? fmtDate(r.date, lang) : ''} ›</span></summary><div class="ro-why">${esc(why || '—')}</div></details>`;
   };
   const ro = bp.excluded.map(roItem).join('') || `<p class="muted small">${T.none}</p>`;
   // One ✎ per card opens a list to pick which item to edit (instead of a pencil on every row).
@@ -1718,7 +1782,7 @@ function renderQuestions(state) {
   const qGroup = (id, title, qs, ans) => {
     const open = ui.qExpanded.has(id);
     const body = open ? `<div class="qg-body">${qs.map(qRow).join('')}${ans && ans.length ? answeredFold(ans) : ''}${id === '__orphans' ? '' : addQBtn(id)}</div>` : '';
-    return `<div class="qg"><button class="qg-sum" data-qexpand="${id}"><span class="qgroup-t">${title}</span><span class="qg-count">${qs.length}</span><span class="qg-caret">${open ? '▾' : '▶'}</span></button>${body}</div>`;
+    return `<div class="qg"><button class="qg-sum" data-qexpand="${id}"><span class="qgroup-t">${title}</span><span class="badge neutral qg-count">${qs.length}</span><span class="qg-caret">${open ? '▾' : '▶'}</span></button>${body}</div>`;
   };
   const order = next ? [next.specialismId, ...specs.map((s) => s.id).filter((id) => id !== next.specialismId)] : specs.map((s) => s.id);
   let groups = '';
@@ -2032,7 +2096,7 @@ function adherenceCard(state, data, days, win, TT) {
   const extraList = Object.values(info).filter((o) => o.isPrn);
   // Colour band for the group roll-up score only (per-treatment rows stay neutral grey).
   // Soft tinted pill for the group roll-up score only (light band bg + dark band text).
-  const bandPill = (pct) => { const c = pct >= 80 ? ['#dcfce7', '#15803d'] : pct >= 50 ? ['#fef3c7', '#854f0b'] : ['#fee2e2', '#b91c1c']; return `<span class="adh-pill" style="background:${c[0]};color:${c[1]}">${pct}%</span>`; };
+  const bandPill = (pct) => { const c = pct >= 80 ? ['#dcfce7', '#15803d'] : pct >= 50 ? ['#fef3c7', '#854f0b'] : ['#fee2e2', '#b91c1c']; return `<span class="badge" style="background:${c[0]};color:${c[1]}">${pct}%</span>`; };
   const regRow = (o) => {
     const id = o.m.id, name = esc(tx(o.m.name, lang));
     const pct = o.sched ? Math.round(o.taken / o.sched * 100) : null;
@@ -2166,9 +2230,9 @@ function trendStackBars(buckets, idxs, mode, normalize) {
 // Change pill: shows the prior value; colour/arrow encode better vs worse (higherIsWorse = more is worse). Hidden when no reliable prior period.
 function trendChg(cur, prev, higherIsWorse, reliable, TT, fmt) {
   if (!reliable || prev == null || cur == null) return '';
-  const d = cur - prev; if (Math.abs(d) < 0.05) return `<span class="chgpill flat">${TT.steady}</span>`;
+  const d = cur - prev; if (Math.abs(d) < 0.05) return `<span class="badge lg neutral">${TT.steady}</span>`;
   const worse = higherIsWorse ? d > 0 : d < 0;
-  return `<span class="chgpill ${worse ? 'up' : 'down'}">${d > 0 ? '↑' : '↓'} ${TT.was} ${fmt(prev)}</span>`;
+  return `<span class="badge lg ${worse ? 'alert' : 'good'}">${d > 0 ? '↑' : '↓'} ${TT.was} ${fmt(prev)}</span>`;
 }
 // #2 Day mix over time — share of each band per bucket (100% stacked); headline = % heavy+ for the window.
 function trendMixCard(lang, TT, cur, prev, reliable, tb) {
@@ -2214,8 +2278,8 @@ function trendFuncImpactCard(lang, TT, data, types, days, win, reliable) {
   let pill = '';
   if (reliable && prevPct != null) {
     const d = pct - prevPct;
-    if (Math.abs(d) < 3) pill = `<span class="chgpill flat">${lang === 'es' ? 'igual' : 'same'}</span>`;
-    else pill = `<span class="chgpill ${d > 0 ? 'up' : 'down'}">${d > 0 ? '↑ ' : '↓ '}${Math.abs(d)} pts</span>`;
+    if (Math.abs(d) < 3) pill = `<span class="badge lg neutral">${lang === 'es' ? 'igual' : 'same'}</span>`;
+    else pill = `<span class="badge lg ${d > 0 ? 'alert' : 'good'}">${d > 0 ? '↑ ' : '↓ '}${Math.abs(d)} pts</span>`;
   }
   const tier = (n, label, idx) => {
     const p = Math.round(n / cur.logged * 100);
@@ -2268,8 +2332,8 @@ function trendShiftCard(lang, TT, cur, prev, reliable, days, win) {
   let pill = '';
   if (reliable && prevPct != null) {
     const d = pct - prevPct;
-    if (Math.abs(d) < 3) pill = `<span class="chgpill flat">${lang === 'es' ? 'igual' : 'same'}</span>`;
-    else pill = `<span class="chgpill ${d > 0 ? 'up' : 'down'}">${d > 0 ? '↑ ' : '↓ '}${Math.abs(d)} pts</span>`;
+    if (Math.abs(d) < 3) pill = `<span class="badge lg neutral">${lang === 'es' ? 'igual' : 'same'}</span>`;
+    else pill = `<span class="badge lg ${d > 0 ? 'alert' : 'good'}">${d > 0 ? '↑ ' : '↓ '}${Math.abs(d)} pts</span>`;
   }
   const legend = [1, 2, 3, 4].map((i) => `<span class="lg"><span class="lgsw" style="background:${SEVHEX[i]}"></span>${TT.bandW[i]}</span>`).join('');
   return `<div class="card"><div class="card-h"><h2>${TT.dayBalanceTitle}</h2>${pill ? `<span style="margin-left:auto">${pill}</span>` : ''}</div>${row(curLabel, cur)}${row(prevLabel, prev)}<div class="lgrow" style="margin-top:10px">${legend}</div></div>`;
@@ -2801,7 +2865,7 @@ function renderForm() {
       delWarn = `<div class="small" style="color:var(--err);margin:6px 2px 0">Permanently deletes this symptom${n ? ` and its ${n} logged ${n === 1 ? 'entry' : 'entries'}` : ''}. To keep the history, Archive instead.</div>`;
     }
   }
-  return `<div class="modal-bg" data-formaction="cancelbg"><div class="modal modal-form" role="dialog">
+  return `<div class="modal-bg ds" data-formaction="cancelbg"><div class="modal modal-form" role="dialog">
     <h2>${fmode === 'add' ? 'Add' : 'Edit'} ${spec.title}</h2>
     <div class="form-body">${body}</div>
     ${ferr ? `<div class="f-err" style="color:var(--err);font-size:13px;margin:4px 2px 0">${esc(ferr)}</div>` : ''}
@@ -3076,7 +3140,10 @@ OneDrive.setTemplateProvider(function(){ return JSON.parse(JSON.stringify(__HT_T
 // (real deployed host, or a machine that has OneDrive configured) keep OneDrive as the source — this
 // preserves normal behaviour everywhere except an unconfigured local preview, which now shows the seed file.
 const _isLocalDev = ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname);
-if (!_isLocalDev || OneDrive.isConfigured()) setActiveSource(OneDrive.oneDriveSource);
+// ?seed forces the co-located health-data.json (fake preview data) even when OneDrive
+// is configured — handy for testing UI against seed data without touching real OneDrive setup.
+const _forceSeed = new URLSearchParams(location.search).has('seed');
+if (!_forceSeed && (!_isLocalDev || OneDrive.isConfigured())) setActiveSource(OneDrive.oneDriveSource);
 
 
 
@@ -3091,8 +3158,8 @@ const statusStrip = document.getElementById('statusStrip');
 const TAB_TITLES = { today: 'Log', overview: 'Summary', records: 'Trends', timeline: 'Timeline', next: 'Visits', us: 'Us' };
 (async function boot() {
   registerSW(); wireChrome();
-  if (OneDrive.isConfigured()) { setActiveSource(OneDrive.oneDriveSource); try { await OneDrive.refreshAccount(); } catch {} setStatus('Loading from OneDrive …'); }
-  else { setStatus('Loading data …'); }
+  if (!_forceSeed && OneDrive.isConfigured()) { setActiveSource(OneDrive.oneDriveSource); try { await OneDrive.refreshAccount(); } catch {} setStatus('Loading from OneDrive …'); }
+  else { setStatus(_forceSeed ? 'Loading seed data …' : 'Loading data …'); }
   try { const { report, meta } = await loadData(); const v = report.ok ? 'Loaded ✓ — ' + meta.source + '. ' + report.warnings.length + ' note(s).' : 'Loaded with ' + report.errors.length + ' error(s).'; setStatus(v, report.ok ? 'ok' : 'err'); setTimeout(() => setStatus(null), report.ok ? 3500 : 0); }
   catch (err) { setStatus('Could not load data: ' + err.message, 'err'); }
   render();
@@ -3246,8 +3313,8 @@ function attachSymptomReorder(container) {
   });
 }
 const Us = (function () {
-  const ui = { win: '30d', nf: 'all', calOpen: false };
-  const WD = { '30d': 30, '3m': 90, '1y': 365 };
+  const ui = { win: '1w', nf: 'all', calOpen: false };
+  const WD = { '1w': 7, '30d': 30, '3m': 90 };
   let _pushTimer = null;
   function save() { DL.persistLocal(); clearTimeout(_pushTimer); _pushTimer = setTimeout(() => { DL.persist(); }, 1000); }
   function toggleCal() { ui.calOpen = !ui.calOpen; }
@@ -3255,108 +3322,176 @@ const Us = (function () {
   function fmtShort(iso, lang) { const d = new Date(iso + 'T00:00:00'); return d.toLocaleDateString(lang === 'es' ? 'es-ES' : 'en-GB', { weekday: 'short', day: 'numeric', month: 'short' }); }
   function fmtDay(iso, lang) { const d = new Date(iso + 'T00:00:00'); return d.toLocaleDateString(lang === 'es' ? 'es-ES' : 'en-GB', { weekday: 'short', day: 'numeric' }); }
   function allDays() { const ds = ((DL.getData() || {}).dailyLogs || []).map((l) => l.date).filter(Boolean).sort(); if (!ds.length) return 30; return Math.round((Date.now() - new Date(ds[0] + 'T00:00:00').getTime()) / 86400000) + 1; }
-  function curNum(date, key) { const u = DL.getUs(date, DL.getData()); return (u && typeof u[key] === 'number') ? u[key] : null; }
-  function meanRange(key, startBack, span) { const today = Today.todayISO(); let s = 0, n = 0; for (let i = startBack; i < startBack + span; i++) { const u = DL.getUs(daysAgo(today, i), DL.getData()); const v = (u && typeof u[key] === 'number') ? u[key] : null; if (v != null) { s += v; n++; } } return n ? s / n : null; }
-  function deltaPill(cur, prev, higherBetter) { if (cur == null || prev == null) return ''; const d = cur - prev; if (Math.abs(d) < 0.05) return ''; const better = higherBetter ? d > 0 : d < 0; return `<span style="color:${better ? 'var(--ok)' : 'var(--err)'}">${d > 0 ? '▲' : '▼'} ${Math.abs(d).toFixed(1)}</span>`; }
-  function spark(key, days, color) {
-    const today = Today.todayISO(); const w = 320, h = 42, pad = 4; const pts = [];
-    for (let i = days - 1; i >= 0; i--) { const u = DL.getUs(daysAgo(today, i), DL.getData()); const v = (u && typeof u[key] === 'number') ? u[key] : null; if (v == null) continue; const idx = days - 1 - i; const x = pad + (days > 1 ? idx / (days - 1) : 0) * (w - 2 * pad); const y = pad + (1 - v / 6) * (h - 2 * pad); pts.push(x.toFixed(1) + ',' + y.toFixed(1)); }
-    let inner = ''; if (pts.length) { const last = pts[pts.length - 1].split(','); inner = `<polyline points="${pts.join(' ')}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><circle cx="${last[0]}" cy="${last[1]}" r="3" fill="${color}"/>`; }
-    return `<svg class="chart us-chart" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" style="height:42px;margin-top:8px">${inner}</svg>`;
+  const CONN = { 1: 'Distant', 2: 'Off', 3: 'Okay', 4: 'Warm', 5: 'Close' };
+  const SATW = { 1: 'Not much', 2: 'Meh', 3: 'Good', 4: 'Great', 5: 'Thriving' };
+  // 5-face SVG (ordinal 1–5), pink ramp keyed to --us. Read the columns of the grid, no axis to decode.
+  const FACE = {
+    1: { c: '#e0a3b8', m: 'M13,30 Q20,23 27,30' },
+    2: { c: '#f48fb1', m: 'M13,28 Q20,25 27,28' },
+    3: { c: '#f06292', m: 'M13,27 L27,27' },
+    4: { c: '#e91e63', m: 'M13,26 Q20,31 27,26' },
+    5: { c: '#ad1457', m: 'M12,25 Q20,34 28,25' }
+  };
+  function face(level, size) {
+    const f = FACE[level]; if (!f) return `<span class="us-face-none"></span>`;
+    return `<svg viewBox="0 0 40 40" width="${size}" height="${size}"><circle cx="20" cy="20" r="18" fill="${f.c}"/><circle cx="14" cy="16" r="2" fill="#fff"/><circle cx="26" cy="16" r="2" fill="#fff"/><path d="${f.m}" stroke="#fff" stroke-width="2.4" fill="none" stroke-linecap="round"/></svg>`;
   }
-  function chips(key, cur) { let h = ''; for (let v = 0; v <= 6; v++) h += `<button type="button" class="us-chip${cur === v ? ' on' : ''}" data-${key}="${v}">${v}</button>`; return `<div class="us-chips">${h}</div>`; }
+  function isFriday(iso) { return new Date(iso + 'T00:00:00').getDay() === 5; }
+  function mondayOf(iso) { const d = new Date(iso + 'T00:00:00'); const wd = (d.getDay() + 6) % 7; d.setDate(d.getDate() - wd); return d.toLocaleDateString('en-CA'); }
   function headerHTML(state) { return `<button class="datettl" id="usDate" aria-label="Choose day"><span class="dttxt">${fmtShort(state.date, state.lang)}</span><span class="dtchev${ui.calOpen ? ' up' : ''}">▾</span></button>`; }
 
   function renderUsScreen(state) {
     const data = DL.getData(); if (!data) return '<div class="card"><p class="muted">No data loaded.</p></div>';
     const lang = state.lang, date = state.date;
     const u = DL.getUs(date, data) || {};
-    const sat = typeof u.satisfaction === 'number' ? u.satisfaction : null;
-    const fri = typeof u.friction === 'number' ? u.friction : null;
-    const qt = typeof u.qualityTime === 'boolean' ? u.qualityTime : null;
+    const wk = u.week || {};
+    const con = typeof u.connection === 'number' ? u.connection : null;
     let strip = '';
     if (ui.calOpen) { const today = Today.todayISO(); let cells = ''; for (let i = 6; i >= 0; i--) { const iso = daysAgo(today, i); cells += `<button type="button" class="us-day${iso === date ? ' sel' : ''}" data-usday="${iso}">${fmtDay(iso, lang)}</button>`; } strip = `<div class="us-strip">${cells}</div>`; }
+
+    // ---- DAILY ----
+    const faceRow = [1, 2, 3, 4, 5].map((l) => `<button type="button" class="us-lab${con === l ? ' sel' : ''}" data-uscon="${l}">${face(l, 34)}<span>${CONN[l]}</span></button>`).join('');
+    const timeRow = [['none', 'Not really'], ['quality', 'Quality time'], ['date', 'A date']].map(([v, l]) => `<button type="button" class="us-state${u.time === v ? ' sel' : ''}" data-ustime="${v}">${l}</button>`).join('');
+    const friRow = [['none', 'None'], ['little', 'A little'], ['argument', 'A real argument']].map(([v, l]) => `<button type="button" class="us-state${u.friction === v ? ' sel' : ''}" data-usfrq="${v}">${l}</button>`).join('');
+    const repBlock = (u.friction && u.friction !== 'none') ? `<div class="us-cond">
+        <p class="us-q" style="margin-bottom:9px">Where did you land?</p>
+        <div class="us-row">${[['resolved', 'Resolved &amp; happy'], ['partial', 'Partly resolved'], ['dropped', 'Dropped it for now']].map(([v, l]) => `<button type="button" class="us-state${u.repair === v ? ' sel' : ''}" data-usrep="${v}">${l}</button>`).join('')}</div>
+      </div>` : '';
     const logCard = `<div class="card">${strip}
-      <p class="us-q">How satisfied were you with your relationship today?</p>
-      ${chips('ussat', sat)}
-      <div class="us-ends"><span>Not at all</span><span>Completely</span></div>
-      <p class="us-q" style="margin-top:16px">How much friction was there between us today?</p>
-      ${chips('usfri', fri)}
-      <div class="us-ends"><span>None</span><span>Constant</span></div>
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:16px">
-        <span class="us-q" style="margin:0">Quality time together today?</span>
-        <span class="us-qt"><button type="button" class="us-tgl${qt === true ? ' on' : ''}" data-usqt="yes" aria-label="Yes">✓</button><button type="button" class="us-tgl${qt === false ? ' on' : ''}" data-usqt="no" aria-label="No">✕</button></span>
-      </div>
-      <p class="us-q" style="margin:16px 0 6px">What are you grateful for today?</p>
-      <textarea class="us-ta" data-usnote="grateful" rows="2" placeholder="Something they did, a moment together…">${esc(u.grateful || '')}</textarea>
-      <p class="us-q" style="margin:12px 0 6px">What could have been improved?</p>
-      <textarea class="us-ta" data-usnote="improve" rows="2" placeholder="A friction point, something to raise…">${esc(u.improve || '')}</textarea>
-      <div class="muted small" style="margin-top:12px">✓ Saved automatically</div>
+      <p class="us-q">How did it feel between you today?</p>
+      <div class="us-row us-faces">${faceRow}</div>
+      <p class="us-q mt16">Did you spend time together today?</p>
+      <div class="us-row">${timeRow}</div>
+      <p class="us-q mt16">Any friction today?</p>
+      <div class="us-row">${friRow}</div>
+      ${repBlock}
+      <p class="us-q mt16">Any area to improve?</p>
+      <textarea class="us-ta" data-usnote="improve" rows="2" placeholder="Something to work on together…">${esc(u.improve || '')}</textarea>
+      <p class="us-q mt16">What are you grateful for today?</p>
+      <textarea class="us-ta us-grat" data-usnote="grateful" rows="2" placeholder="Something they did, a moment together…">${esc(u.grateful || '')}</textarea>
     </div>`;
-    const dn = u.dateNight; let dnCard;
-    if (!dn) {
-      dnCard = `<div class="card" style="padding:0"><button type="button" data-usdn="on" style="all:unset;cursor:pointer;display:block;width:100%;box-sizing:border-box;padding:14px"><div class="us-dn"><span class="us-dn-ic" style="background:var(--chip)">🥂</span><div style="flex:1"><div style="font-weight:600">Date night</div><div class="muted small">None today · tap to log</div></div><span style="width:26px;height:26px;border-radius:50%;border:1.5px solid #cbd5d8;display:inline-block"></span></div></button></div>`;
-    } else {
-      const init = dn.initiator || null;
-      dnCard = `<div class="card" style="border-color:#f3cfe0;background:#fdf2f8">
-        <div class="us-dn"><span class="us-dn-ic" style="background:var(--us);color:#fff">🥂</span><div style="flex:1"><div style="font-weight:600;color:var(--us)">Date night</div><div class="small" style="color:#9d4d74">Logged for today</div></div><button type="button" data-usdn="off" style="width:26px;height:26px;border-radius:50%;border:0;background:var(--us);color:#fff;cursor:pointer">✓</button></div>
-        <div style="display:flex;align-items:center;gap:10px;margin-top:12px"><span class="small" style="color:#9d4d74">Who initiated?</span><span class="us-seg"><button type="button" class="${init === 'me' ? 'on' : ''}" data-usinit="me">Me</button><button type="button" class="${init === 'partner' ? 'on' : ''}" data-usinit="partner">Partner</button></span></div>
+
+    // ---- WEEKLY (Fridays only) ----
+    let weeklyCard = '';
+    if (isFriday(date)) {
+      const satRow = [1, 2, 3, 4, 5].map((l) => `<button type="button" class="us-plab${wk.satisfaction === l ? ' sel' : ''}" data-ussatw="${l}"><span class="n">${l}</span>${SATW[l]}</button>`).join('');
+      const apprRow = [['rarely', 'Rarely'], ['sometimes', 'Sometimes'], ['often', 'Often']].map(([v, l]) => `<button type="button" class="us-state${wk.appreciated === v ? ' sel' : ''}" data-usappr="${v}">${l}</button>`).join('');
+      weeklyCard = `<div class="card">
+        <p class="us-q">How satisfied are you with us this week?</p>
+        <div class="us-row us-plabs">${satRow}</div>
+        <p class="us-q mt16">Did you feel appreciated this week?</p>
+        <div class="us-row">${apprRow}</div>
+        <p class="us-q mt16">One thing you’d like more of?</p>
+        <textarea class="us-ta" data-usweeknote="wantMore" rows="2" placeholder="More time, more affection, a plan…">${esc(wk.wantMore || '')}</textarea>
       </div>`;
     }
+
+    // ---- TRENDS — current period vs previous equal-length period (identical logic for 1w/30d/3m/All) ----
+    const today = Today.todayISO();
     const days = ui.win === 'all' ? allDays() : (WD[ui.win] || 30);
-    const satAvg = meanRange('satisfaction', 0, days), satPrev = meanRange('satisfaction', days, days);
-    const friAvg = meanRange('friction', 0, days), friPrev = meanRange('friction', days, days);
-    const today = Today.todayISO(); let qtYes = 0, qtLogged = 0, dnCount = 0, dnMe = 0, dnPartner = 0;
-    for (let i = 0; i < days; i++) { const du = DL.getUs(daysAgo(today, i), data); if (!du) continue; if (typeof du.qualityTime === 'boolean') { qtLogged++; if (du.qualityTime) qtYes++; } if (du.dateNight && du.dateNight.had) { dnCount++; if (du.dateNight.initiator === 'me') dnMe++; else if (du.dateNight.initiator === 'partner') dnPartner++; } }
-    const winseg = `<div class="winseg">${[['30d', '30d'], ['3m', '3m'], ['1y', '1y'], ['all', 'All']].map(([k, l]) => `<button class="${ui.win === k ? 'on' : ''}" data-uswin="${k}">${l}</button>`).join('')}</div>`;
-    const trendsCard = `<div class="card">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px"><span class="us-sec">Trends</span>${winseg}</div>
-      <div style="padding:6px 0;border-bottom:1px solid var(--line)">
-        <div style="display:flex;align-items:baseline;justify-content:space-between"><span style="font-weight:600;font-size:13px">Satisfaction</span><span class="muted small">${satAvg != null ? satAvg.toFixed(1) : '—'}/6 avg ${deltaPill(satAvg, satPrev, true)}</span></div>
-        ${spark('satisfaction', days, '#0f766e')}
-      </div>
-      <div style="padding:6px 0">
-        <div style="display:flex;align-items:baseline;justify-content:space-between"><span style="font-weight:600;font-size:13px">Friction</span><span class="muted small">${friAvg != null ? friAvg.toFixed(1) : '—'}/6 avg ${deltaPill(friAvg, friPrev, false)}</span></div>
-        ${spark('friction', days, '#be185d')}
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px">
-        <div class="stat" style="text-align:left"><div class="muted small">Quality time</div><div style="font-size:20px;font-weight:700">${qtYes}<span class="muted small"> of ${qtLogged}</span></div></div>
-        <div class="stat" style="text-align:left"><div class="muted small">Date nights</div><div style="font-size:20px;font-weight:700">${dnCount}</div><div class="muted small">You ${dnMe} · partner ${dnPartner}</div></div>
-      </div>
-    </div>`;
+    const winLabel = { '1w': 'week', '30d': '30 days', '3m': '3 months' }[ui.win] || 'period';
+    const hasPrev = ui.win !== 'all'; // "All" has no prior period to compare against
+    function agg(fromBack, span) {
+      const a = { conn: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }, connLogged: 0, warm: 0, cDate: 0, cQual: 0, cNone: 0, together: 0, fNone: 0, fLittle: 0, fArg: 0, fricTotal: 0, repResolved: 0, repDropped: 0 };
+      for (let i = fromBack; i < fromBack + span; i++) { const du = DL.getUs(daysAgo(today, i), data); if (!du) continue;
+        if (typeof du.connection === 'number') { a.conn[du.connection] = (a.conn[du.connection] || 0) + 1; a.connLogged++; if (du.connection >= 4) a.warm++; }
+        if (du.time === 'date') { a.cDate++; a.together++; } else if (du.time === 'quality') { a.cQual++; a.together++; } else if (du.time === 'none') a.cNone++;
+        if (du.friction === 'none') a.fNone++; else if (du.friction === 'little') a.fLittle++; else if (du.friction === 'argument') a.fArg++;
+        if (du.friction && du.friction !== 'none') { a.fricTotal++; if (du.repair === 'resolved') a.repResolved++; if (du.repair === 'dropped') a.repDropped++; }
+      }
+      return a;
+    }
+    const cur = agg(0, days), prev = hasPrev ? agg(days, days) : null;
+    // compact whole-number delta vs previous period; colour by whether the change is an improvement
+    const delta = (c, p, higherBetter) => { if (!hasPrev || p == null) return ''; const d = c - p; if (d === 0) return ` <span class="muted">· ±0 vs ${p}</span>`; const better = higherBetter ? d > 0 : d < 0; return ` <span style="color:${better ? 'var(--ok)' : 'var(--err)'};font-weight:700">${d > 0 ? '▲' : '▼'}${Math.abs(d)}</span> <span class="muted">vs ${p} last ${winLabel}</span>`; };
+    const ptsDelta = (c, p, higherBetter) => { if (!hasPrev || p == null) return ''; const d = c - p; if (d === 0) return ` <span class="muted">· ±0</span>`; const better = higherBetter ? d > 0 : d < 0; return ` <span style="color:${better ? 'var(--ok)' : 'var(--err)'};font-weight:700">${d > 0 ? '▲' : '▼'}${Math.abs(d)}pts</span> <span class="muted">vs ${p}%</span>`; };
+    const winseg = `<div class="winseg">${[['1w', '1w'], ['30d', '30d'], ['3m', '3m'], ['all', 'All']].map(([k, l]) => `<button class="${ui.win === k ? 'on' : ''}" data-uswin="${k}">${l}</button>`).join('')}</div>`;
+
+    // Connection: warm-days headline number + this-vs-previous distribution bars
+    const CFACE = { 1: '#e0a3b8', 2: '#f48fb1', 3: '#f06292', 4: '#e91e63', 5: '#ad1457' };
+    const distBar = (a) => { if (!a.connLogged) return '<div class="us-bar us-distbar"><div style="width:100%;background:#f1eef0;color:#9aa3b2">no data</div></div>'; let seg = ''; for (let l = 1; l <= 5; l++) { const n = a.conn[l]; if (!n) continue; seg += `<div style="width:${(n / a.connLogged * 100).toFixed(2)}%;background:${CFACE[l]}"></div>`; } return `<div class="us-bar us-distbar">${seg}</div>`; };
+    const connLegend = `<div class="us-distlegend">${[1, 2, 3, 4, 5].map((l) => `<span><i style="background:${CFACE[l]}"></i>${CONN[l]}</span>`).join('')}</div>`;
+    const connCard = (cur.connLogged || (prev && prev.connLogged)) ? `<div class="metric"><div class="mtop"><span class="mname">Connection</span></div>
+      <div class="us-cmp-head"><span class="big">${cur.warm}</span><span class="lab">warm ${cur.warm === 1 ? 'day' : 'days'}${delta(cur.warm, prev && prev.warm, true)}</span></div>
+      <div class="us-cmp"><span class="us-cmp-lab">This ${winLabel}</span>${distBar(cur)}</div>
+      ${hasPrev ? `<div class="us-cmp"><span class="us-cmp-lab">Prev ${winLabel}</span>${distBar(prev)}</div>` : ''}
+      ${connLegend}</div>` : `<div class="metric"><div class="mtop"><span class="mname">Connection</span></div><p class="muted small" style="margin:0">No check-ins yet.</p></div>`;
+
+    // Friction & repair
+    const fTot = cur.fNone + cur.fLittle + cur.fArg;
+    const fpct = (n) => fTot ? Math.round(n / fTot * 100) : 0;
+    const repairRate = cur.fricTotal ? Math.round(cur.repResolved / cur.fricTotal * 100) : null;
+    const repairPrev = (prev && prev.fricTotal) ? Math.round(prev.repResolved / prev.fricTotal * 100) : null;
+    const fricBar = fTot ? `<div class="us-bar">
+        ${cur.fNone ? `<div style="width:${fpct(cur.fNone)}%;background:#e6d7de;color:#7a6b73">${cur.fNone} calm</div>` : ''}
+        ${cur.fLittle ? `<div style="width:${fpct(cur.fLittle)}%;background:var(--us)">${cur.fLittle} little</div>` : ''}
+        ${cur.fArg ? `<div style="width:${fpct(cur.fArg)}%;background:#9d174d">${cur.fArg} big</div>` : ''}
+      </div>` : '<p class="muted small" style="margin:0">No days logged.</p>';
+    const repairLine = cur.fricTotal ? `<div class="us-cmp-sub"><span style="color:var(--us);font-weight:700">${repairRate}% repaired</span>${ptsDelta(repairRate, repairPrev, true)}${cur.repDropped ? ` · ${cur.repDropped} dropped` : ''}</div>` : '';
+    const fricCard = `<div class="metric"><div class="mtop"><span class="mname">Friction &amp; repair</span><span class="msub">${cur.fricTotal} friction ${cur.fricTotal === 1 ? 'day' : 'days'}${delta(cur.fricTotal, prev && prev.fricTotal, false)}</span></div>${fricBar}${repairLine}</div>`;
+
+    // Time together
+    const timeCard = `<div class="metric"><div class="mtop"><span class="mname">Time together</span><span class="msub">${cur.together} together ${cur.together === 1 ? 'day' : 'days'}${delta(cur.together, prev && prev.together, true)}</span></div>
+      <div class="us-counts">
+        <div class="us-count"><div class="big">${cur.cDate}</div><div class="cl">dates</div></div>
+        <div class="us-count"><div class="big">${cur.cQual}</div><div class="cl">quality days</div></div>
+        <div class="us-count"><div class="big">${cur.cNone}</div><div class="cl">neither</div></div>
+      </div></div>`;
+
+    // Weekly satisfaction (Fridays in the window) + vs-previous mean
+    let wkPills = ''; for (let i = days - 1; i >= 0; i--) { const iso = daysAgo(today, i); if (!isFriday(iso)) continue; const du = DL.getUs(iso, data); const s = du && du.week && typeof du.week.satisfaction === 'number' ? du.week.satisfaction : null; wkPills += `<div class="us-wkpill${s ? '' : ' empty'}" title="${fmtDay(iso, lang)}">${s || '·'}</div>`; }
+    const satMean = (fromBack, span) => { let s = 0, n = 0; for (let i = fromBack; i < fromBack + span; i++) { const iso = daysAgo(today, i); if (!isFriday(iso)) continue; const du = DL.getUs(iso, data); const v = du && du.week && typeof du.week.satisfaction === 'number' ? du.week.satisfaction : null; if (v != null) { s += v; n++; } } return n ? s / n : null; };
+    const satCur = satMean(0, days), satPrev = hasPrev ? satMean(days, days) : null;
+    let satDelta = '1–5, Fridays'; if (satCur != null && satPrev != null) { const dd = satCur - satPrev; satDelta = Math.abs(dd) < 0.05 ? `<span class="muted">±0 vs last ${winLabel}</span>` : `<span style="color:${dd > 0 ? 'var(--ok)' : 'var(--err)'};font-weight:700">${dd > 0 ? '▲' : '▼'} ${Math.abs(dd).toFixed(1)}</span> <span class="muted">vs last ${winLabel}</span>`; }
+    const weeklyTrend = wkPills ? `<div class="metric"><div class="mtop"><span class="mname">Weekly satisfaction</span><span class="msub">${satDelta}</span></div><div class="us-wkpills">${wkPills}</div></div>` : '';
+
+    // Balance — warm days vs friction days, with warm-share delta
+    const warmDays = cur.warm, fricDays = cur.fricTotal, balTot = warmDays + fricDays;
+    let balDelta = '';
+    if (hasPrev && prev && balTot) { const pTot = prev.warm + prev.fricTotal; if (pTot) { const dd = Math.round(warmDays / balTot * 100) - Math.round(prev.warm / pTot * 100); balDelta = dd === 0 ? ` <span class="muted">· ±0</span>` : ` <span style="color:${dd > 0 ? 'var(--ok)' : 'var(--err)'};font-weight:700">${dd > 0 ? '▲' : '▼'}${Math.abs(dd)}pts</span>`; } }
+    const balCard = balTot ? `<div class="metric us-metric-hi"><div class="mtop"><span class="mname">Balance</span><span class="msub">${Math.round(warmDays / balTot * 100)}% warm${balDelta}</span></div>
+      <div class="us-bar"><div style="width:${Math.round(warmDays / balTot * 100)}%;background:var(--us)">${warmDays} warm</div><div style="width:${Math.round(fricDays / balTot * 100)}%;background:#d7b8c6;color:#6b5560">${fricDays} friction</div></div></div>` : '';
+
+    const trendsCard = `<div class="card">${connCard}${fricCard}${timeCard}${weeklyTrend}${balCard}</div>`;
+
+    // ---- GRATITUDE FEED + NOTES ----
     const cutoff = ui.win === 'all' ? '0000-00-00' : daysAgo(today, days - 1);
     const rows = [];
     ((data.dailyLogs || []).slice().sort((a, b) => (a.date < b.date ? 1 : -1))).forEach((l) => {
       if (!l.us || l.date < cutoff) return; const g = l.us.grateful, im = l.us.improve; if (!g && !im) return;
       if (ui.nf === 'grateful' && !g) return; if (ui.nf === 'improve' && !im) return;
-      let inner = `<div style="margin-bottom:5px"><span class="us-date">${fmtDay(l.date, lang)}</span></div>`;
+      let inner = `<div style="margin-bottom:5px"><span class="badge us">${fmtDay(l.date, lang)}</span></div>`;
       if (g && ui.nf !== 'improve') inner += `<div class="small" style="display:flex;gap:6px;margin:3px 0"><span style="color:var(--us)">♥</span><span>${esc(g)}</span></div>`;
-      if (im && ui.nf !== 'grateful') inner += `<div class="small" style="display:flex;gap:6px;margin:3px 0;color:var(--muted)"><span>→</span><span>${esc(im)}</span></div>`;
+      if (im && ui.nf !== 'grateful') inner += `<div class="small" style="display:flex;gap:6px;margin:3px 0;color:var(--muted)"><span style="color:#d99000">⚡</span><span>${esc(im)}</span></div>`;
       rows.push(`<div class="us-note">${inner}</div>`);
     });
     const nfSeg = `<div class="us-seg">${[['all', 'All'], ['grateful', 'Grateful'], ['improve', 'Improve']].map(([k, l]) => `<button type="button" class="${ui.nf === k ? 'on' : ''}" data-usnf="${k}">${l}</button>`).join('')}</div>`;
-    const notesCard = `<div class="card">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><span class="us-sec">Notes</span>${nfSeg}</div>
-      ${rows.length ? rows.join('') : '<p class="muted small" style="margin:0">No notes in this window yet.</p>'}
-    </div>`;
-    return `<div class="ds">${logCard}${dnCard}${trendsCard}${notesCard}</div>`;
+    const notesCard = `<div class="card">${rows.length ? rows.join('') : '<p class="muted small" style="margin:0">No notes in this window yet.</p>'}</div>`;
+
+    const grpHead = (title, ctrl) => `<div class="trendgrp-h"><span class="gbar"></span><span class="gtxt">${title}</span><span class="grule"></span>${ctrl || ''}</div>`;
+    return `<div class="ds">${grpHead('Daily check-in')}${logCard}${weeklyCard ? grpHead('Weekly check-in') + weeklyCard : ''}${grpHead('Trends', winseg)}${trendsCard}${grpHead('Gratitude &amp; notes', nfSeg)}${notesCard}</div>`;
   }
 
   function onClick(e, state, rerender) {
     const t = e.target.closest('button'); if (!t) return;
-    document.querySelectorAll('.us-ta').forEach((el) => DL.setUsField(state.date, el.dataset.usnote, el.value));
+    // flush any open textareas before a re-render loses them
+    document.querySelectorAll('.us-ta').forEach((el) => { if (el.dataset.usnote) DL.setUsField(state.date, el.dataset.usnote, el.value); else if (el.dataset.usweeknote) DL.setUsWeek(state.date, el.dataset.usweeknote, el.value); });
+    const cur = (k) => { const cu = DL.getUs(state.date, DL.getData()); return cu ? cu[k] : null; };
+    const curW = (k) => { const cu = DL.getUs(state.date, DL.getData()); return (cu && cu.week) ? cu.week[k] : null; };
     if (t.dataset.usday) { state.date = t.dataset.usday; ui.calOpen = false; rerender(); return; }
-    if (t.dataset.ussat != null) { const v = Number(t.dataset.ussat); DL.setUsField(state.date, 'satisfaction', curNum(state.date, 'satisfaction') === v ? null : v); save(); rerender(); return; }
-    if (t.dataset.usfri != null) { const v = Number(t.dataset.usfri); DL.setUsField(state.date, 'friction', curNum(state.date, 'friction') === v ? null : v); save(); rerender(); return; }
-    if (t.dataset.usqt) { const want = t.dataset.usqt === 'yes'; const cu = DL.getUs(state.date, DL.getData()); const cur = (cu && typeof cu.qualityTime === 'boolean') ? cu.qualityTime : null; DL.setUsField(state.date, 'qualityTime', cur === want ? null : want); save(); rerender(); return; }
-    if (t.dataset.usdn) { DL.setUsDateNight(state.date, t.dataset.usdn === 'on'); save(); rerender(); return; }
-    if (t.dataset.usinit) { DL.setUsDateNight(state.date, true, t.dataset.usinit); save(); rerender(); return; }
+    if (t.dataset.uscon != null) { const v = Number(t.dataset.uscon); DL.setUsField(state.date, 'connection', cur('connection') === v ? null : v); save(); rerender(); return; }
+    if (t.dataset.ustime) { DL.setUsField(state.date, 'time', cur('time') === t.dataset.ustime ? null : t.dataset.ustime); save(); rerender(); return; }
+    if (t.dataset.usfrq) { const v = t.dataset.usfrq; const nv = cur('friction') === v ? null : v; DL.setUsField(state.date, 'friction', nv); if (nv == null || nv === 'none') DL.setUsField(state.date, 'repair', null); save(); rerender(); return; }
+    if (t.dataset.usrep) { DL.setUsField(state.date, 'repair', cur('repair') === t.dataset.usrep ? null : t.dataset.usrep); save(); rerender(); return; }
+    if (t.dataset.ussatw != null) { const v = Number(t.dataset.ussatw); DL.setUsWeek(state.date, 'satisfaction', curW('satisfaction') === v ? null : v); save(); rerender(); return; }
+    if (t.dataset.usappr) { DL.setUsWeek(state.date, 'appreciated', curW('appreciated') === t.dataset.usappr ? null : t.dataset.usappr); save(); rerender(); return; }
     if (t.dataset.uswin) { ui.win = t.dataset.uswin; rerender(); return; }
     if (t.dataset.usnf) { ui.nf = t.dataset.usnf; rerender(); return; }
   }
   function onInput(e, state, rerender) {
     if (!e.target.classList || !e.target.classList.contains('us-ta')) return;
-    DL.setUsField(state.date, e.target.dataset.usnote, e.target.value);
+    if (e.target.dataset.usnote) DL.setUsField(state.date, e.target.dataset.usnote, e.target.value);
+    else if (e.target.dataset.usweeknote) DL.setUsWeek(state.date, e.target.dataset.usweeknote, e.target.value);
     e.target.style.height = 'auto'; e.target.style.height = e.target.scrollHeight + 'px';
     DL.persistLocal(); clearTimeout(_pushTimer); _pushTimer = setTimeout(() => DL.persist({ silent: true }), 600);
   }
@@ -3372,7 +3507,10 @@ function render() {
   if (!showUs && state.tab === 'us') state.tab = 'today';
   const usTab = document.getElementById('tabUs'); if (usTab) usTab.hidden = !showUs;
   const tabbarEl = document.querySelector('.tabbar'); if (tabbarEl) tabbarEl.classList.toggle('us-on', showUs);
-  document.body.classList.toggle('tab-us', !state.showData && state.tab === 'us');
+  const isUs = !state.showData && state.tab === 'us';
+  document.body.classList.toggle('tab-us', isUs);
+  const themeMeta = document.querySelector('meta[name="theme-color"]');
+  if (themeMeta) themeMeta.setAttribute('content', isUs ? '#be185d' : '#0f766e');
   let content;
   try {
     if (state.showData) { titleEl.textContent = 'Data'; content = renderDataScreen(); }
@@ -3401,18 +3539,18 @@ function render() {
 }
 function renderDataScreen() {
   const data = getData(); const meta = getLoadMeta();
-  if (!data) return odPanel() + '<div class="card"><p class="muted">No data loaded.</p></div>';
+  if (!data) return '<div class="ds">' + odPanel() + '<div class="card"><p class="muted">No data loaded.</p></div></div>';
   const pr = parseReport(); const v = meta?.validation || { ok: true, errors: [], warnings: [] }; const lang = state.lang;
   const statsHtml = COLLECTIONS.map((c) => '<div class="stat"><div class="n">' + pr.counts[c] + '</div><div class="k">' + c + '</div></div>').join('');
-  const verdict = v.ok ? '<span class="badge ok">SCHEMA OK</span>' : '<span class="badge err">' + v.errors.length + ' ERRORS</span>';
+  const verdict = v.ok ? '<span class="badge good">SCHEMA OK</span>' : '<span class="badge alert">' + v.errors.length + ' ERRORS</span>';
   const errHtml = v.errors.length ? '<details class="msgs" open><summary>' + v.errors.length + ' error(s)</summary><ul class="msglist">' + v.errors.map((e) => '<li>✗ ' + esc(e) + '</li>').join('') + '</ul></details>' : '';
   const warnHtml = v.warnings.length ? '<details class="msgs"><summary>' + v.warnings.length + ' note(s)</summary><ul class="msglist">' + v.warnings.map((w) => '<li>! ' + esc(w) + '</li>').join('') + '</ul></details>' : '';
   const curK = (data.meta && data.meta.burdenBands && typeof data.meta.burdenBands.k === 'number') ? data.meta.burdenBands.k : 2;
   const curVH = (data.meta && data.meta.burdenBands && typeof data.meta.burdenBands.vhCount === 'number') ? data.meta.burdenBands.vhCount : 2;
   const curT = (data.meta && data.meta.burdenBands && typeof data.meta.burdenBands.t === 'number') ? data.meta.burdenBands.t : 1;
-  const rn = (n) => '<span style="color:#8a97a3;font-size:12px">(' + n + ')</span>';
+  const rn = (n) => '<span style="color:var(--muted);font-size:12px">(' + n + ')</span>';
   const bInput = (id, min, val) => '<input type="number" id="' + id + '" min="' + min + '" step="1" value="' + val + '" style="width:46px;display:inline-block;text-align:center;vertical-align:baseline;margin:0 2px">';
-  return odPanel() +
+  return '<div class="ds">' + odPanel() +
     '<div class="card"><h2>Display options</h2>' +
     '<div class="f f-row"><label><input type="checkbox" id="prefEnglishOnly"' + (getPref('englishOnly') ? ' checked' : '') + '> English only (hide EN/ES switch)</label></div>' +
     '<div class="f f-row"><label><input type="checkbox" id="prefTrackEpisodes"' + (getPref('trackEpisodes') ? ' checked' : '') + '> Enable episode tracking</label></div>' +
@@ -3422,20 +3560,21 @@ function renderDataScreen() {
     '<div class="card"><h2>Burden scale</h2>' +
     '<p class="muted small" style="margin:0 0 12px">How each day’s level is set from your symptom ratings. The boxes are yours to adjust.</p>' +
     '<div style="display:flex;flex-direction:column;gap:11px;font-size:15px;line-height:1.6">' +
-      '<div style="display:flex;gap:10px"><span style="flex:0 0 12px;height:12px;border-radius:3px;background:#fde047;margin-top:5px"></span>' +
+      '<div style="display:flex;gap:10px"><span style="flex:0 0 12px;height:12px;border-radius:3px;background:var(--sev-1);margin-top:5px"></span>' +
         '<span><b>Light</b> — symptoms only noticeable ' + rn(1) + ', or up to ' + bInput('burdenT', 0, curT) + ' distracting ' + rn(2) + '</span></div>' +
-      '<div style="display:flex;gap:10px"><span style="flex:0 0 12px;height:12px;border-radius:3px;background:#f59e0b;margin-top:5px"></span>' +
+      '<div style="display:flex;gap:10px"><span style="flex:0 0 12px;height:12px;border-radius:3px;background:var(--sev-2);margin-top:5px"></span>' +
         '<span><b>Typical</b> — ' + bInput('burdenTt', 1, curT + 1) + ' or more distracting ' + rn(2) + ', or one interfering ' + rn(3) + ' on its own</span></div>' +
-      '<div style="display:flex;gap:10px"><span style="flex:0 0 12px;height:12px;border-radius:3px;background:#f97316;margin-top:5px"></span>' +
+      '<div style="display:flex;gap:10px"><span style="flex:0 0 12px;height:12px;border-radius:3px;background:var(--sev-3);margin-top:5px"></span>' +
         '<span><b>Difficult</b> — one interfering ' + rn(3) + ' with ' + bInput('burdenK', 1, curK) + ' others distracting ' + rn(2) + ', two interfering ' + rn(3) + ', or one that prevents activity ' + rn(4) + '</span></div>' +
-      '<div style="display:flex;gap:10px"><span style="flex:0 0 12px;height:12px;border-radius:3px;background:#b91c1c;margin-top:5px"></span>' +
+      '<div style="display:flex;gap:10px"><span style="flex:0 0 12px;height:12px;border-radius:3px;background:var(--sev-4);margin-top:5px"></span>' +
         '<span><b>Severe</b> — ' + bInput('burdenVH', 2, curVH) + ' or more interfering ' + rn(3) + ' or worse, at once</span></div>' +
     '</div>' +
     '</div>' +
     '<div class="card"><h2>Parse report ' + verdict + '</h2>' +
     '<div class="kv"><span class="k">Source</span><span class="v">' + esc(pr.source || '') + '</span></div>' +
     errHtml + warnHtml + '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;"><button id="exportBtn" class="btn">⤓ Export data</button><label class="btn ghost" style="cursor:pointer">⤒ Import data<input id="importFile" type="file" accept=".json,application/json" hidden></label><button id="resetSeedBtn" class="btn ghost">↺ Reset to seed</button></div><p class="muted small" style="margin-top:8px">Export saves everything to a <b>health-data.json</b> file you can keep or send to lock in your work. Import loads one back.</p></div>' +
-    '<div class="card"><h2>Records parsed</h2><div class="grid">' + statsHtml + '</div></div>';
+    '<div class="card"><h2>Records parsed</h2><div class="grid">' + statsHtml + '</div></div>' +
+    '</div>';
 }
 function odPanel() {
   const configured = OneDrive.isConfigured();
