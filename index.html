@@ -244,6 +244,24 @@ ul.tight { margin: 4px 0 0; padding-left: 18px; } ul.tight li { padding: 1px 0; 
 .ds .addmini{border:0;width:28px;height:28px;border-radius:50%;background:var(--teal-tint);color:var(--teal-d);font-size:18px;font-weight:700;line-height:1;cursor:pointer;}
 .ds .infobtn{border:0;width:20px;height:20px;padding:0;border-radius:50%;background:var(--teal-tint);color:var(--teal-d);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;flex:none;}
 .ds .card-h .hgrp h2{margin:0;}
+/* Headline card — three stat boxes each with an info button + inline change pill */
+.ds .hl-row{display:flex;gap:8px;}
+.ds .hl-box{flex:1;position:relative;padding-top:12px;}
+.ds .hl-box .k{padding:0 16px;}
+.ds .hl-box .hl-val{display:flex;align-items:baseline;justify-content:center;gap:5px;flex-wrap:wrap;margin-top:4px;}
+.ds .hl-box .hl-unit{font-size:12px;color:var(--muted);font-weight:600;}
+.ds .hl-box .infobtn{position:absolute;top:6px;right:6px;background:transparent;color:var(--muted);z-index:1;}
+/* Tap-to-expand: whole box is a target; ⓘ stays a separate hit for the definition modal */
+.ds .hl-box{cursor:pointer;border-radius:10px;transition:background .12s;}
+.ds .hl-box:hover{background:#f7fafb;}
+.ds .hl-box.hl-sel{background:var(--teal-tint);box-shadow:inset 0 0 0 1.5px var(--teal);}
+.ds .hl-caret{display:block;text-align:center;color:var(--teal);font-size:9px;line-height:1;margin-top:5px;opacity:0;transition:opacity .12s,transform .15s;}
+.ds .hl-box:hover .hl-caret{opacity:.45;}
+.ds .hl-box.hl-sel .hl-caret{opacity:1;transform:rotate(180deg);}
+.ds .hl-trend{margin-top:12px;padding-top:12px;border-top:1px solid var(--line);animation:hlfade .2s ease;}
+.ds .hl-trend-h{font-size:13px;font-weight:700;margin-bottom:4px;}
+.ds .hl-trend-h .muted{font-weight:500;}
+@keyframes hlfade{from{opacity:0;transform:translateY(-4px);}to{opacity:1;transform:none;}}
 .modal.sym-info{max-width:360px;}
 .sym-info-top{display:flex;justify-content:flex-end;margin:-6px -6px 0 0;}
 .sym-info-x{border:0;background:transparent;color:var(--muted);font-size:18px;line-height:1;cursor:pointer;padding:4px 6px;}
@@ -278,7 +296,15 @@ ul.tight { margin: 4px 0 0; padding-left: 18px; } ul.tight li { padding: 1px 0; 
 .ds .winseg button{border:0;background:transparent;color:var(--muted);font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px;cursor:pointer;}
 .ds .winseg button.on{background:var(--card);color:var(--teal-d);box-shadow:0 1px 2px rgba(0,0,0,.12);}
 .ds .trendbar{position:sticky;top:var(--topbar-h,56px);z-index:9;background:var(--bg);padding:8px 0 10px;margin:0 0 2px;border-bottom:1px solid var(--line);}
-.ds .trendgrp-h{display:flex;align-items:center;gap:9px;margin:26px 2px 12px;}
+.ds .dstrip-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid #f4f6f7;}
+.dstrip-row:first-of-type{border-top:0;}
+.dstrip-nm{flex:0 0 96px;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.dstrip{flex:1;display:flex;gap:1px;height:18px;min-width:60px;}
+.dstrip i{flex:1;min-width:0;border-radius:2px;}
+.dstrip-pk{flex:0 0 auto;font-size:12px;color:var(--muted);white-space:nowrap;}
+.dstrip-pk b{color:var(--ink);font-weight:700;}
+.dstrip-lg{margin-top:12px;}
+.trendgrp-h{display:flex;align-items:center;gap:9px;margin:26px 2px 12px;}
 .ds .trendgrp-h .gbar{width:4px;height:17px;background:var(--teal);border-radius:2px;flex:none;}
 .ds .trendgrp-h .gtxt{font-size:13px;font-weight:700;letter-spacing:.02em;text-transform:uppercase;color:var(--ink);}
 .ds .trendgrp-h .grule{flex:1;height:1px;background:var(--line);}
@@ -404,9 +430,10 @@ ul.tight { margin: 4px 0 0; padding-left: 18px; } ul.tight li { padding: 1px 0; 
 .ds .bars .b{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;height:100%;justify-content:flex-end;}
 .ds .bars .b .bar{width:100%;max-width:24px;border-radius:5px 5px 0 0;background:var(--teal);}
 .ds .epstats{display:flex;gap:10px;}
-.ds .epstats .epstat{flex:1;min-width:0;background:var(--chip);border-radius:10px;padding:10px 12px;}
-.ds .epstats .epv{font-size:20px;font-weight:800;line-height:1.1;color:var(--ink);}
-.ds .epstats .epl{font-size:10px;color:var(--muted);margin-top:3px;line-height:1.25;}
+.ds .epstats .epstat{flex:1;min-width:0;background:var(--chip);border-radius:var(--r-md);padding:11px 12px;}
+.ds .epstats .epv{font-size:22px;font-weight:700;line-height:1.1;color:var(--teal-d);}
+.ds .epstats .epsuf{font-size:13px;font-weight:600;color:var(--muted);margin-left:5px;}
+.ds .epstats .epl{font-size:11px;color:var(--muted);margin-top:2px;line-height:1.25;}
 .ds .bars .b .bl{font-size:9px;color:var(--muted);font-weight:600;} .ds .bars .b .bv{font-size:10px;font-weight:700;}
 .ds .mini{width:100%;height:54px;display:block;}
 .ds .linkbtn{background:none;border:0;color:var(--teal);font:inherit;font-size:13px;cursor:pointer;text-decoration:underline;}
@@ -1167,13 +1194,8 @@ function symRow(state, symId, locId, label) {
 function agoLabel(n, lang) { return lang === 'es' ? (n === 1 ? 'hace 1 día' : 'hace ' + n + ' días') : (n === 1 ? '1 day ago' : n + ' days ago'); }
 function daysBetween(aISO, bISO) { const a = new Date(aISO + 'T00:00:00Z'); const b = new Date(bISO + 'T00:00:00Z'); return Math.round((b - a) / 86400000); }
 
-// Breadth dial: how many OTHER symptoms at 2+ let a single 3 count as "difficult". Per-person, stored in meta; default 2.
-function burdenK(data) { const k = data && data.meta && data.meta.burdenBands && data.meta.burdenBands.k; return (typeof k === 'number' && k >= 1) ? k : 2; }
-// "Severe" dial: how many symptoms at 3+ make a day severe. Per-person, stored in meta; default 2. (User-facing band names are difficult/severe; code keeps the short k/vh dial keys.)
-function burdenVH(data) { const v = data && data.meta && data.meta.burdenBands && data.meta.burdenBands.vhCount; return (typeof v === 'number' && v >= 2) ? v : 2; }
-// Light dial (added 10 Jul 2026): how many symptoms at 2 (distracting) a day can have and still count as light. Per-person, stored in meta; default 1 (a lone distracting stays light). More than this → typical.
-function burdenT(data) { const t = data && data.meta && data.meta.burdenBands && data.meta.burdenBands.t; return (typeof t === 'number' && t >= 0) ? t : 1; }
-// Intensity list feeding the day band. Single symptoms contribute their one severity; LOCATED symptoms (joint pain, nerve sensations) contribute EACH affected region separately (changed 10 Jul 2026 — was worst-site only), so breadth reflects multi-site involvement: a widespread joint flare can reach difficult/severe on its own, matching how joint count signals disease activity. null if nothing logged.
+// Intensity list for a day. Single symptoms contribute their one severity; LOCATED symptoms (joint pain, nerve
+// sensations) contribute EACH affected region separately, so breadth reflects multi-site involvement. null if nothing logged.
 function dayIntensities(iso, types, data) {
   const l = DL.getDailyLog(iso, data);
   if (!l || !(l.symptoms || []).some((r) => typeof r.severity === 'number')) return null;
@@ -1185,25 +1207,8 @@ function dayIntensities(iso, types, data) {
   });
   return out;
 }
-// Day band from PEAK intensity + breadth (design rule, 9 Jul 2026 — replaces the old sum-based bands):
-// 0 clear · 1 light (only 1s, or a lone 2) · 2 typical (2+ symptoms at 2, or a lone 3 without breadth) · 3 difficult (a single 3 with k+ others at 2, two-plus 3s below the severe line, or any single 4) · 4 severe (vh+ symptoms at 3+). k and vh are per-person dials. Band names match the calendar legend + Data-tab settings (difficult/severe). NB "symptoms" here = intensity entries from dayIntensities, where located symptoms (joint pain, nerve) count EACH affected region — so multiple severe joints add to breadth.
-function dayBandIdx(iso, types, data) {
-  const ints = dayIntensities(iso, types, data);
-  if (!ints || !ints.length) return -1;
-  const peak = Math.max(...ints);
-  if (peak <= 0) return 0;
-  if (peak <= 1) return 1;
-  const n3 = ints.filter((v) => v >= 3).length;
-  const o2 = ints.filter((v) => v === 2).length;
-  const k = burdenK(data);
-  const vh = burdenVH(data);
-  const t = burdenT(data);
-  if (n3 >= vh) return 4;                     // severe: enough symptoms at 3+
-  if (n3 >= 2) return 3;                      // difficult: two-plus 3s, but below the severe line
-  if (peak >= 4) return 3;                    // difficult: one symptom that prevents activity (4)
-  if (peak === 3) return o2 >= k ? 3 : 2;     // single 3: difficult with breadth, else typical
-  return o2 > t ? 2 : 1;                       // peak 2: typical if more than t at a 2, else light (t = distracting allowed while still light)
-}
+// Day peak = the worst symptom that day on the 0–4 scale (the one scale used everywhere). -1 if nothing logged.
+function dayPeak(iso, types, data) { const ii = dayIntensities(iso, types, data); return ii ? (ii.length ? Math.max(...ii) : 0) : -1; }
 const CAL_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z"/><path d="M16 3v4"/><path d="M8 3v4"/><path d="M4 11h16"/></svg>';
 const NOTE_SVG = '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4h8a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-8a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2z"/><path d="M9 9h6"/><path d="M9 13h6"/><path d="M9 17h4"/></svg>';
 const CHECK_SVG = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5l9 -11"/></svg>';
@@ -1222,7 +1227,7 @@ function monthCal(state, data, types) {
   for (let d = 1; d <= daysIn; d++) {
     const iso = `${monthIso}-${String(d).padStart(2, '0')}`;
     const fut = iso > tISO;
-    const bi = fut ? -1 : dayBandIdx(iso, types, data);
+    const bi = fut ? -1 : dayPeak(iso, types, data);
     const cls = bi >= 0 ? ` calb${bi}` : '';
     // Burden stays as the cell fill; a folded top-right corner (diagonal cut, white, matching the tile
     // radius) carries that day's mood face when mood tracking is on and a mood was logged. The white fold
@@ -1233,7 +1238,7 @@ function monthCal(state, data, types) {
   }
   const canNext = monthIso < tISO.slice(0, 7);
   const lg = (cls, txt) => `<span><span class="lgsw ${cls}"></span>${txt}</span>`;
-  const legend = `<div class="callegend">${lg('calb1', lang === 'es' ? 'leve' : 'light')}${lg('calb2', lang === 'es' ? 'típico' : 'typical')}${lg('calb3', lang === 'es' ? 'difícil' : 'difficult')}${lg('calb4', lang === 'es' ? 'grave' : 'severe')}</div>`;
+  const legend = `<div class="callegend">${lg('calb1', lang === 'es' ? 'perceptible' : 'noticeable')}${lg('calb2', lang === 'es' ? 'molesto' : 'distracting')}${lg('calb3', lang === 'es' ? 'interfiere' : 'interferes')}${lg('calb4', lang === 'es' ? 'impide' : 'prevents')}</div>`;
   const note = `<div class="calnote">${lang === 'es' ? 'Toca un día para abrirlo.' : 'Tap a day to open it.'}</div>`;
   // Month notes list — shown only under the month calendar. Chronological, newest first,
   // scoped to the displayed month; taps open that day (data-day). Log view is English-only,
@@ -1248,7 +1253,7 @@ function monthCal(state, data, types) {
       const st = (data.symptomTypes || []).find((s) => s.id === r.symptomId);
       let tag = st ? tx(st.name, lang) : (r.symptomId || '');
       if (r.locationId && st && Array.isArray(st.locations)) { const loc = st.locations.find((x) => x.id === r.locationId); if (loc) tag += ' · ' + tx(loc.name, lang); }
-      mNotes.push({ date: l.date, tag, text: String(r.note), col: noteBandCols[Math.max(0, dayBandIdx(l.date, types, data))] });
+      mNotes.push({ date: l.date, tag, text: String(r.note), col: noteBandCols[Math.max(0, dayPeak(l.date, types, data))] });
     });
   });
   (data.episodes || []).forEach((e) => {
@@ -1340,8 +1345,8 @@ function renderToday(state) {
   const symEditing = ui.editPick === 'symptomTypes';
   const symPick = (data.symptomTypes || []).map((s) => `<div class="pickrow-wrap" data-symid="${s.id}"><span class="drag-grip" aria-hidden="true" title="${lang === 'es' ? 'Arrastra para reordenar' : 'Drag to reorder'}">⠿</span><button class="pickrow" data-edit="symptomTypes:${s.id}">${esc(tx(s.name, lang))}${s.archived ? ` <span class="muted small">(${lang === 'en' ? 'archived' : 'archivado'})</span>` : ''}</button></div>`).join('');
   const symEditBtns = `<button class="addmini" data-editpick="symptomTypes" aria-label="${lang === 'es' ? 'Editar' : 'Edit'}">${symEditing ? '✕' : '✎'}</button><button class="addmini" data-add="symptomTypes" aria-label="${lang === 'en' ? 'Add symptom' : 'Añadir síntoma'}">＋</button>`;
-  const bBand = dayBandIdx(date, types, data);
-  const bWords = lang === 'es' ? ['sin síntomas', 'leve', 'típico', 'difícil', 'grave'] : ['clear', 'light', 'typical', 'difficult', 'severe'];
+  const bBand = dayPeak(date, types, data);
+  const bWords = lang === 'es' ? ['ninguno', 'perceptible', 'molesto', 'interfiere', 'impide'] : ['none', 'noticeable', 'distracting', 'interferes', 'prevents'];
   const bCols = ['#94a3b8', '#fde047', '#f59e0b', '#f97316', '#b91c1c'];
   const bTextCols = ['#fff', '#422006', '#422006', '#fff', '#fff'];
   const burdenChip = bBand < 0 ? '' : `<span class="badge" style="background:${bCols[bBand]};color:${bTextCols[bBand]}">${bWords[bBand]}</span>`;
@@ -1501,7 +1506,7 @@ function onInput(e, state) {
   clearTimeout(_noteTimer); _noteTimer = setTimeout(() => { DL.persist({ silent: true }); }, 600);
 }
 
-return { ui, todayISO, headerHTML, renderToday, onClick, onInput, dayBandIdx };
+return { ui, todayISO, headerHTML, renderToday, onClick, onInput };
 })();
 
 // ---- Shared doctor-readable medication schedule (used by Prep + Records) ----
@@ -1741,6 +1746,7 @@ function renderBig(state) {
   return `<div class="ds">
     <div class="card"><div class="card-h"><h2>${T.activeManaged}</h2><span class="hgrp">${condHdr}</span></div>${condSeg}${condBody}</div>
     <div class="card" id="medsTable"><div class="card-h"><h2>${T.currentMeds}</h2><span class="hgrp">${editBtn('medications')}<button class="addmini" data-add="medications" aria-label="Add medication">＋</button></span></div>${ui.editPick === 'medications' ? pickList(allMeds, 'medications', (m) => tx(m.name, lang)) : meds}${pastSection}</div>
+    ${Records.renderLabs(state)}
     ${Records.renderProg(state)}
     <button class="printbtn" data-print><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>${lang === 'es' ? 'Imprimir / Guardar PDF' : 'Print / Save PDF'}</button>
   </div>`;
@@ -1887,7 +1893,7 @@ const { todayISO } = Today;
 
 
 
-const ui = { labId: null, win: '1y', scoreWin: '3m', symTrend: null, labGroups: new Set(), editPick: null, medOpen: null, badLines: { heavy: true, vh: true }, histYear: null };
+const ui = { labId: null, win: '1y', scoreWin: '3m', symTrend: null, hlTrend: 'peak', labGroups: new Set(), editPick: null, medOpen: null, histYear: null };
 
 const STR = {
   en: { conditions: 'Conditions', meds: 'Meds', symptoms: 'Symptoms', episodes: 'Episodes', labs: 'Labs', timeline: 'Map',
@@ -1935,39 +1941,49 @@ const TSS = {
   en: { worse: 'worse', better: 'better', steady: 'steady', notEnough: 'Not enough history yet.', noData: 'No data yet.',
         period: { '30d': '30 days', '3m': '3 months', '1y': 'year' }, was: 'was', vsPrev: 'vs previous', allTime: 'all time', past: 'past', partial: 'partial', mo: 'mo',
         mixTitle: 'Day mix over time', areasTitle: 'Areas affected', loadTitle: 'Overall load',
-        dayBalanceTitle: 'Good days vs bad days', badLineTitle: 'Bad days over time',
-        heavyPlus: 'difficult or severe', areasUnit: 'areas', loadSub: 'severity × spread', bandW: ['clear', 'light', 'typical', 'difficult', 'severe'],
+        dayBalanceTitle: 'Good days vs bad days',
+        heavyPlus: 'difficult or severe', areasUnit: 'areas', loadSub: 'severity × spread', sevW: ['none', 'noticeable', 'distracting', 'interferes', 'prevents'],
         sevTitle: 'Average severity', sevUnit: 'avg / 4', breadthTitle: 'Areas active', breadthUnit: 'per day',
-        groups: { overall: 'Overall status', driving: "What's driving it", context: 'Context', clinical: 'Clinical' },
+        groups: { headline: 'Headline', overall: 'Functional impact', driving: 'Drivers', context: 'Context', clinical: 'Clinical' },
         mostProm: 'Most prominent',
+        dayStrip: 'Day-by-day severity', dsPeak: 'peak', dsNone: 'No symptoms logged in this window.',
         moodTitle: 'Mood', moodOutOf5: 'avg', moodNoData: 'No mood logged in this window.',
         labs: 'Labs', episodes: 'Episodes', epEpisode: 'episode', epEpisodes: 'episodes', epUnwell: 'unwell', epDay: 'day', epDays: 'days', epOfDays: 'of days', epSince: 'since last unwell', epNow: 'unwell right now', epNone: 'no episodes yet',
         pos: 'Positive', neg: 'Negative', progression: 'Progression',
-        onsetAll: 'Onset & progression', started: 'Started in the last', newBadge: 'new', catJoint: 'joint', catNerve: 'nerve', catOther: 'other', nothingNew: 'Nothing new started in this period.',
         newJointLoc: 'New joint pain location', newNerve: 'New nerve sensation', newSymptom: 'New symptom',
         funcTitle: 'Disruption', symImpTitle: 'Most limiting symptoms',
         fiInterfered: 'Interfered with activities', fiPrevented: 'Prevented an activity',
         fiInterferedShort: 'interfered', fiPreventedShort: 'prevented', fiDays: 'days',
         fiNone: 'No day a symptom interfered with or prevented an activity in this period.',
-        fiOfLogged: 'of logged days', fiSubImpact: 'a symptom interfered with or prevented an activity' },
+        fiOfLogged: 'of logged days', fiSubImpact: 'a symptom interfered with or prevented an activity',
+        headline: {
+          active: { t: 'Symptoms Active', b: 'How many separate symptoms or joint sites were active on an average day. This is how <b>widespread</b> things are — not how bad any one of them is.' },
+          peak: { t: 'Peak Avg', b: "The average of each day's single <b>worst</b> symptom, on the 0–4 scale (noticeable → prevents). Autoimmune symptoms are best judged at their worst, so this tracks <b>flare-ups</b> and ignores how many areas are active." },
+          burden: { t: 'Total Burden', b: "Everything you felt each day added up — every active site's severity, summed, then averaged. It rises when symptoms get <b>more intense</b> or <b>spread</b> to more areas. Because the total has no fixed maximum, this box shows how it has <b>changed</b> vs the previous period, not a score." },
+          sub: 'Change vs the previous period. Tap any ⓘ for what it means.', baseline: 'new baseline', close: 'Close' } },
   es: { worse: 'peor', better: 'mejor', steady: 'estable', notEnough: 'Historial insuficiente.', noData: 'Sin datos aún.',
         period: { '30d': '30 días', '3m': '3 meses', '1y': 'año' }, was: 'antes', vsPrev: 'vs', allTime: 'todo el tiempo', past: 'últimos', partial: 'parcial', mo: 'm',
         mixTitle: 'Distribución de días', areasTitle: 'Zonas afectadas', loadTitle: 'Carga total',
-        dayBalanceTitle: 'Días buenos vs malos', badLineTitle: 'Días malos con el tiempo',
-        heavyPlus: 'difícil o grave', areasUnit: 'zonas', loadSub: 'gravedad × extensión', bandW: ['sin síntomas', 'leve', 'típico', 'difícil', 'grave'],
+        dayBalanceTitle: 'Días buenos vs malos',
+        heavyPlus: 'difícil o grave', areasUnit: 'zonas', loadSub: 'gravedad × extensión', sevW: ['ninguno', 'perceptible', 'molesto', 'interfiere', 'impide'],
         sevTitle: 'Gravedad media', sevUnit: 'media / 4', breadthTitle: 'Zonas activas', breadthUnit: 'por día',
-        groups: { overall: 'Estado general', driving: 'Qué lo está causando', context: 'Contexto', clinical: 'Clínico' },
+        groups: { headline: 'Resumen', overall: 'Impacto funcional', driving: 'Factores', context: 'Contexto', clinical: 'Clínico' },
         mostProm: 'Más prominente',
+        dayStrip: 'Gravedad día a día', dsPeak: 'pico', dsNone: 'Sin síntomas registrados en este periodo.',
         moodTitle: 'Ánimo', moodOutOf5: 'media', moodNoData: 'Sin ánimo registrado en este periodo.',
         labs: 'Analíticas', episodes: 'Episodios', epEpisode: 'episodio', epEpisodes: 'episodios', epUnwell: 'con malestar', epDay: 'día', epDays: 'días', epOfDays: 'de los días', epSince: 'desde el último', epNow: 'con malestar ahora', epNone: 'sin episodios aún',
         pos: 'Positivo', neg: 'Negativo', progression: 'Progresión',
-        onsetAll: 'Inicio y progresión', started: 'Empezó — últimos', newBadge: 'nuevo', catJoint: 'articular', catNerve: 'nervioso', catOther: 'otro', nothingNew: 'Nada nuevo empezó en este periodo.',
         newJointLoc: 'Nueva zona de dolor articular', newNerve: 'Nueva sensación nerviosa', newSymptom: 'Nuevo síntoma',
         funcTitle: 'Interrupción', symImpTitle: 'Síntomas más limitantes',
         fiInterfered: 'Interfirió con mis actividades', fiPrevented: 'Me impidió una actividad',
         fiInterferedShort: 'interfirió', fiPreventedShort: 'impidió', fiDays: 'días',
         fiNone: 'Ningún día un síntoma interfirió o impidió una actividad en este periodo.',
-        fiOfLogged: 'de días registrados', fiSubImpact: 'un síntoma interfirió o impidió una actividad' },
+        fiOfLogged: 'de días registrados', fiSubImpact: 'un síntoma interfirió o impidió una actividad',
+        headline: {
+          active: { t: 'Síntomas activos', b: 'Cuántos síntomas o zonas distintas estuvieron activos en un día promedio. Es lo <b>extenso</b> que es — no lo grave que es ninguno.' },
+          peak: { t: 'Pico medio', b: 'El promedio del <b>peor</b> síntoma de cada día, en la escala 0–4 (perceptible → impide). Los síntomas autoinmunes se valoran mejor en su peor momento, así que esto refleja los <b>brotes</b> e ignora cuántas zonas están activas.' },
+          burden: { t: 'Carga total', b: 'Todo lo que sentiste cada día sumado — la gravedad de cada zona activa, sumada y promediada. Sube cuando los síntomas se <b>intensifican</b> o se <b>extienden</b> a más zonas. Como el total no tiene un máximo fijo, esta casilla muestra <b>cuánto ha cambiado</b> respecto al periodo anterior, no una puntuación.' },
+          sub: 'Cambio respecto al periodo anterior. Toca cualquier ⓘ para saber qué significa.', baseline: 'nueva base', close: 'Cerrar' } },
 };
 function dayLogged(log) { return !!log && (log.symptoms || []).some((r) => typeof r.severity === 'number'); }
 const WIN_DAYS = { '30d': 30, '3m': 90, '1y': 365 };
@@ -2086,10 +2102,10 @@ function episodeStats(data, lang, win) {
   const timeframe = win === 'all' ? T.allTime : ((lang === 'es' ? (win === '1y' ? 'último ' : 'últimos ') : 'last ') + T.period[win]);
   const tiles = [
     { v: String(inWin.length), l: (inWin.length === 1 ? T.epEpisode : T.epEpisodes) + ' · ' + timeframe },
-    { v: days(unwellDays), l: T.epUnwell + ' · ' + pct + '% ' + T.epOfDays + ' · ' + timeframe },
+    { v: days(unwellDays), suf: '· ' + pct + '%', l: T.epUnwell + ' · ' + timeframe },
     { v: t3v, l: t3l },
   ];
-  return `<div class="epstats">${tiles.map((s) => `<div class="epstat"><div class="epv">${s.v}</div><div class="epl">${s.l}</div></div>`).join('')}</div>`;
+  return `<div class="epstats">${tiles.map((s) => `<div class="epstat"><div class="epv">${s.v}${s.suf ? ` <span class="epsuf">${s.suf}</span>` : ''}</div><div class="epl">${s.l}</div></div>`).join('')}</div>`;
 }
 // Medication adherence card for the Trends page. Follows the page's window (30d/3m/1y/All).
 // Overall % + change vs previous period; per-med strip+streak (dropped on long windows); PRN as dose count.
@@ -2191,22 +2207,6 @@ function collectOnsets(data) {
   });
   return out.sort((a, b) => (a.onset < b.onset ? -1 : a.onset > b.onset ? 1 : 0));
 }
-// Window-aware: 'all' shows the full progression; 30d/3m/1y filter to onsets inside the window ("what's new"). Items with onset within 90 days get a "new" badge.
-function onsetCard(state, data, days, win, TT) {
-  const lang = state.lang;
-  let items = collectOnsets(data);
-  if (!items.length) return '';
-  const tISO = todayISO(); const cut90 = shiftDate(tISO, -90);
-  if (win !== 'all') { const cut = shiftDate(tISO, -days); items = items.filter((o) => o.onset >= cut); }
-  const title = win === 'all' ? TT.onsetAll : `${TT.started} ${TT.period[win]}`;
-  const head = `<div class="card-h"><h2>${title}</h2></div>`;
-  if (!items.length) return `<div class="card">${head}<p class="muted small">${TT.nothingNew}</p></div>`;
-  const rows = items.map((o) => {
-    const badge = o.onset >= cut90 ? ` <span style="border:1px solid #b91c1c;color:#b91c1c;border-radius:4px;padding:0 5px;font-size:10px;vertical-align:1px">${TT.newBadge}</span>` : '';
-    return `<div style="position:relative;display:flex;align-items:baseline;gap:10px;padding:5px 0"><span style="position:absolute;left:-16px;top:8px;width:10px;height:10px;border-radius:50%;background:var(--muted);box-shadow:0 0 0 3px var(--card)"></span><span style="width:64px;flex:none;font-size:12px;color:var(--muted)">${fmtMonth(o.onset, lang)}</span><span style="font-size:14px;color:var(--ink)">${esc(tx(o.name, lang))}${badge}</span></div>`;
-  }).join('');
-  return `<div class="card">${head}<div style="position:relative;padding-left:16px"><span style="position:absolute;left:4px;top:4px;bottom:4px;width:2px;background:var(--line)"></span>${rows}</div></div>`;
-}
 // ===== How-am-I-trending charts (window-aware; replace the old burden/severity headline pair) =====
 function dayLoad(iso, types, data) { const l = DL.getDailyLog(iso, data); return (l && dayLogged(l)) ? daySum(l, types) : null; }
 // Count of a located symptom's sites active (severity>0) on a day — powers the "areas affected" spread view.
@@ -2221,33 +2221,29 @@ function bucketMeans(days, valFn) {
   daily.forEach((d, i) => { const key = mode === 'month' ? d.iso.slice(0, 7) : mode === 'week' ? 'w' + Math.floor(i / 7) : d.iso; if (!(key in idx)) { idx[key] = groups.length; groups.push({ iso: d.iso, isoFirst: d.iso, sum: 0, n: 0 }); } const g = groups[idx[key]]; g.iso = d.iso; if (d.v != null) { g.sum += d.v; g.n++; } });
   return { buckets: groups.map((g) => ({ iso: g.iso, isoFirst: g.isoFirst, v: g.n ? g.sum / g.n : null })), mode };
 }
-// Aggregate a day-range [a,b) into band counts, bad-day total, and load/breadth means.
+// Aggregate a day-range [a,b) into logged-day count + mean overall load (severity × spread).
 function winAgg(data, types, a, b) {
-  const band = [0, 0, 0, 0, 0]; let logged = 0, loadSum = 0;
-  for (let i = a; i < b; i++) { const iso = isoBack(i); const bi = Today.dayBandIdx(iso, types, data); if (bi < 0) continue; logged++; band[bi]++; loadSum += dayLoad(iso, types, data) || 0; }
-  return { band, logged, bad: band[3] + band[4], loadMean: logged ? loadSum / logged : null };
+  let logged = 0, loadSum = 0;
+  for (let i = a; i < b; i++) { const v = dayLoad(isoBack(i), types, data); if (v == null) continue; logged++; loadSum += v; }
+  return { logged, loadMean: logged ? loadSum / logged : null };
 }
-// Window-aware buckets: one per day (≤45d), week (≤120d) or month (else), each with band counts + load/breadth means.
+// Peak-based version of winAgg for the "Good days vs bad days" card: each day bucketed by its WORST symptom
+// (0–4 on the severity scale), not the composite day-band. Same {band, logged, bad} shape so trendShiftCard
+// consumes it unchanged; bad = days the worst symptom interfered (3) or prevented (4).
+function winAggPeak(data, types, a, b) {
+  const by = logsByDate(data);
+  const band = [0, 0, 0, 0, 0]; let logged = 0;
+  for (let i = a; i < b; i++) { const log = by[isoBack(i)]; if (!log || !dayLogged(log)) continue; const p = dayPeakIntensity(log, types); if (p == null) continue; logged++; band[Math.max(0, Math.min(4, p))]++; }
+  return { band, logged, bad: band[3] + band[4] };
+}
+// Window-aware buckets: one per day (≤45d), week (≤120d) or month (else), each with a mean overall-load value.
 function trendBuckets(data, types, days) {
   const daily = [];
-  for (let i = days - 1; i >= 0; i--) { const iso = isoBack(i); const bi = Today.dayBandIdx(iso, types, data); daily.push({ iso, bi, load: bi < 0 ? null : dayLoad(iso, types, data) }); }
+  for (let i = days - 1; i >= 0; i--) { const iso = isoBack(i); daily.push({ iso, load: dayLoad(iso, types, data) }); }
   const mode = days > 120 ? 'month' : days > 45 ? 'week' : 'day';
   const groups = []; const idx = {};
-  daily.forEach((d, i) => { const key = mode === 'month' ? d.iso.slice(0, 7) : mode === 'week' ? 'w' + Math.floor(i / 7) : d.iso; if (!(key in idx)) { idx[key] = groups.length; groups.push({ iso: d.iso, isoFirst: d.iso, band: [0, 0, 0, 0, 0], logged: 0, loadSum: 0 }); } const g = groups[idx[key]]; g.iso = d.iso; if (d.bi >= 0) { g.band[d.bi]++; g.logged++; g.loadSum += d.load || 0; } });
-  return { buckets: groups.map((g) => ({ iso: g.iso, isoFirst: g.isoFirst, band: g.band, logged: g.logged, bad: g.band[3] + g.band[4], loadMean: g.logged ? g.loadSum / g.logged : null })), mode };
-}
-// Stacked band bars per bucket. idxs = band indices (bottom→top). normalize → each bucket to 100% of its logged days.
-function trendStackBars(buckets, idxs, mode, normalize) {
-  const w = 320, h = 110, padB = 16, padT = 6, padL = 6, padR = 6, n = buckets.length || 1;
-  const sumOf = (b) => idxs.reduce((a, i) => a + b.band[i], 0);
-  const maxTot = Math.max(1, ...buckets.map(sumOf));
-  const slot = (w - padL - padR) / n, bw = Math.min(22, slot * 0.72);
-  let out = '';
-  buckets.forEach((b, i) => { if (!b.logged) return; const base = normalize ? Math.max(1, b.logged) : maxTot; const x = padL + i * slot + (slot - bw) / 2; let y = h - padB; idxs.forEach((idx) => { const c = b.band[idx]; if (!c) return; const hh = c / base * (h - padT - padB); y -= hh; out += `<rect x="${x.toFixed(1)}" y="${(y - 0.3).toFixed(1)}" width="${bw.toFixed(1)}" height="${(hh + 0.3).toFixed(1)}" fill="${SEVHEX[idx]}"/>`; }); });
-  let xl;
-  if (mode === 'month') { xl = buckets.map((b, i) => i % 3 !== 0 ? '' : `<text x="${(padL + i * slot + slot / 2).toFixed(1)}" y="${h - 3}" font-size="9" fill="#94a3b8" text-anchor="middle">${MON3[+b.iso.slice(5, 7) - 1]}</text>`).join(''); }
-  else { const f = buckets.length ? (buckets[0].isoFirst || buckets[0].iso) : '', l = buckets.length ? buckets[buckets.length - 1].iso : ''; xl = `<text x="${padL}" y="${h - 3}" font-size="9" fill="#94a3b8">${ddmm(f)}</text><text x="${w - padR}" y="${h - 3}" font-size="9" fill="#94a3b8" text-anchor="end">${ddmm(l)}</text>`; }
-  return `<svg class="trend" viewBox="0 0 ${w} ${h}" role="img">${out}${xl}</svg>`;
+  daily.forEach((d, i) => { const key = mode === 'month' ? d.iso.slice(0, 7) : mode === 'week' ? 'w' + Math.floor(i / 7) : d.iso; if (!(key in idx)) { idx[key] = groups.length; groups.push({ iso: d.iso, isoFirst: d.iso, logged: 0, loadSum: 0 }); } const g = groups[idx[key]]; g.iso = d.iso; if (d.load != null) { g.logged++; g.loadSum += d.load; } });
+  return { buckets: groups.map((g) => ({ iso: g.iso, isoFirst: g.isoFirst, logged: g.logged, loadMean: g.logged ? g.loadSum / g.logged : null })), mode };
 }
 // Change pill: shows the prior value; colour/arrow encode better vs worse (higherIsWorse = more is worse). Hidden when no reliable prior period.
 function trendChg(cur, prev, higherIsWorse, reliable, TT, fmt) {
@@ -2256,15 +2252,7 @@ function trendChg(cur, prev, higherIsWorse, reliable, TT, fmt) {
   const worse = higherIsWorse ? d > 0 : d < 0;
   return `<span class="badge lg ${worse ? 'alert' : 'good'}">${d > 0 ? '↑' : '↓'} ${TT.was} ${fmt(prev)}</span>`;
 }
-// #2 Day mix over time — share of each band per bucket (100% stacked); headline = % heavy+ for the window.
-function trendMixCard(lang, TT, cur, prev, reliable, tb) {
-  const pct = cur.logged ? Math.round(cur.bad / cur.logged * 100) : 0;
-  const prevPct = prev.logged ? Math.round(prev.bad / prev.logged * 100) : null;
-  const pill = trendChg(pct, prevPct, true, reliable, TT, (v) => Math.round(v) + '%');
-  const legend = [1, 2, 3, 4].map((i) => `<span class="lg"><span class="lgsw" style="background:${SEVHEX[i]}"></span>${TT.bandW[i]}</span>`).join('');
-  return `<div class="card"><div class="card-h"><h2>${TT.mixTitle}</h2></div><div class="bignum">${pct}% <span class="muted small">${TT.heavyPlus}</span>${pill ? `<span style="margin-left:auto">${pill}</span>` : ''}</div><div class="lgrow" style="margin-top:8px">${legend}</div>${trendStackBars(tb.buckets, [1, 2, 3, 4], tb.mode, true)}</div>`;
-}
-// ===== Functional impact (interfere / prevent) — uses the scale's own semantics: a day's PEAK symptom intensity of 3 = "interfered with activities", 4 = "prevented an activity". Deliberately NOT dayBandIdx (that's the composite burden band); this reads the 0–4 scale literally so it's doctor-legible.
+// ===== Functional impact (interfere / prevent) — uses the scale's own semantics: a day's PEAK symptom intensity of 3 = "interfered with activities", 4 = "prevented an activity". Reads the 0–4 scale literally so it's doctor-legible.
 // Per-day peak intensity across all tracked symptoms (0–4); null on unlogged days.
 function dayPeakIntensity(log, types) { if (!log || !dayLogged(log)) return null; let peak = 0; types.forEach((s) => { const v = symIntensity(s, log); if (v > peak) peak = v; }); return peak; }
 // Day-level counts over [a,b): logged days, days a symptom interfered (peak===3) vs prevented (peak===4). affected = either.
@@ -2357,34 +2345,8 @@ function trendShiftCard(lang, TT, cur, prev, reliable, days, win) {
     if (Math.abs(d) < 3) pill = `<span class="badge lg neutral">${lang === 'es' ? 'igual' : 'same'}</span>`;
     else pill = `<span class="badge lg ${d > 0 ? 'alert' : 'good'}">${d > 0 ? '↑ ' : '↓ '}${Math.abs(d)} pts</span>`;
   }
-  const legend = [1, 2, 3, 4].map((i) => `<span class="lg"><span class="lgsw" style="background:${SEVHEX[i]}"></span>${TT.bandW[i]}</span>`).join('');
+  const legend = [1, 2, 3, 4].map((i) => `<span class="lg"><span class="lgsw" style="background:${SEVHEX[i]}"></span>${TT.sevW[i]}</span>`).join('');
   return `<div class="card"><div class="card-h"><h2>${TT.dayBalanceTitle}</h2>${pill ? `<span style="margin-left:auto">${pill}</span>` : ''}</div>${row(curLabel, cur)}${row(prevLabel, prev)}<div class="lgrow" style="margin-top:10px">${legend}</div></div>`;
-}
-// #2 Bad days over time — two lines (heavy = SEVHEX[3], very heavy = SEVHEX[4]) as % of each bucket's logged days across the window. Complements the distribution card by showing direction/slope (and, here, the recent *emergence* of very-heavy days). Uses the shared window-aware buckets (day/week/month) from trendBuckets.
-function trendBadLineCard(lang, TT, tb, win) {
-  const period = win === 'all' ? TT.allTime : ((lang === 'es' ? (win === '1y' ? 'último ' : 'últimos ') : 'last ') + TT.period[win]);
-  const bkts = tb.buckets, mode = tb.mode, n = bkts.length;
-  const w = 320, h = 122, padL = 28, padR = 8, padT = 8, padB = 16;
-  const plotW = w - padL - padR, plotH = h - padT - padB;
-  const X = (i) => n <= 1 ? padL + plotW / 2 : padL + i / (n - 1) * plotW;
-  const Y = (v) => padT + (100 - v) / 100 * plotH;
-  let grid = '';
-  [0, 50, 100].forEach((g) => { const y = Y(g); grid += `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${w - padR}" y2="${y.toFixed(1)}" stroke="#eef2f4" stroke-width="1"/><text x="${(padL - 4).toFixed(1)}" y="${(y + 3).toFixed(1)}" font-size="9" fill="#94a3b8" text-anchor="end">${g}%</text>`; });
-  const line = (idx, color) => {
-    const pts = [];
-    bkts.forEach((b, i) => { if (!b.logged) return; pts.push(`${X(i).toFixed(1)},${Y(b.band[idx] / b.logged * 100).toFixed(1)}`); });
-    if (!pts.length) return '';
-    const dots = pts.map((p) => { const c = p.split(','); return `<circle cx="${c[0]}" cy="${c[1]}" r="2.2" fill="${color}"/>`; }).join('');
-    return `<polyline points="${pts.join(' ')}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>${dots}`;
-  };
-  let xl;
-  if (mode === 'month') xl = bkts.map((b, i) => i % 3 !== 0 ? '' : `<text x="${X(i).toFixed(1)}" y="${h - 3}" font-size="9" fill="#94a3b8" text-anchor="middle">${MON3[+b.iso.slice(5, 7) - 1]}</text>`).join('');
-  else { const f = n ? (bkts[0].isoFirst || bkts[0].iso) : '', l = n ? bkts[n - 1].iso : ''; xl = `<text x="${padL}" y="${h - 3}" font-size="9" fill="#94a3b8">${ddmm(f)}</text><text x="${w - padR}" y="${h - 3}" font-size="9" fill="#94a3b8" text-anchor="end">${ddmm(l)}</text>`; }
-  const show = ui.badLines || { heavy: true, vh: true };
-  const svg = `<svg class="trend" viewBox="0 0 ${w} ${h}" role="img" style="height:auto">${grid}${show.heavy ? line(3, SEVHEX[3]) : ''}${show.vh ? line(4, SEVHEX[4]) : ''}${xl}</svg>`;
-  // Clickable legend: each band toggles its line. At least one line always stays on (see onClick guard). Off = hollow swatch + muted label.
-  const legBtn = (idx, key) => { const on = show[key]; return `<button class="lg" data-badline="${key}" aria-pressed="${on}" style="border:0;background:none;padding:2px 0;cursor:pointer;font:inherit;font-size:11px;color:${on ? 'var(--ink)' : 'var(--muted)'}"><span class="lgsw" style="background:${on ? SEVHEX[idx] : 'transparent'};box-shadow:inset 0 0 0 1.5px ${SEVHEX[idx]}"></span>${TT.bandW[idx]}</button>`; };
-  return `<div class="card"><div class="card-h"><h2>${TT.badLineTitle}</h2></div>${svg}<div class="lgrow" style="margin-top:10px">${legBtn(3, 'heavy')}${legBtn(4, 'vh')}</div></div>`;
 }
 // #4 Areas affected — spread of ONE located symptom (default: first located type, e.g. joint pain), i.e. how many of its sites are active per day.
 // Selectable when the person tracks >1 located symptom; hidden entirely for people who track none (e.g. a single-symptom-only user).
@@ -2404,43 +2366,9 @@ function trendAreasCard(state, data, days, win, TT, reliable) {
     : `<div class="muted small" style="margin:-2px 0 8px">${esc(tx(sym.name, lang))}</div>`;
   return `<div class="card"><div class="card-h"><h2>${TT.areasTitle}</h2></div>${sel}<div class="bignum">${cur != null ? cur.toFixed(1) : '–'} <span class="muted small">${TT.areasUnit}</span>${pill ? `<span style="margin-left:auto">${pill}</span>` : ''}</div>${trendSVG(series, max, cur)}</div>`;
 }
-// Average severity — the severity half of Overall load, isolated. Mean 0–4 intensity across ACTIVE symptoms (intensity>0) per day, then meaned over the window. Bounded 0–4 so it reads on the same scale as the daily log; rises only when symptoms intensify, not when more of them switch on.
-function trendSeverityCard(lang, TT, data, types, days, win, reliable) {
-  const valFn = (iso) => {
-    const l = DL.getDailyLog(iso, data); if (!l || !dayLogged(l)) return null;
-    const vals = types.map((s) => symIntensity(s, l)).filter((v) => v > 0);
-    return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : 0;
-  };
-  const cur = winMean(valFn, 0, days), prev = winMean(valFn, days, 2 * days);
-  const series = bucketMeans(days, valFn).buckets.map((b) => ({ iso: b.iso, v: b.v }));
-  const pill = trendChg(cur, prev, true, reliable, TT, (v) => v.toFixed(1));
-  return `<div class="card"><div class="card-h"><h2>${TT.sevTitle}</h2></div><div class="bignum">${cur != null ? cur.toFixed(1) : '–'} <span class="muted small">${TT.sevUnit}</span>${pill ? `<span style="margin-left:auto">${pill}</span>` : ''}</div>${trendSVG(series, 4, cur)}</div>`;
-}
-// Areas active — the breadth/spread half of Overall load, isolated. Counts ACTIVE sites per day: each logged joint location (severity>0) for located symptoms + each active simple symptom. Mean over the window; rises only when symptoms spread, not when existing ones worsen.
-function trendBreadthCard(lang, TT, data, types, days, win, reliable) {
-  const valFn = (iso) => {
-    const l = DL.getDailyLog(iso, data); if (!l || !dayLogged(l)) return null;
-    const rows = l.symptoms || []; let n = 0;
-    types.forEach((s) => {
-      if (s.trackBy === 'locations') {
-        (s.locations || []).filter((x) => !x.archived).forEach((loc) => { if (rows.find((x) => x.symptomId === s.id && x.locationId === loc.id && typeof x.severity === 'number' && x.severity > 0)) n++; });
-      } else { const r = rows.find((x) => x.symptomId === s.id && x.locationId == null && typeof x.severity === 'number'); if (r && r.severity > 0) n++; }
-    });
-    return n;
-  };
-  const cur = winMean(valFn, 0, days), prev = winMean(valFn, days, 2 * days);
-  const series = bucketMeans(days, valFn).buckets.map((b) => ({ iso: b.iso, v: b.v }));
-  const max = Math.max(2, ...series.map((x) => x.v || 0));
-  const pill = trendChg(cur, prev, true, reliable, TT, (v) => v.toFixed(1));
-  return `<div class="card"><div class="card-h"><h2>${TT.breadthTitle}</h2></div><div class="bignum">${cur != null ? cur.toFixed(1) : '–'} <span class="muted small">${TT.breadthUnit}</span>${pill ? `<span style="margin-left:auto">${pill}</span>` : ''}</div>${trendSVG(series, max, cur)}</div>`;
-}
-// #3 Overall load — severity+spread combined (the old burden sum), mean per bucket; line.
-function trendLoadCard(lang, TT, cur, prev, reliable, tb) {
-  const pill = trendChg(cur.loadMean, prev.loadMean, true, reliable, TT, (v) => v.toFixed(1));
-  const series = tb.buckets.map((b) => ({ iso: b.iso, v: b.loadMean }));
-  const max = Math.max(4, ...series.map((x) => x.v || 0));
-  return `<div class="card"><div class="card-h"><h2>${TT.loadTitle}</h2></div><div class="bignum">${cur.loadMean != null ? cur.loadMean.toFixed(1) : '–'} <span class="muted small">${TT.loadSub}</span>${pill ? `<span style="margin-left:auto">${pill}</span>` : ''}</div>${trendSVG(series, max, cur.loadMean)}</div>`;
-}
+// Average severity + Areas active cards were removed — the Headline boxes (Peak Avg / Symptoms Active) now
+// carry those trends inline, so standalone cards here were duplicates.
+// Overall load card was removed — it's the burden sum, now carried by the Headline > Total Burden box.
 // Optional daily-mood trend (window-aware) — average over the window + a coloured-by-nothing line, plus a
 // change pill vs the equal prior period. Mood is 1–5 with higher = better, so higherIsWorse=false and the
 // line stays the neutral teal (the SEVHEX value-colouring is for the 0–4 severity charts where higher=worse).
@@ -2462,10 +2390,100 @@ function trendMoodCard(lang, TT, data, days, win, reliable) {
   const distRows = [5, 4, 3, 2, 1].map((n) => { const c = cnt[n - 1]; return `<div class="mooddist-row">${moodFaceSVG(n, 20)}<span class="mooddist-track"><span style="display:block;height:100%;width:${(c / maxc * 100).toFixed(0)}%;background:${MOOD_COLORS[n - 1]}"></span></span><span class="mooddist-n">${c} ${dayWord(c)}</span></div>`; }).join('');
   return `<div class="card"><div class="card-h"><h2>${TT.moodTitle}</h2></div><div class="bignum">${avg.toFixed(1)} <span class="muted small">${TT.moodOutOf5}</span>${pill ? `<span style="margin-left:auto">${pill}</span>` : ''}</div><div class="mooddist">${distRows}</div></div>`;
 }
+// Headline card — three window-aware stat boxes (Symptoms Active / Peak Avg / Total Burden), each with an
+// info button that opens the shared sym-info modal. Reuses dayPeakIntensity, dayLoad and winMean. Change pills
+// fall back to "new baseline" when the prior period isn't reliably covered (mirrors the other cards' gating).
+const HL_ICON = '<svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="7.5" r="1.4" fill="currentColor"/><rect x="10.8" y="10.5" width="2.4" height="7" rx="1.2" fill="currentColor"/></svg>';
+function trendHeadlineCard(lang, TT, data, types, days, reliable) {
+  const H = TT.headline;
+  const activeFn = (iso) => {
+    const l = DL.getDailyLog(iso, data); if (!l || !dayLogged(l)) return null;
+    const rows = l.symptoms || []; let n = 0;
+    types.forEach((s) => {
+      if (s.trackBy === 'locations') { (s.locations || []).filter((x) => !x.archived).forEach((loc) => { if (rows.find((x) => x.symptomId === s.id && x.locationId === loc.id && typeof x.severity === 'number' && x.severity > 0)) n++; }); }
+      else { const r = rows.find((x) => x.symptomId === s.id && x.locationId == null && typeof x.severity === 'number'); if (r && r.severity > 0) n++; }
+    });
+    return n;
+  };
+  const peakFn = (iso) => { const l = DL.getDailyLog(iso, data); return (l && dayLogged(l)) ? dayPeakIntensity(l, types) : null; };
+  const burdenFn = (iso) => dayLoad(iso, types, data);
+  const stat = (fn) => ({ cur: winMean(fn, 0, days), prev: winMean(fn, days, 2 * days) });
+  const A = stat(activeFn), P = stat(peakFn), K = stat(burdenFn);
+  const pill = (cur, prev) => {
+    if (!reliable || prev == null || prev === 0 || cur == null) return `<span class="badge neutral">${H.baseline}</span>`;
+    const p = Math.round((cur - prev) / prev * 100);
+    if (Math.abs(p) < 3) return `<span class="badge neutral">${TT.steady}</span>`;
+    return `<span class="badge ${p > 0 ? 'alert' : 'good'}">${p > 0 ? '↑' : '↓'} ${Math.abs(p)}%</span>`;
+  };
+  const leafN = types.reduce((a, s) => a + (s.trackBy === 'locations' ? (s.locations || []).filter((x) => !x.archived).length : 1), 0);
+  const UNIT = { active: `/ ${leafN}`, peak: '/ 4', burden: '' };
+  // Each box is tappable: tapping opens an inline "over time" line chart under the row (tap again to close).
+  // The ⓘ button keeps opening the definition modal — it's matched first by the click delegation, so it never
+  // also toggles the chart. hl-sel marks the open box; the caret flips to point at its chart.
+  const sel = ui.hlTrend;
+  const box = (key, s) => `<div class="stat hl-box${sel === key ? ' hl-sel' : ''}" data-hltrend="${key}" role="button" tabindex="0" aria-expanded="${sel === key}"><button class="infobtn" data-hlinfo="${key}" aria-label="${H[key].t}">${HL_ICON}</button><div class="k">${H[key].t}</div><div class="hl-val"><span class="n">${s.cur != null ? s.cur.toFixed(1) : '–'}</span>${UNIT[key] ? `<span class="hl-unit">${UNIT[key]}</span>` : ''}${pill(s.cur, s.prev)}</div><span class="hl-caret" aria-hidden="true">▾</span></div>`;
+  // Total Burden has no fixed maximum, but the raw average anchors the % change (which alone can read alarmingly large), so it uses the same number + pill layout as the other two boxes — just no denominator.
+  // Inline trend panel — the open box's metric bucketed over the window. Peak uses the 0–4 severity colouring
+  // (matches the Average severity chart); Active and Burden use the plain teal line. avg = the window mean (the
+  // number shown in the box) as the dashed reference. Burden has no fixed max so its axis auto-scales.
+  const seriesFor = { active: activeFn, peak: peakFn, burden: burdenFn };
+  const statFor = { active: A, peak: P, burden: K };
+  let panel = '';
+  if (sel && seriesFor[sel]) {
+    const st = statFor[sel];
+    const over = lang === 'es' ? 'en el tiempo' : 'over time';
+    if (st.cur == null) { panel = `<div class="hl-trend"><div class="hl-trend-h">${H[sel].t} <span class="muted">${over}</span></div><p class="muted small" style="margin:2px 0 0">${TT.noData}</p></div>`; }
+    else {
+      const series = bucketMeans(days, seriesFor[sel]).buckets.map((b) => ({ iso: b.iso, v: b.v }));
+      const isPeak = sel === 'peak';
+      const max = isPeak ? 4 : Math.max(sel === 'active' ? 2 : 4, ...series.map((x) => x.v || 0));
+      panel = `<div class="hl-trend"><div class="hl-trend-h">${H[sel].t} <span class="muted">${over}</span></div>${trendSVG(series, max, st.cur, isPeak)}</div>`;
+    }
+  }
+  const modal = (ui.hlInfo && H[ui.hlInfo]) ? `<div class="modal-bg" data-hlbg><div class="modal sym-info" role="dialog" aria-label="${H[ui.hlInfo].t}">
+      <div class="sym-info-top"><button class="sym-info-x" data-hlclose aria-label="${H.close}">✕</button></div>
+      <h2 class="sym-info-title">${H[ui.hlInfo].t}</h2>
+      <p class="sym-info-body">${H[ui.hlInfo].b}</p>
+    </div></div>` : '';
+  return `<div class="card"><div class="hl-row">${box('active', A)}${box('peak', P)}${box('burden', K)}</div>${panel}${modal}</div>`;
+}
+// Day-by-day severity strip. One row per single symptom and per active joint site (joint pain is
+// decomposed into its locations — no group tag). Each cell = one day coloured on the 0–4 scale; a
+// logged-but-clear day is pale, an unlogged day is blank. Long windows bucket cells by MAX (not mean)
+// so single-day spikes are never smoothed away — the whole point is showing peaks that drop to 0 next day.
+function trendDayStripCard(lang, TT, data, types, days, win) {
+  const by = logsByDate(data);
+  const drivers = [];
+  types.forEach((s) => {
+    if (s.trackBy === 'locations') DL.activeLocations(s).forEach((l) => drivers.push({ name: tx(l.name, lang), symId: s.id, locId: l.id }));
+    else drivers.push({ name: tx(s.name, lang), symId: s.id, locId: null });
+  });
+  const MAXC = 92;
+  const bucketMax = (a) => { if (a.length <= MAXC) return a; const out = []; const size = a.length / MAXC; for (let b = 0; b < MAXC; b++) { const seg = a.slice(Math.floor(b * size), Math.floor((b + 1) * size)).filter((v) => v != null); out.push(seg.length ? Math.max(...seg) : null); } return out; };
+  const rows = drivers.map((d) => {
+    const arr = [];
+    for (let i = days - 1; i >= 0; i--) { const iso = isoBack(i); const log = by[iso]; arr.push((log && dayLogged(log)) ? (DL.getSeverity(iso, d.symId, d.locId, data) ?? 0) : null); }
+    const present = arr.filter((v) => v != null && v > 0);
+    const logged = arr.filter((v) => v != null).length;
+    const peak = arr.reduce((m, v) => (v != null && v > m ? v : m), 0);
+    const burden = logged ? present.reduce((a, b) => a + b, 0) / logged : 0;
+    return { d, arr, peak, burden, seen: present.length > 0 };
+  }).filter((r) => r.seen).sort((a, b) => b.burden - a.burden);
+  if (!rows.length) return `<div class="card"><div class="card-h"><h2>${TT.dayStrip}</h2></div><p class="muted small">${TT.dsNone}</p></div>`;
+  const body = rows.map((r) => {
+    const cells = bucketMax(r.arr).map((v) => {
+      if (v == null) return '<i style="background:transparent;box-shadow:inset 0 0 0 1px #eef2f4"></i>';
+      const bg = v <= 0 ? 'var(--chip)' : SEVHEX[Math.max(1, Math.min(4, Math.round(v)))];
+      return `<i style="background:${bg}"></i>`;
+    }).join('');
+    return `<div class="dstrip-row"><span class="dstrip-nm">${esc(r.d.name)}</span><span class="dstrip">${cells}</span><span class="dstrip-pk">${TT.dsPeak} <b>${r.peak}</b></span></div>`;
+  }).join('');
+  const legend = `<div class="lgrow dstrip-lg">${[0, 1, 2, 3, 4].map((n) => `<span class="lg"><span class="lgsw" style="background:${n === 0 ? 'var(--chip)' : SEVHEX[n]}"></span>${TT.sevW[n]}</span>`).join('')}</div>`;
+  return `<div class="card"><div class="card-h"><h2>${TT.dayStrip}</h2></div>${body}${legend}</div>`;
+}
 function renderTrends(state) {
   const lang = state.lang; const TT = TSS[lang]; const data = DL.getData();
   if (!data) return '<div class="card"><p class="muted">No data.</p></div>';
-  if (ui.labId) { const lab = (data.labs || []).find((l) => l.id === ui.labId); if (lab) return '<div class="ds">' + renderLabDetail(state, lab) + '</div>'; ui.labId = null; }
   const types = DL.activeSymptomTypes(data);
   const win = ui.scoreWin || '3m';
   const allDays = (() => { const ds = (data.dailyLogs || []).map((l) => l.date).filter(Boolean).sort(); if (!ds.length) return 365; return Math.round((Date.now() - new Date(ds[0] + 'T00:00:00Z').getTime()) / 86400000) + 1; })();
@@ -2474,16 +2492,9 @@ function renderTrends(state) {
   // How am I trending — four window-aware charts (helpers above). Comparison pills hide when the prior period predates tracking.
   const firstLog = (data.dailyLogs || []).map((l) => l.date).filter(Boolean).sort()[0];
   const reliable = win !== 'all' && !!firstLog && firstLog <= isoBack(2 * days - 1);
-  const curAgg = winAgg(data, types, 0, days);
-  const prevAgg = winAgg(data, types, days, 2 * days);
-  const tb = trendBuckets(data, types, days);
-  const shiftCard = trendShiftCard(lang, TT, curAgg, prevAgg, reliable, days, win);
-  const badLineCard = trendBadLineCard(lang, TT, tb, win);
+  const shiftCard = trendShiftCard(lang, TT, winAggPeak(data, types, 0, days), winAggPeak(data, types, days, 2 * days), reliable, days, win);
   const funcCard = trendFuncImpactCard(lang, TT, data, types, days, win, reliable);
   const symImpCard = trendSymImpactCard(lang, TT, data, types, days, win);
-  const loadCard = trendLoadCard(lang, TT, curAgg, prevAgg, reliable, tb);
-  const sevCard = trendSeverityCard(lang, TT, data, types, days, win, reliable);
-  const breadthCard = trendBreadthCard(lang, TT, data, types, days, win, reliable);
   // Most prominent = current level + change, tap to drill in
   const stats = symStats(data, types, days).filter((x) => x.cur > 0.05);
   const promRows = stats.map((x) => {
@@ -2495,34 +2506,22 @@ function renderTrends(state) {
     return `<div class="promrow" data-symtrend="${x.s.id}"><span class="promname">${esc(tx(x.s.name, lang))}</span><span class="prombar"><span style="width:${(x.cur / 4 * 100).toFixed(0)}%;background:${col}"></span></span><span class="promval">${x.cur.toFixed(1)}</span><span class="tr ${dc}">${ar}${dtxt}</span></div>${line}`;
   }).join('') || `<p class="muted small">${TT.noData}</p>`;
   const promCard = `<div class="card"><div class="card-h"><h2>${TT.mostProm}</h2></div>${promRows}</div>`;
-  let onsetHtml = ''; try { onsetHtml = onsetCard(state, data, days, win, TT); } catch (err) { console.warn('onset card failed', err); }
-  // Labs — collapsible panels
-  const groups = {}; (data.labs || []).forEach((l) => { const g = l.group || 'Other'; (groups[g] = groups[g] || []).push(l); });
-  const og = ui.labGroups || (ui.labGroups = new Set());
-  const labHtml = Object.entries(groups).map(([g, ls]) => {
-    const open = og.has(g);
-    const rows = ls.map((l) => {
-      const r = DL.latestLab(l); const hl = labHL(l); let dot, val, chg = '';
-      if (r && typeof r.value === 'number') {
-        dot = hl === 'high' ? '#dc2626' : hl === 'low' ? '#2563eb' : '#16a34a';
-        val = r.value + ' <span class="muted small">' + esc(l.unit) + '</span>';
-        const pc = labPct(l); if (pc != null) { const a = pc > 0 ? '↑' : pc < 0 ? '↓' : '→'; chg = `<span class="muted small labchg">${a} ${Math.abs(pc)}%</span>`; }
-      } else { const pn = DL.labPosNeg(l, r); const isPos = pn === 'positive'; dot = pn ? (isPos ? '#dc2626' : '#16a34a') : '#94a3b8'; val = pn ? (isPos ? TT.pos : TT.neg) : (r && r.qualitative ? esc(r.qualitative) : '—'); }
-      return `<button class="lab-row" data-lab="${l.id}"><span class="bp-name"><span class="ldot" style="background:${dot}"></span>${esc(tx(l.marker, lang))}</span><span class="lab-val">${val} ${chg} ›</span></button>`;
-    }).join('');
-    return `<div class="labgrp"><button class="labgrp-h" data-labgrp="${esc(g)}"><span class="gcaret">${open ? '▾' : '▸'}</span> ${esc(g)}</button>${open ? `<div class="labgrp-b">${rows}</div>` : ''}</div>`;
-  }).join('');
+  let dayCard = '';
+  try { dayCard = trendDayStripCard(lang, TT, data, types, days, win); }
+  catch (err) { console.warn('day strip card failed', err); dayCard = ''; }
+  // Labs moved to the Summary page — see Records.renderLabs.
   let adhCard = '';
   try { adhCard = adherenceCard(state, data, days, win, TT); }
   catch (err) { console.warn('adherence card failed', err); adhCard = `<div class="card"><div class="card-h"><h2>${lang === 'es' ? 'Cumplimiento de medicación' : 'Medication adherence'}</h2></div><p class="muted small">—</p></div>`; }
-  const labsCard = `<div class="card"><div class="card-h"><h2>${TT.labs}</h2><button class="addmini" data-add="labs" aria-label="Add marker">＋</button></div>${labHtml}</div>`;
   const illCard = getPref('trackEpisodes') ? `<div class="card"><div class="card-h"><h2>${TT.episodes}</h2></div>${episodeStats(data, lang, win)}</div>` : '';
   const moodCard = getPref('trackMood') ? trendMoodCard(lang, TT, data, days, win, reliable) : '';
+  const headlineCard = trendHeadlineCard(lang, TT, data, types, days, reliable);
   const trendGroups = [
-    [TT.groups.overall, [shiftCard, badLineCard, funcCard]],
-    [TT.groups.driving, [loadCard, sevCard, breadthCard, symImpCard, promCard, onsetHtml]],
+    [TT.groups.headline, [headlineCard]],
+    [TT.groups.driving, [symImpCard, promCard, dayCard]],
+    [TT.groups.overall, [funcCard, shiftCard]],
     [TT.groups.context, [moodCard, illCard]],
-    [TT.groups.clinical, [adhCard, labsCard]],
+    [TT.groups.clinical, [adhCard]],
   ];
   const groupsHtml = trendGroups.map(([title, cards]) => {
     const body = cards.join('');
@@ -2574,6 +2573,29 @@ function renderProg(state) {
 }
 function renderRecords(state) { return renderTrends(state); }
 function renderTimeline(state) { return '<div class="ds">' + renderProg(state) + '</div>'; }
+// Labs card (lives at the bottom of the Summary page, above Progression). Tapping a marker drills into its
+// detail (renderLabDetail) in place; the back button returns to the list. Self-contained — no .ds wrapper.
+function renderLabs(state) {
+  const lang = state.lang; const TT = TSS[lang]; const data = DL.getData();
+  if (!data) return '';
+  if (ui.labId) { const lab = (data.labs || []).find((l) => l.id === ui.labId); if (lab) return renderLabDetail(state, lab); ui.labId = null; }
+  const groups = {}; (data.labs || []).forEach((l) => { const g = l.group || 'Other'; (groups[g] = groups[g] || []).push(l); });
+  const og = ui.labGroups || (ui.labGroups = new Set());
+  const labHtml = Object.entries(groups).map(([g, ls]) => {
+    const open = og.has(g);
+    const rows = ls.map((l) => {
+      const r = DL.latestLab(l); const hl = labHL(l); let dot, val, chg = '';
+      if (r && typeof r.value === 'number') {
+        dot = hl === 'high' ? '#dc2626' : hl === 'low' ? '#2563eb' : '#16a34a';
+        val = r.value + ' <span class="muted small">' + esc(l.unit) + '</span>';
+        const pc = labPct(l); if (pc != null) { const a = pc > 0 ? '↑' : pc < 0 ? '↓' : '→'; chg = `<span class="muted small labchg">${a} ${Math.abs(pc)}%</span>`; }
+      } else { const pn = DL.labPosNeg(l, r); const isPos = pn === 'positive'; dot = pn ? (isPos ? '#dc2626' : '#16a34a') : '#94a3b8'; val = pn ? (isPos ? TT.pos : TT.neg) : (r && r.qualitative ? esc(r.qualitative) : '—'); }
+      return `<button class="lab-row" data-lab="${l.id}"><span class="bp-name"><span class="ldot" style="background:${dot}"></span>${esc(tx(l.marker, lang))}</span><span class="lab-val">${val} ${chg} ›</span></button>`;
+    }).join('');
+    return `<div class="labgrp"><button class="labgrp-h" data-labgrp="${esc(g)}"><span class="gcaret">${open ? '▾' : '▸'}</span> ${esc(g)}</button>${open ? `<div class="labgrp-b">${rows}</div>` : ''}</div>`;
+  }).join('');
+  return `<div class="card"><div class="card-h"><h2>${TT.labs}</h2><button class="addmini" data-add="labs" aria-label="Add marker">＋</button></div>${labHtml}</div>`;
+}
 function renderLabDetail(state, lab) {
   const lang = state.lang; const T = STR[lang];
   const wins = ['3m', '1y', 'all'];
@@ -2613,21 +2635,24 @@ function lineChart(lab, win, lang) {
 
 
 async function onClick(e, state, rerender) {
-  const t = e.target.closest('button, [data-symtrend]');
+  if (e.target.classList && e.target.classList.contains('modal-bg') && e.target.hasAttribute('data-hlbg')) { ui.hlInfo = null; rerender(); return; }
+  const t = e.target.closest('button, [data-symtrend], [data-hltrend]');
   if (!t) return;
+  if (t.dataset.hlinfo != null) { ui.hlInfo = ui.hlInfo === t.dataset.hlinfo ? null : t.dataset.hlinfo; rerender(); return; }
+  if (t.dataset.hlclose != null) { ui.hlInfo = null; rerender(); return; }
+  if (t.dataset.hltrend) { ui.hlTrend = (ui.hlTrend === t.dataset.hltrend) ? null : t.dataset.hltrend; rerender(); return; }
   if (t.dataset.editpick != null) { ui.editPick = ui.editPick === t.dataset.editpick ? null : t.dataset.editpick; rerender(); return; }
   if (t.dataset.scorewin) { ui.scoreWin = t.dataset.scorewin; rerender(); return; }
   if (t.dataset.areasym) { ui.areaSym = t.dataset.areasym; rerender(); return; }
   if (t.dataset.symtrend) { ui.symTrend = (ui.symTrend === t.dataset.symtrend) ? null : t.dataset.symtrend; rerender(); return; }
   if (t.dataset.med != null) { ui.medOpen = ui.medOpen === t.dataset.med ? null : t.dataset.med; rerender(); return; }
-  if (t.dataset.badline) { const b = t.dataset.badline, o = b === 'heavy' ? 'vh' : 'heavy'; if (ui.badLines[b] && !ui.badLines[o]) return; ui.badLines[b] = !ui.badLines[b]; rerender(); return; }
   if (t.dataset.labgrp) { const g = t.dataset.labgrp; ui.labGroups.has(g) ? ui.labGroups.delete(g) : ui.labGroups.add(g); rerender(); return; }
   if (t.dataset.lab) { ui.labId = t.dataset.lab === '__back' ? null : t.dataset.lab; ui.win = '1y'; rerender(); return; }
   if (t.dataset.win) { ui.win = t.dataset.win; rerender(); return; }
   if (t.dataset.histyear != null) { ui.histYear = t.dataset.histyear; rerender(); return; }
 }
 
-return { ui, renderRecords, renderTimeline, renderProg, onClick };
+return { ui, renderRecords, renderTimeline, renderProg, renderLabs, onClick };
 })();
 
 const Forms = (function(){
@@ -3212,7 +3237,7 @@ function wireChrome() {
     if (ed) { if (ed.dataset.add) { const pf = ed.dataset.prefill ? JSON.parse(ed.dataset.prefill) : null; Forms.open(ed.dataset.add, null, pf); } else { const [c, id] = ed.dataset.edit.split(':'); Forms.open(c, id || null); } render(); return; }
     if (state.showData) return;
     if (state.tab === 'today') Today.onClick(e, state, render);
-    else if (state.tab === 'overview' && e.target.closest('[data-editpick="milestones"],[data-histyear]')) Records.onClick(e, state, render);
+    else if (state.tab === 'overview' && e.target.closest('[data-editpick="milestones"],[data-histyear],[data-lab],[data-labgrp],[data-win]')) Records.onClick(e, state, render);
     else if (state.tab === 'overview' || state.tab === 'next') Appt.onClick(e, state, render);
     else if (state.tab === 'records' || state.tab === 'timeline') Records.onClick(e, state, render);
     else if (state.tab === 'us') Us.onClick(e, state, render);
@@ -3225,10 +3250,6 @@ function wireChrome() {
     if (e.target.id === 'prefTrackEpisodes') { setPref('trackEpisodes', e.target.checked); render(); return; }
     if (e.target.id === 'prefTrackMood') { const on = e.target.checked; setPref('trackMood', on); if (on) setPrefStr('moodSince', new Date().toLocaleDateString('en-CA')); render(); return; }
     if (e.target.id === 'prefShowUs') { const on = e.target.checked; setPref('showUs', on); if (on && !getPrefStr('usSince')) setPrefStr('usSince', new Date().toLocaleDateString('en-CA')); if (!on && state.tab === 'us') setTab('today'); else render(); return; }
-    if (e.target.id === 'burdenK') { const k = Math.max(1, Math.round(Number(e.target.value) || 2)); const d = DL.getData(); if (d) { d.meta = d.meta || {}; d.meta.burdenBands = Object.assign({}, d.meta.burdenBands, { k }); DL.persistLocal(); DL.persist(); } render(); return; }
-    if (e.target.id === 'burdenT') { const t = Math.max(0, Math.round(Number(e.target.value) || 1)); const d = DL.getData(); if (d) { d.meta = d.meta || {}; d.meta.burdenBands = Object.assign({}, d.meta.burdenBands, { t }); DL.persistLocal(); DL.persist(); } render(); return; }
-    if (e.target.id === 'burdenTt') { const t = Math.max(0, Math.round(Number(e.target.value) || 2) - 1); const d = DL.getData(); if (d) { d.meta = d.meta || {}; d.meta.burdenBands = Object.assign({}, d.meta.burdenBands, { t }); DL.persistLocal(); DL.persist(); } render(); return; }
-    if (e.target.id === 'burdenVH') { const vhCount = Math.max(2, Math.round(Number(e.target.value) || 2)); const d = DL.getData(); if (d) { d.meta = d.meta || {}; d.meta.burdenBands = Object.assign({}, d.meta.burdenBands, { vhCount }); DL.persistLocal(); DL.persist(); } render(); return; }
     if (Forms.isOpen()) { Forms.onInput(e); if (e.target && e.target.dataset && e.target.dataset.rerender !== undefined) render(); return; }
   });
 }
@@ -3633,30 +3654,12 @@ function renderDataScreen() {
   const verdict = v.ok ? '<span class="badge good">SCHEMA OK</span>' : '<span class="badge alert">' + v.errors.length + ' ERRORS</span>';
   const errHtml = v.errors.length ? '<details class="msgs" open><summary>' + v.errors.length + ' error(s)</summary><ul class="msglist">' + v.errors.map((e) => '<li>✗ ' + esc(e) + '</li>').join('') + '</ul></details>' : '';
   const warnHtml = v.warnings.length ? '<details class="msgs"><summary>' + v.warnings.length + ' note(s)</summary><ul class="msglist">' + v.warnings.map((w) => '<li>! ' + esc(w) + '</li>').join('') + '</ul></details>' : '';
-  const curK = (data.meta && data.meta.burdenBands && typeof data.meta.burdenBands.k === 'number') ? data.meta.burdenBands.k : 2;
-  const curVH = (data.meta && data.meta.burdenBands && typeof data.meta.burdenBands.vhCount === 'number') ? data.meta.burdenBands.vhCount : 2;
-  const curT = (data.meta && data.meta.burdenBands && typeof data.meta.burdenBands.t === 'number') ? data.meta.burdenBands.t : 1;
-  const rn = (n) => '<span style="color:var(--muted);font-size:12px">(' + n + ')</span>';
-  const bInput = (id, min, val) => '<input type="number" id="' + id + '" min="' + min + '" step="1" value="' + val + '" style="width:46px;display:inline-block;text-align:center;vertical-align:baseline;margin:0 2px">';
   return '<div class="ds">' + odPanel() +
     '<div class="card"><h2>Display options</h2>' +
     '<div class="f f-row"><label><input type="checkbox" id="prefEnglishOnly"' + (getPref('englishOnly') ? ' checked' : '') + '> English only (hide EN/ES switch)</label></div>' +
     '<div class="f f-row"><label><input type="checkbox" id="prefTrackEpisodes"' + (getPref('trackEpisodes') ? ' checked' : '') + '> Enable episode tracking</label></div>' +
     '<div class="f f-row"><label><input type="checkbox" id="prefTrackMood"' + (getPref('trackMood') ? ' checked' : '') + '> Enable mood tracking</label></div>' +
     '<div class="f f-row"><label><input type="checkbox" id="prefShowUs"' + (getPref('showUs') ? ' checked' : '') + '> Enable relationship tracking</label></div>' +
-    '</div>' +
-    '<div class="card"><h2>Burden scale</h2>' +
-    '<p class="muted small" style="margin:0 0 12px">How each day’s level is set from your symptom ratings. The boxes are yours to adjust.</p>' +
-    '<div style="display:flex;flex-direction:column;gap:11px;font-size:15px;line-height:1.6">' +
-      '<div style="display:flex;gap:10px"><span style="flex:0 0 12px;height:12px;border-radius:3px;background:var(--sev-1);margin-top:5px"></span>' +
-        '<span><b>Light</b> — symptoms only noticeable ' + rn(1) + ', or up to ' + bInput('burdenT', 0, curT) + ' distracting ' + rn(2) + '</span></div>' +
-      '<div style="display:flex;gap:10px"><span style="flex:0 0 12px;height:12px;border-radius:3px;background:var(--sev-2);margin-top:5px"></span>' +
-        '<span><b>Typical</b> — ' + bInput('burdenTt', 1, curT + 1) + ' or more distracting ' + rn(2) + ', or one interfering ' + rn(3) + ' on its own</span></div>' +
-      '<div style="display:flex;gap:10px"><span style="flex:0 0 12px;height:12px;border-radius:3px;background:var(--sev-3);margin-top:5px"></span>' +
-        '<span><b>Difficult</b> — one interfering ' + rn(3) + ' with ' + bInput('burdenK', 1, curK) + ' others distracting ' + rn(2) + ', two interfering ' + rn(3) + ', or one that prevents activity ' + rn(4) + '</span></div>' +
-      '<div style="display:flex;gap:10px"><span style="flex:0 0 12px;height:12px;border-radius:3px;background:var(--sev-4);margin-top:5px"></span>' +
-        '<span><b>Severe</b> — ' + bInput('burdenVH', 2, curVH) + ' or more interfering ' + rn(3) + ' or worse, at once</span></div>' +
-    '</div>' +
     '</div>' +
     '<div class="card"><h2>Parse report ' + verdict + '</h2>' +
     '<div class="kv"><span class="k">Source</span><span class="v">' + esc(pr.source || '') + '</span></div>' +
