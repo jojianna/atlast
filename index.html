@@ -1457,7 +1457,7 @@ let _pushTimer = null;
 function save() {
   DL.persistLocal();
   ui.savedAt = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  clearTimeout(_pushTimer); _pushTimer = setTimeout(() => { DL.persist(); }, 1000);
+  clearTimeout(_pushTimer); _pushTimer = setTimeout(() => { DL.persist({ silent: true }); }, 1000);
 }
 
 async function onClick(e, state, rerender) {
@@ -2485,12 +2485,14 @@ function renderTrends(state) {
   const lang = state.lang; const TT = TSS[lang]; const data = DL.getData();
   if (!data) return '<div class="card"><p class="muted">No data.</p></div>';
   const types = DL.activeSymptomTypes(data);
-  const win = ui.scoreWin || '3m';
+  const firstLog = (data.dailyLogs || []).map((l) => l.date).filter(Boolean).sort()[0];
+  // Default window adapts to history: new users start on the shortest (30d) so they aren't dropped
+  // into a mostly-empty 3-month view; once there's a full 3 months of history, default to 3m.
+  const win = ui.scoreWin || ((firstLog && firstLog <= isoBack(89)) ? '3m' : '30d');
   const allDays = (() => { const ds = (data.dailyLogs || []).map((l) => l.date).filter(Boolean).sort(); if (!ds.length) return 365; return Math.round((Date.now() - new Date(ds[0] + 'T00:00:00Z').getTime()) / 86400000) + 1; })();
   const days = win === 'all' ? allDays : (WIN_DAYS[win] || 30);
   const winseg = `<div class="trendbar"><div class="winseg">${[['30d', '30d'], ['3m', '3m'], ['1y', '1y'], ['all', 'All']].map(([k, lbl]) => `<button class="${win === k ? 'on' : ''}" data-scorewin="${k}">${lbl}</button>`).join('')}</div></div>`;
   // How am I trending — four window-aware charts (helpers above). Comparison pills hide when the prior period predates tracking.
-  const firstLog = (data.dailyLogs || []).map((l) => l.date).filter(Boolean).sort()[0];
   const reliable = win !== 'all' && !!firstLog && firstLog <= isoBack(2 * days - 1);
   const shiftCard = trendShiftCard(lang, TT, winAggPeak(data, types, 0, days), winAggPeak(data, types, days, 2 * days), reliable, days, win);
   const funcCard = trendFuncImpactCard(lang, TT, data, types, days, win, reliable);
@@ -2499,11 +2501,14 @@ function renderTrends(state) {
   const stats = symStats(data, types, days).filter((x) => x.cur > 0.05);
   const promRows = stats.map((x) => {
     const lvl = Math.max(1, Math.min(4, Math.round(x.cur))); const col = SEVHEX[lvl];
-    const worse = x.delta > 0.05, better = x.delta < -0.05; const dc = worse ? 'up' : better ? 'down' : 'flat'; const ar = worse ? '↑' : better ? '↓' : '→';
-    const dtxt = Math.abs(x.delta) < 0.05 ? '' : ' ' + (worse ? '+' : '') + x.delta.toFixed(1);
+    // Change arrow only when there's a reliable prior period — otherwise the "prev" window predates
+    // tracking (all zeros) and every symptom would read as a spurious increase on a new user's first days.
+    const worse = reliable && x.delta > 0.05, better = reliable && x.delta < -0.05; const dc = worse ? 'up' : better ? 'down' : 'flat'; const ar = worse ? '↑' : better ? '↓' : '→';
+    const dtxt = (!reliable || Math.abs(x.delta) < 0.05) ? '' : ' ' + (worse ? '+' : '') + x.delta.toFixed(1);
+    const chg = reliable ? `<span class="tr ${dc}">${ar}${dtxt}</span>` : '';
     const open = ui.symTrend === x.s.id;
     const line = open ? `<div class="promline">${trendSVG(windowSeries(data, [x.s], days, (lg, t) => symIntensity(t[0], lg)).series, 4, x.cur, true)}</div>` : '';
-    return `<div class="promrow" data-symtrend="${x.s.id}"><span class="promname">${esc(tx(x.s.name, lang))}</span><span class="prombar"><span style="width:${(x.cur / 4 * 100).toFixed(0)}%;background:${col}"></span></span><span class="promval">${x.cur.toFixed(1)}</span><span class="tr ${dc}">${ar}${dtxt}</span></div>${line}`;
+    return `<div class="promrow" data-symtrend="${x.s.id}"><span class="promname">${esc(tx(x.s.name, lang))}</span><span class="prombar"><span style="width:${(x.cur / 4 * 100).toFixed(0)}%;background:${col}"></span></span><span class="promval">${x.cur.toFixed(1)}</span>${chg}</div>${line}`;
   }).join('') || `<p class="muted small">${TT.noData}</p>`;
   const promCard = `<div class="card"><div class="card-h"><h2>${TT.mostProm}</h2></div>${promRows}</div>`;
   let dayCard = '';
@@ -3481,7 +3486,11 @@ const Us = (function () {
     const today = Today.todayISO();
     const days = ui.win === 'all' ? allDays() : (WD[ui.win] || 30);
     const winLabel = { '1w': 'week', '30d': '30 days', '3m': '3 months' }[ui.win] || 'period';
-    const hasPrev = ui.win !== 'all'; // "All" has no prior period to compare against
+    // Only compare against the previous equal-length period when that period lies within tracked
+    // history. On a new user the prior window is entirely before they started, so an empty (all-zero)
+    // baseline would wrongly read as "worse/better vs 0" on their first days. ("All" has no prior period.)
+    const firstUs = ((data.dailyLogs || []).filter((l) => l.us).map((l) => l.date).filter(Boolean).sort())[0];
+    const hasPrev = ui.win !== 'all' && !!firstUs && firstUs <= daysAgo(today, 2 * days - 1);
     function agg(fromBack, span) {
       const a = { conn: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }, connLogged: 0, warm: 0, cDate: 0, cQual: 0, cNone: 0, together: 0, fNone: 0, fLittle: 0, fArg: 0, fricTotal: 0 };
       for (let i = fromBack; i < fromBack + span; i++) { const du = DL.getUs(daysAgo(today, i), data); if (!du) continue;
@@ -3606,7 +3615,29 @@ const Us = (function () {
   function resetNotes() { ui.notesPage = false; ui.notesMonth = 'all'; ui.calOpen = false; ui.calMonth = null; }
   return { headerHTML, renderUsScreen, onClick, onInput, toggleCal, resetNotes };
 })();
+// A full render() replaces screen.innerHTML, which blows away focus + caret if the user is
+// typing in a note. Capture the focused field (by its stable data-*/id attributes) before the
+// swap and restore focus, selection, and scroll after, so re-renders don't kick you out mid-type.
+function captureFieldFocus() {
+  const el = document.activeElement;
+  if (!el || (el.tagName !== 'TEXTAREA' && el.tagName !== 'INPUT')) return null;
+  const attrs = [...el.attributes].filter((a) => a.name === 'id' || a.name.indexOf('data-') === 0);
+  if (!attrs.length) return null;
+  const sel = el.tagName.toLowerCase() + attrs.map((a) => `[${a.name}="${(window.CSS && CSS.escape) ? CSS.escape(a.value) : a.value}"]`).join('');
+  let start = null, end = null;
+  try { start = el.selectionStart; end = el.selectionEnd; } catch {}
+  return { sel, start, end, scroll: el.scrollTop };
+}
+function restoreFieldFocus(f) {
+  if (!f) return;
+  let el; try { el = screen.querySelector(f.sel); } catch { return; }
+  if (!el || el === document.activeElement) return;
+  try { el.focus({ preventScroll: true }); } catch { el.focus(); }
+  if (f.start != null) { try { el.setSelectionRange(f.start, f.end); } catch {} }
+  if (f.scroll) el.scrollTop = f.scroll;
+}
 function render() {
+  const _savedFocus = captureFieldFocus();
   const titles = TAB_TITLES;
   const englishOnly = getPref('englishOnly');
   const langToggle = document.querySelector('.lang-toggle'); if (langToggle) langToggle.hidden = englishOnly || (!state.showData && state.tab === 'us');
@@ -3645,6 +3676,7 @@ function render() {
   // Auto-size the mood journal note to its content on (re)render; CSS max-height caps it and scrolls past that.
   screen.querySelectorAll('.moodnote').forEach((el) => { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; });
   screen.querySelectorAll('.us-ta').forEach((el) => { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; });
+  restoreFieldFocus(_savedFocus);
 }
 function renderDataScreen() {
   const data = getData(); const meta = getLoadMeta();
