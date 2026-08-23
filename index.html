@@ -1899,9 +1899,11 @@ function renderBig(state) {
     return parts.join(' · ');
   };
   // ONE chip per condition: investigating → "Investigating"; otherwise the control state.
-  const condChip = (c) => c.status === 'investigating'
-    ? `<span class="badge info">${STATUS[lang].investigating}</span>`
-    : (c.control && c.control !== 'no_treatment' && T.control && T.control[c.control] ? `<span class="badge ${CTRL_CLS[c.control] || 'neutral'}">${T.control[c.control]}</span>` : '');
+  // A treatment control (Treating/Adjusting) takes precedence over the Investigating badge, so a condition
+  // still being worked up but already being treated shows its treatment state. Investigating with no treatment set still shows "Investigating".
+  const condChip = (c) => (c.control && c.control !== 'no_treatment' && T.control && T.control[c.control])
+    ? `<span class="badge ${CTRL_CLS[c.control] || 'neutral'}">${T.control[c.control]}</span>`
+    : (c.status === 'investigating' ? `<span class="badge info">${STATUS[lang].investigating}</span>` : '');
   const condRow = (c) => {
     const sub = condSub(c);
     return `<div class="drow"><div><div class="dname">${esc(tx(c.name, lang))}</div>${sub ? `<div class="dmeta">${esc(sub)}</div>` : ''}</div><div class="dright">${condChip(c)}</div></div>`;
