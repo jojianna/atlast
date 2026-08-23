@@ -226,6 +226,7 @@ ul.tight { margin: 4px 0 0; padding-left: 18px; } ul.tight li { padding: 1px 0; 
 .ds .drow:first-of-type{border-top:0;}
 .ds .dname{font-weight:600;}
 .ds .dmeta{font-size:13px;color:var(--muted);margin-top:1px;}
+.ds .dspec{color:var(--teal);}
 .ds .ct-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 14px;margin-top:8px;}
 .ds .ct-grid .dmeta{line-height:1.35;}
 .ds .appt-seg, .ds .seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;padding:2px;margin:0 0 12px;}
@@ -529,9 +530,9 @@ ul.tight { margin: 4px 0 0; padding-left: 18px; } ul.tight li { padding: 1px 0; 
 .us-q { font-size:14px; font-weight:600; margin:0 0 8px; }
 .us-ta { width:100%; box-sizing:border-box; border:1px solid var(--line); border-radius:8px; padding:8px; font:inherit; font-size:14px; line-height:1.45; resize:vertical; min-height:56px; max-height:240px; overflow-y:auto; }
 /* Optional note fields (improve/grateful) collapse behind a pink disclosure row so an open box doesn't invite filling. */
-.us-disc { display:flex; align-items:center; justify-content:space-between; width:100%; background:transparent; border:0; border-top:1px solid var(--line); margin-top:16px; padding:12px 0 2px; font:inherit; cursor:pointer; touch-action:manipulation; -webkit-tap-highlight-color:transparent; }
+.us-disc { display:flex; align-items:center; justify-content:space-between; text-align:left; width:100%; background:transparent; border:0; border-top:1px solid var(--line); margin-top:16px; padding:12px 0 2px; font:inherit; cursor:pointer; touch-action:manipulation; -webkit-tap-highlight-color:transparent; }
 .us-disc-l { display:inline-flex; align-items:baseline; gap:8px; }
-.us-disc-q { font-size:14px; font-weight:600; color:var(--us); }
+.us-disc-q { font-size:14px; font-weight:600; color:var(--us); text-align:left; }
 .us-disc-opt { font-size:11px; font-weight:400; color:var(--muted); }
 .us-chev { display:flex; color:var(--us); transition:transform .15s ease; }
 .us-disc[aria-expanded="true"] .us-chev { transform:rotate(180deg); }
@@ -993,7 +994,7 @@ function medDueOn(m, date) {
 function medTimeOfDay(m) { return m.timeOfDay || 'morning'; }
 // Daily view: only meds flagged track !== false, ordered morning → midday → evening.
 function medsForDate(date, data = _data) {
-  const active = (data.medications || []).filter((m) => m.status !== 'stopped' && m.track !== false);
+  const active = (data.medications || []).filter((m) => m.status !== 'stopped' && m.track !== false && m.category !== 'otc');
   const isPrn = (m) => m.scheduledDays === 'prn' || (m.status === 'prn' && m.everyNDays == null);
   const byTime = (a, b) => (TOD_ORDER[medTimeOfDay(a)] - TOD_ORDER[medTimeOfDay(b)]);
   const prn = active.filter(isPrn).sort(byTime);
@@ -1586,7 +1587,10 @@ function renderToday(state) {
   const regMeds = scheduled.filter((m) => m.category !== 'supplement' && m.category !== 'therapy');
   const suppMeds = scheduled.filter((m) => m.category === 'supplement');
   const therMeds = scheduled.filter((m) => m.category === 'therapy');
-  const medsBody = (medSec(T.secRegular, regMeds) + medSec(T.secSupplements, suppMeds) + medSec(T.secTherapies, therMeds) + medSec(T.asNeeded, prn, true)) || `<p class="muted small">${T.noMeds}</p>`;
+  // Therapies fold into "As needed": scheduled therapies keep the yes/no toggle; PRN meds keep the dose stepper.
+  const asNeededBody = therMeds.map((m) => medRow(m, false)).join('') + prn.map((m) => medRow(m, true)).join('');
+  const asNeededSec = (therMeds.length || prn.length) ? `<div class="subsec">${T.asNeeded}</div>${asNeededBody}` : '';
+  const medsBody = (medSec(T.secRegular, regMeds) + medSec(T.secSupplements, suppMeds) + asNeededSec) || `<p class="muted small">${T.noMeds}</p>`;
   // Meds card edit controls (mirrors the symptoms card): ✎ opens a pick-list of meds to edit, ＋ adds one.
   // Both open the same medication form used on the Summary tab, so the two entry points never diverge.
   const medEditing = ui.editPick === 'medications';
@@ -1812,7 +1816,7 @@ function buildDoctorSheet(lang) {
   const condStatus = (c) => c.status === 'investigating'
     ? STATUS[lang].investigating
     : (c.control && c.control !== 'no_treatment' && T.control && T.control[c.control] ? T.control[c.control] : '');
-  const condRows = bp.conditions.slice().sort(byDateDesc).map((c) => {
+  const condRows = bp.conditions.filter((c) => c.status !== 'resolved').slice().sort(byDateDesc).map((c) => {
     const meta = [c.statusDate ? `${T.since} ${c.statusDate.slice(0, 4)}` : '', condStatus(c)].filter(Boolean).join(' · ');
     return `<tr><td>${esc(tx(c.name, lang))}</td><td class="ps-right">${esc(meta)}</td></tr>`;
   }).join('') || `<tr><td colspan="2">${T.none}</td></tr>`;
@@ -1820,16 +1824,15 @@ function buildDoctorSheet(lang) {
   const isPrnMed = (m) => m.scheduledDays === 'prn' || (m.status === 'prn' && m.everyNDays == null);
   const byTimeOfDay = (a, b) => ((TOD_ORDER[a.timeOfDay] != null ? TOD_ORDER[a.timeOfDay] : 1) - (TOD_ORDER[b.timeOfDay] != null ? TOD_ORDER[b.timeOfDay] : 1));
   const all = bp.medications;
-  const prn = all.filter(isPrnMed);
+  const asNeeded = all.filter((m) => isPrnMed(m) || m.category === 'therapy').sort(byTimeOfDay);
   const supp = all.filter((m) => !isPrnMed(m) && m.category === 'supplement').sort(byTimeOfDay);
   const reg = all.filter((m) => !isPrnMed(m) && m.category !== 'supplement' && m.category !== 'therapy').sort(byTimeOfDay);
-  const ther = all.filter((m) => !isPrnMed(m) && m.category === 'therapy').sort(byTimeOfDay);
   const medRow = (m) => {
     const s = medSchedule(m, lang); const sched = [s.xxx, s.freq].filter(Boolean).join(' · ');
     return `<tr><td>${esc(tx(m.name, lang))}</td><td>${m.dose ? esc(m.dose) : '—'}</td><td>${esc(sched || '—')}</td></tr>`;
   };
   const medGroup = (label, list) => list.length ? `<tr class="ps-sub"><td colspan="3">${esc(label)}</td></tr>${list.map(medRow).join('')}` : '';
-  const medBody = (medGroup(T.secRegular, reg) + medGroup(T.secSupplements, supp) + medGroup(T.secTherapies, ther) + medGroup(T.secPrn, prn)) || `<tr><td colspan="3">${T.none}</td></tr>`;
+  const medBody = (medGroup(T.secRegular, reg) + medGroup(T.secSupplements, supp) + medGroup(T.secPrn, asNeeded)) || `<tr><td colspan="3">${T.none}</td></tr>`;
   return `<div class="ps-head"><div class="ps-title">${title}</div><div class="ps-date">${esc(prepared)}</div></div>
     <div class="ps-h">${L('Active conditions', 'Condiciones activas')}</div>
     <table class="ps-tbl">${condRows}</table>
@@ -1918,16 +1921,18 @@ function renderBig(state) {
     else { right = `<span class="f">${esc(sch.freq || statusLbl)}</span>`; }
     const tag = tx(m.purpose, lang) || '';
     const sub = (tag ? esc(tag) : '') + (tag && m.dose ? ' · ' : '') + (m.dose ? `<b>${esc(m.dose)}</b>` : '');
-    return `<div class="drow"><div><div class="dname">${esc(tx(m.name, lang))}</div>${sub ? `<div class="dmeta">${sub}</div>` : ''}</div><div class="dright"><div class="sched">${right}</div></div></div>`;
+    const spIds = (m.specialismIds && m.specialismIds.length) ? m.specialismIds : [...new Set((m.conditionIds || []).flatMap((cid) => (condById[cid]?.specialismIds) || []))];
+    const spNames = spIds.map((sid) => spById[sid] ? specialistLabel(spById[sid], lang) : '').filter(Boolean);
+    const specLine = spNames.length ? `<div class="dmeta dspec">${esc(spNames.join(', '))}</div>` : '';
+    return `<div class="drow"><div><div class="dname">${esc(tx(m.name, lang))}</div>${sub ? `<div class="dmeta">${sub}</div>` : ''}${specLine}</div><div class="dright"><div class="sched">${right}</div></div></div>`;
   };
   const byTimeOfDay = (a, b) => ((TOD_ORDER[a.timeOfDay] != null ? TOD_ORDER[a.timeOfDay] : 1) - (TOD_ORDER[b.timeOfDay] != null ? TOD_ORDER[b.timeOfDay] : 1));
   const allMeds = bp.medications;
-  const prnMeds = allMeds.filter(isPrnMed);
+  const asNeededMeds = allMeds.filter((m) => isPrnMed(m) || m.category === 'therapy').sort(byTimeOfDay);
   const suppMeds = allMeds.filter((m) => !isPrnMed(m) && m.category === 'supplement').sort(byTimeOfDay);
   const regMeds = allMeds.filter((m) => !isPrnMed(m) && m.category !== 'supplement' && m.category !== 'therapy').sort(byTimeOfDay);
-  const therMeds = allMeds.filter((m) => !isPrnMed(m) && m.category === 'therapy').sort(byTimeOfDay);
   const medSection = (label, list) => list.length ? `<div class="subsec">${label}</div>${list.map(medRowHtml).join('')}` : '';
-  const meds = (medSection(T.secRegular, regMeds) + medSection(T.secSupplements, suppMeds) + medSection(T.secTherapies, therMeds) + medSection(T.secPrn, prnMeds)) || `<p class="muted small">${T.none}</p>`;
+  const meds = (medSection(T.secRegular, regMeds) + medSection(T.secSupplements, suppMeds) + medSection(T.secPrn, asNeededMeds)) || `<p class="muted small">${T.none}</p>`;
   // Ruled out — one collapsed line; each item taps for why/when.
   const roItem = (r) => {
     const prov = r.status === 'provisionally_excluded';
@@ -1958,7 +1963,7 @@ function renderBig(state) {
   const pastSection = pastMeds.length ? `<details class="pastmeds" style="margin-top:10px;border-top:1px solid var(--line);padding-top:8px"><summary style="cursor:pointer;color:var(--muted);font-size:13px">${pastLbl} · ${pastMeds.length}</summary><div style="margin-top:6px">${pastRows}</div></details>` : '';
   return `<div class="ds">
     <div class="card"><div class="card-h"><h2>${T.activeManaged}</h2><span class="hgrp">${condHdr}</span></div>${condSeg}${condBody}</div>
-    <div class="card" id="medsTable"><div class="card-h"><h2>${T.currentMeds}</h2><span class="hgrp">${editBtn('medications')}<button class="addmini" data-add="medications" aria-label="Add medication">＋</button></span></div>${ui.editPick === 'medications' ? pickList(allMeds, 'medications', (m) => tx(m.name, lang)) : meds}${pastSection}</div>
+    <div class="card" id="medsTable"><div class="card-h"><h2>${T.currentMeds}</h2><span class="hgrp">${editBtn('medications')}<button class="addmini" data-add="medications" aria-label="Add medication">＋</button></span></div>${ui.editPick === 'medications' ? pickList((data.medications || []).filter((m) => m.status !== 'stopped'), 'medications', (m) => tx(m.name, lang)) : meds}${pastSection}</div>
     ${Records.renderLabs(state)}
     ${Records.renderProg(state)}
     <button class="printbtn" data-print><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>${lang === 'es' ? 'Imprimir / Guardar PDF' : 'Print / Save PDF'}</button>
@@ -2902,13 +2907,15 @@ const SPECS = {
     { key: 'track', type: 'checkbox', label: 'Track daily (show in the daily check-off)' },
     { key: 'category', type: 'radio', label: 'Category', rerender: true, options: [{ v: 'prescription', l: 'Prescription' }, { v: 'supplement', l: 'Supplement' }, { v: 'otc', l: 'OTC (over-the-counter)' }, { v: 'therapy', l: 'Therapy' }] },
     { key: 'purpose', type: 'i18n', label: 'Purpose' },
+    { key: 'conditionIds', type: 'multiselect', label: 'For condition(s)', source: 'conditions' },
+    { key: 'specialismIds', type: 'multiselect', label: 'Managed by — specialist (overrides the condition)', source: 'specialisms' },
     { key: 'status', type: 'select', label: 'Status', options: ['active', 'tapering', 'stopped'] },
     { key: 'startDate', type: 'date', label: 'Started' },
     { key: 'stopDate', type: 'date', label: 'Stopped' },
     { key: 'lastDoseChange', type: 'date', label: 'Last dose change' },
     { key: 'doseHistory', type: 'rows', label: 'Dose history', sub: [{ key: 'date', type: 'date', label: 'Date' }, { key: 'dose', type: 'text', label: 'Dose' }, { key: 'note', type: 'text', label: 'Note' }] },
     { key: 'notes', type: 'i18n', label: 'Notes', textarea: true },
-  ], defaults: { name: { en: '', es: '' }, dose: '', freqLabel: { en: '', es: '' }, scheduledDays: ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'], timeOfDay: 'morning', track: true, category: 'prescription', purpose: { en: '', es: '' }, conditionIds: [], status: 'active', startDate: null, stopDate: null, lastDoseChange: null, doseHistory: [], notes: { en: '', es: '' } } },
+  ], defaults: { name: { en: '', es: '' }, dose: '', freqLabel: { en: '', es: '' }, scheduledDays: ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'], timeOfDay: 'morning', track: true, category: 'prescription', purpose: { en: '', es: '' }, conditionIds: [], specialismIds: [], status: 'active', startDate: null, stopDate: null, lastDoseChange: null, doseHistory: [], notes: { en: '', es: '' } } },
   episodes: { title: 'Episode', fields: [
     { key: 'name', type: 'i18n', label: 'Name', enOnly: true },
     { key: 'type', type: 'select', label: 'Type', options: ['cold_flu', 'infection', 'gi', 'flare', 'other'] },
@@ -3368,7 +3375,7 @@ function buildSummary(d) {
   const L = 'en'; const lines = [];
   lines.push('# Health summary (auto-generated — read only)'); lines.push('');
   lines.push('_Mirror of health-data.json. Do not edit by hand; edit the app or the JSON._'); lines.push('');
-  const active = (d.conditions || []).filter((c) => ['current', 'investigating', 'resolved'].includes(c.status));
+  const active = (d.conditions || []).filter((c) => ['current', 'investigating'].includes(c.status));
   if (active.length) { lines.push('## Active conditions'); active.forEach((c) => lines.push('- ' + tx(c.name, L) + ' — ' + c.status + (c.statusDate ? ' (' + c.statusDate + ')' : ''))); lines.push(''); }
   const meds = (d.medications || []).filter((m) => m.status !== 'stopped' && m.category !== 'otc');
   if (meds.length) {
