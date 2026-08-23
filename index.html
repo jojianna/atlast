@@ -232,6 +232,7 @@ ul.tight { margin: 4px 0 0; padding-left: 18px; } ul.tight li { padding: 1px 0; 
 .ds .appt-seg, .ds .seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;padding:2px;margin:0 0 12px;}
 .ds .appt-seg button, .ds .seg button{border:0;background:none;font:inherit;font-size:12px;color:var(--muted);padding:5px 14px;border-radius:999px;cursor:pointer;}
 .ds .appt-seg button.on, .ds .seg button.on{background:var(--teal-d);color:#fff;font-weight:600;}
+.ds .seg button{padding:5px 10px;white-space:nowrap;}
 .ds .appt-cols{column-count:2;column-gap:16px;}
 .ds .appt-cell{break-inside:avoid;margin-bottom:14px;}
 .ds .appt-tap{display:block;width:100%;text-align:left;background:none;border:0;padding:0;font:inherit;cursor:pointer;}
@@ -1907,7 +1908,10 @@ function renderBig(state) {
   };
   const byDateDesc = (a, b) => { const da = a.statusDate || '', db = b.statusDate || ''; if (da === db) return 0; if (!da) return 1; if (!db) return -1; return da < db ? 1 : -1; };
   const allConds = bp.conditions.slice().sort(byDateDesc);
-  const conds = allConds.map(condRow).join('') || `<p class="muted small">${T.none}</p>`;
+  const activeConds = allConds.filter((c) => c.status !== 'resolved');
+  const resolvedConds = allConds.filter((c) => c.status === 'resolved');
+  const conds = activeConds.map(condRow).join('') || `<p class="muted small">${T.none}</p>`;
+  const resolvedRows = resolvedConds.map(condRow).join('') || `<p class="muted small">${T.none}</p>`;
   // Doctor-style med list: Regular / Supplements / PRN with an aligned schedule column.
   const isPrnMed = (m) => m.scheduledDays === 'prn' || (m.status === 'prn' && m.everyNDays == null);
   const medRowHtml = (m) => {
@@ -1948,13 +1952,15 @@ function renderBig(state) {
   const editBtn = (coll) => `<button class="addmini" data-editpick="${coll}" aria-label="${lang === 'es' ? 'Editar' : 'Edit'}">${ui.editPick === coll ? '✕' : '✎'}</button>`;
   // Conditions + Ruled out share one card with a toggle (single column). Row contents/tags are unchanged.
   const condView = ui.condView || 'active';
-  const condSeg = `<div class="seg"><button class="${condView === 'active' ? 'on' : ''}" data-condview="active">${lang === 'es' ? 'Activas' : 'Active'} · ${allConds.length}</button><button class="${condView === 'ruled' ? 'on' : ''}" data-condview="ruled">${T.ruledOut} · ${bp.excluded.length}</button></div>`;
-  const condHdr = condView === 'active'
-    ? `${editBtn('conditions')}<button class="addmini" data-add="conditions" aria-label="Add condition">＋</button>`
-    : `${editBtn('excluded')}<button class="addmini" data-add="conditions" data-prefill='{"status":"excluded"}' aria-label="${lang === 'es' ? 'Añadir descartado' : 'Add ruled-out'}">＋</button>`;
-  const condBody = condView === 'active'
-    ? (ui.editPick === 'conditions' ? pickList(allConds, 'conditions', (c) => tx(c.name, lang)) : conds)
-    : (ui.editPick === 'excluded' ? pickList(bp.excluded, 'conditions', (r) => tx(r.name, lang)) : ro);
+  const condSeg = `<div class="seg"><button class="${condView === 'active' ? 'on' : ''}" data-condview="active">${lang === 'es' ? 'Activas' : 'Active'} · ${activeConds.length}</button><button class="${condView === 'resolved' ? 'on' : ''}" data-condview="resolved">${lang === 'es' ? 'Resueltas' : 'Resolved'} · ${resolvedConds.length}</button><button class="${condView === 'ruled' ? 'on' : ''}" data-condview="ruled">${T.ruledOut} · ${bp.excluded.length}</button></div>`;
+  const condHdr = condView === 'ruled'
+    ? `${editBtn('excluded')}<button class="addmini" data-add="conditions" data-prefill='{"status":"excluded"}' aria-label="${lang === 'es' ? 'Añadir descartado' : 'Add ruled-out'}">＋</button>`
+    : `${editBtn('conditions')}<button class="addmini" data-add="conditions" aria-label="Add condition">＋</button>`;
+  const condBody = condView === 'ruled'
+    ? (ui.editPick === 'excluded' ? pickList(bp.excluded, 'conditions', (r) => tx(r.name, lang)) : ro)
+    : condView === 'resolved'
+      ? (ui.editPick === 'conditions' ? pickList(resolvedConds, 'conditions', (c) => tx(c.name, lang)) : resolvedRows)
+      : (ui.editPick === 'conditions' ? pickList(activeConds, 'conditions', (c) => tx(c.name, lang)) : conds);
   // Past (stopped) meds — hidden from the current list, surfaced here so they can be reopened / resumed.
   const pastMeds = (data.medications || []).filter((m) => m.status === 'stopped').sort((a, b) => { const x = a.stopDate || '', y = b.stopDate || ''; return x < y ? 1 : (x > y ? -1 : 0); });
   const pastLbl = lang === 'es' ? 'Medicamentos anteriores' : 'Past medications';
