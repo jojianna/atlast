@@ -330,6 +330,9 @@ ul.tight { margin: 4px 0 0; padding-left: 18px; } ul.tight li { padding: 1px 0; 
 .ds .wkday.sel .wkdow,.ds .wkday.sel .wktick{color:rgba(255,255,255,.85);}
 .ds .wkday.tod:not(.sel){border-color:var(--teal);border-width:1.5px;}
 .ds .wkday.fut{opacity:.4;}
+/* Month boundary in the week strip: a vertical month label + a teal left-edge on the 1st, to orient across month rollovers. */
+.ds .wkmonth{flex:0 0 auto;display:flex;align-items:center;justify-content:center;writing-mode:vertical-rl;transform:rotate(180deg);font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding:0 1px;}
+.ds .wkday.month1{border-left:2px solid var(--teal);}
 .ds .wkcal{flex:0 0 auto;width:34px;height:34px;border:1px solid var(--line);background:#fff;border-radius:9px;display:flex;align-items:center;justify-content:center;color:var(--teal);cursor:pointer;padding:0;touch-action:manipulation;-webkit-tap-highlight-color:transparent;}
 .ds .wkcal svg{width:18px;height:18px;}
 .ds .wkcal.on{background:var(--teal);color:#fff;border-color:var(--teal);}
@@ -366,6 +369,7 @@ ul.tight { margin: 4px 0 0; padding-left: 18px; } ul.tight li { padding: 1px 0; 
 .ds .symrow .symctl{display:flex;align-items:center;gap:6px;}
 .ds .sevpick,.ds .sev-chip.sevsq{display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;min-width:38px;padding:0;border:0;border-radius:9px;font-size:15px;font-weight:700;cursor:pointer;}
 .ds .chipgrp{display:flex;align-items:center;gap:6px;} .ds .sev-chip.sumsq{background:var(--teal);color:#fff;cursor:default;}
+.ds .loc-total{display:flex;align-items:center;justify-content:space-between;padding:4px 0 8px;margin-bottom:4px;border-bottom:1px solid var(--line);font-size:13px;color:var(--muted);}
 .ds .noteicon{width:38px;height:38px;display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--line);background:#fff;border-radius:9px;cursor:pointer;color:var(--muted);touch-action:manipulation;-webkit-tap-highlight-color:transparent;position:relative;}
 .ds .noteicon.has{color:var(--teal);}
 .ds .noteicon.has::after{content:'';position:absolute;top:-3px;right:-3px;width:10px;height:10px;border-radius:50%;background:var(--teal);border:2px solid var(--card);}
@@ -514,20 +518,24 @@ ul.tight { margin: 4px 0 0; padding-left: 18px; } ul.tight li { padding: 1px 0; 
   html,body{background:#fff !important;}
   @page{margin:14mm;}
 }
-/* Us — optional relationship tab (off by default). Pink experience: topbar + accents use --us. */
-body.tab-us .topbar { background:var(--us); }
-body.tab-us .cogbtn { color:#fff; }
-body.tab-us .lang-btn.is-active { color:var(--us); }
-body.tab-us .ds .trendgrp-h .gbar { background:var(--us); }
-body.tab-us .ds .trendgrp-h:first-child { margin-top:4px; }
-body.tab-us .ds .winseg button.on { color:var(--us); }
-body.tab-us .ds .us-trendhead { position:sticky; top:var(--topbar-h,56px); z-index:9; background:var(--bg); margin:4px 0 12px; padding:9px 0; border-bottom:1px solid var(--line); }
+/* Relationship ("Us") — optional, gated by showUs. No longer a tab: the daily check-in is a card
+   on the Log tab (.rel-card) and the trends + notes are a group on the Trends page (.rel). Pink accents. */
+.rel .trendgrp-h .gbar { background:var(--us); }
+.rel-card .card-h h2 { color:var(--us); }
 .us-chips { display:grid; grid-template-columns:repeat(7,1fr); gap:5px; }
 .us-chip { height:38px; border:1px solid var(--line); background:#fff; color:var(--muted); border-radius:9px; font-weight:700; font-size:15px; cursor:pointer; touch-action:manipulation; -webkit-tap-highlight-color:transparent; user-select:none; }
 .us-chip.on { background:var(--us); color:#fff; border-color:transparent; }
 .us-ends { display:flex; justify-content:space-between; font-size:11px; color:var(--muted); margin-top:5px; }
 .us-q { font-size:14px; font-weight:600; margin:0 0 8px; }
 .us-ta { width:100%; box-sizing:border-box; border:1px solid var(--line); border-radius:8px; padding:8px; font:inherit; font-size:14px; line-height:1.45; resize:vertical; min-height:56px; max-height:240px; overflow-y:auto; }
+/* Optional note fields (improve/grateful) collapse behind a pink disclosure row so an open box doesn't invite filling. */
+.us-disc { display:flex; align-items:center; justify-content:space-between; width:100%; background:transparent; border:0; border-top:1px solid var(--line); margin-top:16px; padding:12px 0 2px; font:inherit; cursor:pointer; touch-action:manipulation; -webkit-tap-highlight-color:transparent; }
+.us-disc-l { display:inline-flex; align-items:baseline; gap:8px; }
+.us-disc-q { font-size:14px; font-weight:600; color:var(--us); }
+.us-disc-opt { font-size:11px; font-weight:400; color:var(--muted); }
+.us-chev { display:flex; color:var(--us); transition:transform .15s ease; }
+.us-disc[aria-expanded="true"] .us-chev { transform:rotate(180deg); }
+.us-disc-body { margin-top:8px; }
 .us-qt { display:flex; gap:6px; }
 .us-tgl { width:46px; height:38px; border:1px solid var(--line); background:#fff; border-radius:8px; font-size:16px; color:var(--muted); cursor:pointer; touch-action:manipulation; -webkit-tap-highlight-color:transparent; }
 .us-tgl.on { background:var(--us); color:#fff; border-color:transparent; }
@@ -563,13 +571,13 @@ body.tab-us .ds .us-trendhead { position:sticky; top:var(--topbar-h,56px); z-ind
 .us-plab.sel { background:var(--us); color:#fff; border-color:transparent; }
 .us-grat { background:#fffafc; border-color:#f3c6dd; }
 .mt16 { margin-top:16px; }
-body.tab-us .metric { border:1px solid var(--line); border-radius:14px; padding:14px; margin-top:12px; }
-body.tab-us .metric:first-child { margin-top:0; }
-body.tab-us .metric .mtop { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:11px; }
-body.tab-us .metric .mname { font-size:13.5px; font-weight:600; }
-body.tab-us .metric .msub { font-size:11px; color:var(--muted); }
-body.tab-us .metric .dow { display:flex; gap:5px; margin-bottom:5px; }
-body.tab-us .metric .dow span { flex:1; text-align:center; font-size:9.5px; color:var(--faint,#9aa3b2); font-weight:600; }
+.rel .metric { border:1px solid var(--line); border-radius:14px; padding:14px; margin-top:12px; }
+.rel .metric:first-child { margin-top:0; }
+.rel .metric .mtop { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:11px; }
+.rel .metric .mname { font-size:13.5px; font-weight:600; }
+.rel .metric .msub { font-size:11px; color:var(--muted); }
+.rel .metric .dow { display:flex; gap:5px; margin-bottom:5px; }
+.rel .metric .dow span { flex:1; text-align:center; font-size:9.5px; color:var(--faint,#9aa3b2); font-weight:600; }
 .us-wk { display:flex; gap:5px; margin-bottom:5px; }
 .us-cell { flex:1; display:flex; justify-content:center; align-items:center; }
 .us-cell svg { display:block; }
@@ -626,7 +634,6 @@ body.tab-us .metric .dow span { flex:1; text-align:center; font-size:9.5px; colo
     <button class="tab" data-tab="overview"><span class="tab-ico" aria-hidden="true">📋</span><span class="tab-label">Summary</span></button>
     <button class="tab" data-tab="records"><span class="tab-ico" aria-hidden="true">📈</span><span class="tab-label">Trends</span></button>
     <button class="tab" data-tab="next"><span class="tab-ico" aria-hidden="true">🗓</span><span class="tab-label">Visits</span></button>
-    <button class="tab" data-tab="us" id="tabUs" hidden><span class="tab-ico" aria-hidden="true">💗</span><span class="tab-label">Us</span></button>
   </nav>
   <div id="printSheet" aria-hidden="true"></div>
   <script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@3/lib/msal-browser.min.js"></script>
@@ -1115,6 +1122,194 @@ async function importData(text) {
 return { CONFIG, getData, getLoadMeta, subscribe, setActiveSource, getActiveSource, loadData, resetToSeed, saveData, t, tx, specialistLabel, derivedOverall, derivedIntensity, activeSymptomTypes, activeLocations, latestLab, labWindow, activeConditions, excludedList, bigPicture, labStatus, labTrend, labPosNeg, labGroups, parseReport, weekdayOf, getDailyLog, setSeverity, getSeverity, setSymptomNote, getSymptomNote, setMood, getMood, setMoodNote, getMoodNote, getUs, setUsField, setUsWeek, setMedTaken, getMedTaken, setMedCount, getMedCount, medDueOn, medTimeOfDay, medsForDate, submitSymptoms, requiredMedsOn, symptomsSubmitted, startEpisode, endEpisode, reopenEpisode, setEpisodeNote, ongoingEpisodes, episodesEndedOn, persist, persistLocal, markQuestionAnswered, genId, getRecord, upsert, remove, archiveSymptomType, deleteSymptomType, addSymptomType, renameSymptomType, setSymptomOverall, addLocation, renameLocation, archiveLocation, reorderSymptomTypes, addLabResult, removeLabResult, recordDoseChange, exportJSON, importData };
 })();
 
+// Relationship ("Us") — optional daily check-in + trends, gated by the `showUs` pref.
+// No longer a standalone tab: the daily check-in renders as a card on the Log tab, and the
+// trends + notes render as a group on the Trends page (driven by the shared Trends window).
+const Rel = (function () {
+  const ui = { nf: 'all', notesExpanded: false, notesMonth: 'all', usOpen: new Set(), usSeeded: new Set() };
+  const CHEV_SVG = '<svg class="us-chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6l6 -6"/></svg>';
+  const HEART_SVG = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19.5 12.572l-7.5 7.428l-7.5 -7.428a5 5 0 1 1 7.5 -6.572a5 5 0 1 1 7.5 6.572"/></svg>';
+  const BULB_SVG = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12h1m8 -9v1m8 8h1m-15.4 -6.4l.7 .7m12.1 -.7l-.7 .7"/><path d="M9 16a5 5 0 1 1 6 0a3.5 3.5 0 0 0 -1 3a2 2 0 0 1 -4 0a3.5 3.5 0 0 0 -1 -3"/><path d="M9.7 17l4.6 0"/></svg>';
+  const CONN = { 1: 'Distant', 2: 'Off', 3: 'Okay', 4: 'Warm', 5: 'Close' };
+  // 5-face SVG (ordinal 1–5), pink ramp keyed to --us.
+  const FACE = {
+    1: { c: '#e0a3b8', m: 'M13,30 Q20,23 27,30' },
+    2: { c: '#f48fb1', m: 'M13,28 Q20,25 27,28' },
+    3: { c: '#f06292', m: 'M13,27 L27,27' },
+    4: { c: '#e91e63', m: 'M13,26 Q20,31 27,26' },
+    5: { c: '#ad1457', m: 'M12,25 Q20,34 28,25' }
+  };
+  function face(level, size) {
+    const f = FACE[level]; if (!f) return `<span class="us-face-none"></span>`;
+    return `<svg viewBox="0 0 40 40" width="${size}" height="${size}"><circle cx="20" cy="20" r="18" fill="${f.c}"/><circle cx="14" cy="16" r="2" fill="#fff"/><circle cx="26" cy="16" r="2" fill="#fff"/><path d="${f.m}" stroke="#fff" stroke-width="2.4" fill="none" stroke-linecap="round"/></svg>`;
+  }
+  function daysAgo(iso, n) { const d = new Date(iso + 'T00:00:00'); d.setDate(d.getDate() - n); return d.toLocaleDateString('en-CA'); }
+  function fmtDay(iso, lang) { const d = new Date(iso + 'T00:00:00'); return d.toLocaleDateString(lang === 'es' ? 'es-ES' : 'en-GB', { weekday: 'short', day: 'numeric' }); }
+  function allDays() { const ds = ((DL.getData() || {}).dailyLogs || []).map((l) => l.date).filter(Boolean).sort(); if (!ds.length) return 30; return Math.round((Date.now() - new Date(ds[0] + 'T00:00:00').getTime()) / 86400000) + 1; }
+  function monthLabel(mk, lang) { return new Date(mk + '-01T00:00:00').toLocaleDateString(lang === 'es' ? 'es-ES' : 'en-GB', { month: 'long', year: 'numeric' }); }
+  function monthShort(mk, lang) { return new Date(mk + '-01T00:00:00').toLocaleDateString(lang === 'es' ? 'es-ES' : 'en-GB', { month: 'short' }); }
+  function noteRowHtml(l, lang, showG, showI) {
+    const g = l.us.grateful, im = l.us.improve;
+    let inner = `<div style="margin-bottom:5px"><span class="badge us">${fmtDay(l.date, lang)}</span></div>`;
+    if (showG && g) inner += `<div class="small" style="display:flex;gap:6px;align-items:flex-start;margin:3px 0"><span style="flex:0 0 1.2em;display:flex;justify-content:center;padding-top:2px;color:var(--us)">${HEART_SVG}</span><span>${esc(g)}</span></div>`;
+    if (showI && im) inner += `<div class="small" style="display:flex;gap:6px;align-items:flex-start;margin:3px 0;color:var(--muted)"><span style="flex:0 0 1.2em;display:flex;justify-content:center;padding-top:2px;color:var(--warn)">${BULB_SVG}</span><span>${esc(im)}</span></div>`;
+    return `<div class="us-note">${inner}</div>`;
+  }
+  let _pushTimer = null;
+  function save() { DL.persistLocal(); clearTimeout(_pushTimer); _pushTimer = setTimeout(() => { DL.persist(); }, 1000); }
+
+  // Optional note field (improve/grateful) as a pink disclosure row. Collapsed by default so the open box
+  // doesn't invite filling; auto-opens once for a day that already has a note (usSeeded guards the one-time
+  // seed so a manual collapse afterwards sticks). Open state is keyed by date so it doesn't bleed across days.
+  function noteBlock(date, field, q, ph, val) {
+    const key = date + ':' + field;
+    if (val && val.trim() && !ui.usSeeded.has(key)) ui.usOpen.add(key);
+    ui.usSeeded.add(key);
+    const open = ui.usOpen.has(key);
+    const body = open ? `<div class="us-disc-body"><textarea class="us-ta${field === 'grateful' ? ' us-grat' : ''}" data-usnote="${field}" rows="2" placeholder="${ph}">${esc(val)}</textarea></div>` : '';
+    return `<button type="button" class="us-disc" data-usexpand="${field}" aria-expanded="${open}"><span class="us-disc-l"><span class="us-disc-q">${q}</span><span class="us-disc-opt">optional</span></span>${CHEV_SVG}</button>${body}`;
+  }
+
+  // ---- DAILY CHECK-IN (Log tab) ----
+  function checkinCard(state) {
+    if (!getPref('showUs')) return '';
+    const data = DL.getData(); if (!data) return '';
+    const date = state.date;
+    const u = DL.getUs(date, data) || {};
+    const con = typeof u.connection === 'number' ? u.connection : null;
+    const faceRow = [1, 2, 3, 4, 5].map((l) => `<button type="button" class="us-lab${con === l ? ' sel' : ''}" data-uscon="${l}">${face(l, 34)}<span>${CONN[l]}</span></button>`).join('');
+    const timeRow = [['none', 'Not really'], ['quality', 'Quality time'], ['date', 'A date']].map(([v, l]) => `<button type="button" class="us-state${u.time === v ? ' sel' : ''}" data-ustime="${v}">${l}</button>`).join('');
+    const friRow = [['none', 'None'], ['little', 'A little'], ['argument', 'A real argument']].map(([v, l]) => `<button type="button" class="us-state${u.friction === v ? ' sel' : ''}" data-usfrq="${v}">${l}</button>`).join('');
+    return `<div class="card rel-card">
+      <div class="card-h"><h2>Us</h2></div>
+      <p class="us-q">How close were you as a couple today?</p>
+      <div class="us-row us-faces">${faceRow}</div>
+      <p class="us-q mt16">Did you spend time together today?</p>
+      <div class="us-row">${timeRow}</div>
+      <p class="us-q mt16">Any friction today?</p>
+      <div class="us-row">${friRow}</div>
+      ${noteBlock(date, 'improve', 'Anything we need to improve from today?', 'Something to work on together…', u.improve || '')}
+      ${noteBlock(date, 'grateful', "Anything you're grateful to your partner for today?", 'Something they did, a moment together…', u.grateful || '')}
+    </div>`;
+  }
+  // Handle a Log-tab click on a check-in control. Returns true if it belonged to us.
+  function onLogClick(t, state) {
+    if (!(t.dataset.uscon != null || t.dataset.ustime || t.dataset.usfrq || t.dataset.usexpand)) return false;
+    document.querySelectorAll('.us-ta').forEach((el) => { if (el.dataset.usnote) DL.setUsField(state.date, el.dataset.usnote, el.value); });
+    if (t.dataset.usexpand) { const key = state.date + ':' + t.dataset.usexpand; ui.usOpen.has(key) ? ui.usOpen.delete(key) : ui.usOpen.add(key); return true; }
+    const cur = (k) => { const cu = DL.getUs(state.date, DL.getData()); return cu ? cu[k] : null; };
+    if (t.dataset.uscon != null) { const v = Number(t.dataset.uscon); DL.setUsField(state.date, 'connection', cur('connection') === v ? null : v); save(); return true; }
+    if (t.dataset.ustime) { DL.setUsField(state.date, 'time', cur('time') === t.dataset.ustime ? null : t.dataset.ustime); save(); return true; }
+    if (t.dataset.usfrq) { const v = t.dataset.usfrq; DL.setUsField(state.date, 'friction', cur('friction') === v ? null : v); save(); return true; }
+    return false;
+  }
+  function onLogInput(e, state) {
+    if (!e.target.classList || !e.target.classList.contains('us-ta')) return false;
+    if (e.target.dataset.usnote) DL.setUsField(state.date, e.target.dataset.usnote, e.target.value);
+    e.target.style.height = 'auto'; e.target.style.height = e.target.scrollHeight + 'px';
+    DL.persistLocal(); clearTimeout(_pushTimer); _pushTimer = setTimeout(() => DL.persist({ silent: true }), 600);
+    return true;
+  }
+
+  // ---- TRENDS + NOTES (Trends tab) — driven by the shared page window (days/win) ----
+  function trendsHTML(state, days, win) {
+    if (!getPref('showUs')) return '';
+    const data = DL.getData(); if (!data) return '';
+    const lang = state.lang;
+    const today = Today.todayISO();
+    const wDays = win === 'all' ? allDays() : days;
+    const firstUs = ((data.dailyLogs || []).filter((l) => l.us).map((l) => l.date).filter(Boolean).sort())[0];
+    const hasPrev = win !== 'all' && !!firstUs && firstUs <= daysAgo(today, 2 * wDays - 1);
+    function agg(fromBack, span) {
+      const a = { conn: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }, connLogged: 0, warm: 0, cDate: 0, cQual: 0, cNone: 0, together: 0, fNone: 0, fLittle: 0, fArg: 0, fricTotal: 0 };
+      for (let i = fromBack; i < fromBack + span; i++) { const du = DL.getUs(daysAgo(today, i), data); if (!du) continue;
+        if (typeof du.connection === 'number') { a.conn[du.connection] = (a.conn[du.connection] || 0) + 1; a.connLogged++; if (du.connection >= 4) a.warm++; }
+        if (du.time === 'date') { a.cDate++; a.together++; } else if (du.time === 'quality') { a.cQual++; a.together++; } else if (du.time === 'none') a.cNone++;
+        if (du.friction === 'none') a.fNone++; else if (du.friction === 'little') a.fLittle++; else if (du.friction === 'argument') a.fArg++;
+        if (du.friction && du.friction !== 'none') a.fricTotal++;
+      }
+      return a;
+    }
+    const cur = agg(0, wDays), prev = hasPrev ? agg(wDays, wDays) : null;
+    // Whole-number count shown as a % of the window length (per Anna's choice); e.g. 28 good days / 90 = 31%.
+    const pct = (n) => wDays ? Math.round(n / wDays * 100) : 0;
+    // Period-vs-period change in percentage points — both periods use the same window length as denominator,
+    // so this is (cur% − prev%). Hidden until a full prior equal-length period exists (hasPrev).
+    const deltaPP = (c, p, higherBetter) => { if (!hasPrev || p == null) return ''; const cp = pct(c), pp = pct(p), d = cp - pp; if (d === 0) return ` <span class="muted">· ±0pp vs ${pp}%</span>`; const better = higherBetter ? d > 0 : d < 0; return ` <span style="color:${better ? 'var(--ok)' : 'var(--err)'};font-weight:700">${d > 0 ? '▲' : '▼'}${Math.abs(d)}pp</span> <span class="muted">vs ${pp}%</span>`; };
+
+    // Connection
+    const goodBar = (a, isCur) => { const pct = wDays ? Math.min(100, a.warm / wDays * 100) : 0; const fill = a.connLogged ? `<div style="width:${pct.toFixed(2)}%;background:${isCur ? 'var(--us)' : 'var(--us-soft)'}"></div>` : ''; return `<div class="us-bar us-goodbar">${fill}</div><span class="us-goodn"${isCur ? '' : ' style="color:var(--muted)"'}>${a.connLogged ? a.warm : '–'}</span>`; };
+    const connCard = (cur.connLogged || (prev && prev.connLogged)) ? `<div class="metric"><div class="mtop"><span class="mname">Connection</span></div>
+      <div class="us-cmp-head"><span class="big">${cur.warm}</span><span class="lab">good ${cur.warm === 1 ? 'day' : 'days'} · ${pct(cur.warm)}%${deltaPP(cur.warm, prev && prev.warm, true)}</span></div>
+      <div class="us-cmp"><span class="us-cmp-lab">This</span>${goodBar(cur, true)}</div>
+      ${hasPrev ? `<div class="us-cmp"><span class="us-cmp-lab">Prev</span>${goodBar(prev, false)}</div>` : ''}</div>` : `<div class="metric"><div class="mtop"><span class="mname">Connection</span></div><p class="muted small" style="margin:0">No check-ins yet.</p></div>`;
+
+    // Friction
+    const fTot = cur.fNone + cur.fLittle + cur.fArg;
+    const fpct = (n) => fTot ? Math.round(n / fTot * 100) : 0;
+    const fricBar = fTot ? `<div class="us-bar">
+        ${cur.fNone ? `<div style="width:${fpct(cur.fNone)}%;background:#e6d7de;color:#7a6b73">${cur.fNone} calm</div>` : ''}
+        ${cur.fLittle ? `<div style="width:${fpct(cur.fLittle)}%;background:var(--us)">${cur.fLittle} little</div>` : ''}
+        ${cur.fArg ? `<div style="width:${fpct(cur.fArg)}%;background:#9d174d">${cur.fArg} big</div>` : ''}
+      </div>` : '<p class="muted small" style="margin:0">No days logged.</p>';
+    const fricCard = `<div class="metric"><div class="mtop"><span class="mname">Friction</span></div>
+      <div class="us-cmp-head"><span class="big">${cur.fricTotal}</span><span class="lab">friction ${cur.fricTotal === 1 ? 'day' : 'days'} · ${pct(cur.fricTotal)}%${deltaPP(cur.fricTotal, prev && prev.fricTotal, false)}</span></div>
+      ${fricBar}</div>`;
+
+    // Time together
+    const timeCard = `<div class="metric"><div class="mtop"><span class="mname">Time together</span><span class="msub">${cur.together} together ${cur.together === 1 ? 'day' : 'days'} · ${pct(cur.together)}%${deltaPP(cur.together, prev && prev.together, true)}</span></div>
+      <div class="us-counts">
+        <div class="us-count rank1"><div class="big">${cur.cDate}</div><div class="cl">dates</div></div>
+        <div class="us-count rank2"><div class="big">${cur.cQual}</div><div class="cl">quality days</div></div>
+        <div class="us-count rank3"><div class="big">${cur.cNone}</div><div class="cl">neither</div></div>
+      </div></div>`;
+
+    const trendsCard = `<div class="card">${connCard}${fricCard}${timeCard}</div>`;
+
+    // ---- NOTES (inline expand/collapse; own recent/all toggle, independent of the window) ----
+    const showG = ui.nf !== 'improve', showI = ui.nf !== 'grateful';
+    const noteLogs = (data.dailyLogs || []).filter((l) => l.us && (l.us.grateful || l.us.improve)).slice().sort((a, b) => (a.date < b.date ? 1 : -1));
+    const filtered = noteLogs.filter((l) => { if (ui.nf === 'grateful' && !l.us.grateful) return false; if (ui.nf === 'improve' && !l.us.improve) return false; return true; });
+    const nfSeg = `<div class="us-seg">${[['all', 'All'], ['grateful', 'Grateful'], ['improve', 'Improve']].map(([k, l]) => `<button type="button" class="${ui.nf === k ? 'on' : ''}" data-usnf="${k}">${l}</button>`).join('')}</div>`;
+    let notesBody;
+    if (!filtered.length) {
+      notesBody = '<p class="muted small" style="margin:0">No notes yet.</p>';
+    } else if (!ui.notesExpanded) {
+      const notesCutoff = daysAgo(today, 6); // last 7 days incl. today
+      const recent = filtered.filter((l) => l.date >= notesCutoff);
+      const shown = recent.length ? recent : filtered.slice(0, 3); // if nothing in last 7d, show the 3 most recent
+      const rows = shown.map((l) => noteRowHtml(l, lang, showG, showI)).join('');
+      const more = filtered.length > shown.length;
+      const btn = more ? `<button type="button" class="us-showall" data-usnotestoggle="1">Show all notes<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6l6 -6"/></svg></button>` : '';
+      notesBody = rows + btn;
+    } else {
+      const months = [...new Set(filtered.map((l) => l.date.slice(0, 7)))];
+      const fm = (ui.notesMonth !== 'all' && !months.includes(ui.notesMonth)) ? 'all' : ui.notesMonth;
+      const chips = `<button type="button" class="us-mchip${fm === 'all' ? ' on' : ''}" data-usmonth="all">All</button>` + months.map((mk) => `<button type="button" class="us-mchip${fm === mk ? ' on' : ''}" data-usmonth="${mk}">${monthShort(mk, lang)}</button>`).join('');
+      const shown = filtered.filter((l) => fm === 'all' || l.date.slice(0, 7) === fm);
+      let body = '', curM = '', buf = [];
+      const flush = () => { if (buf.length) { body += `<div class="us-mlabel">${monthLabel(curM, lang)}</div>${buf.join('')}`; buf = []; } };
+      shown.forEach((l) => { const mk = l.date.slice(0, 7); if (mk !== curM) { flush(); curM = mk; } buf.push(noteRowHtml(l, lang, showG, showI)); });
+      flush();
+      const btn = `<button type="button" class="us-showall" data-usnotestoggle="1">Show less<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 15l6 -6l6 6"/></svg></button>`;
+      notesBody = `<div class="us-monthchips">${chips}</div><div class="us-notescount">${shown.length} ${shown.length === 1 ? 'note' : 'notes'}</div>${body}${btn}`;
+    }
+    const notesCard = `<div class="card">${notesBody}</div>`;
+
+    const grpHead = (title, ctrl) => `<div class="trendgrp-h"><span class="gbar"></span><span class="gtxt">${title}</span><span class="grule"></span>${ctrl || ''}</div>`;
+    return `<div class="rel">${grpHead('Us')}${trendsCard}${grpHead('Gratitude &amp; notes', nfSeg)}${notesCard}</div>`;
+  }
+  // Handle a Trends-tab click on a notes control. Returns true if it belonged to us.
+  function onTrendsClick(t) {
+    if (t.dataset.usnf) { ui.nf = t.dataset.usnf; return true; }
+    if (t.dataset.usnotestoggle) { ui.notesExpanded = !ui.notesExpanded; ui.notesMonth = 'all'; return true; }
+    if (t.dataset.usmonth) { ui.notesMonth = t.dataset.usmonth; return true; }
+    return false;
+  }
+  function resetNotes() { ui.notesExpanded = false; ui.notesMonth = 'all'; }
+  return { checkinCard, onLogClick, onLogInput, trendsHTML, onTrendsClick, resetNotes };
+})();
+
 const Today = (function(){
 const { tx } = DL;
 
@@ -1291,13 +1486,20 @@ function renderToday(state) {
   // Mood counts toward completion only from the day tracking was switched on (moodSince) up to today,
   // so enabling it never retroactively un-completes older days (mirrors symptom addedDate / MEDS_REQUIRED_SINCE).
   const moodReq = (iso) => moodOn && !!moodSince && iso >= moodSince && iso <= tISO;
+  // Relationship check-in: the three state questions (connection/time/friction) are mandatory and
+  // count toward completion from the day tracking was switched on (usSince) up to today; the two
+  // note fields (grateful/improve) stay optional. Gated + non-retroactive, mirroring mood.
+  const usOn = getPref('showUs');
+  const usSince = getPrefStr('usSince');
+  const relReq = (iso) => usOn && !!usSince && iso >= usSince && iso <= tISO;
+  const relOk = (iso) => { if (!relReq(iso)) return true; const u = DL.getUs(iso, data); return !!u && typeof u.connection === 'number' && !!u.time && !!u.friction; };
   // A symptom only counts toward a day's completeness on/after the day it was added.
   // Symptoms carry an addedDate (stamped on creation); older ones without it are treated
   // as always-present. This stops a newly-added symptom from retroactively un-completing
   // past days (before it existed there was nothing to log for it).
   const typesOn = (iso) => types.filter((s) => !s.addedDate || s.addedDate <= iso);
   if (ui.calView === 'month') return `<div class="ds">${monthCal(state, data, types)}</div>`;
-  const isComplete = (iso) => { const l = DL.getDailyLog(iso, data); if (!l) return false; const moodOk = !moodReq(iso) || (typeof l.mood === 'number'); if (l.symptomsSubmittedAt) return moodOk; const symOk = typesOn(iso).every((s) => s.trackBy === 'single' ? (DL.getSeverity(iso, s.id, null, data) != null) : (DL.derivedOverall(s, l.symptoms || []) != null)); const medsOk = DL.requiredMedsOn(iso, data).every((m) => DL.getMedTaken(iso, m.id, data) != null); return symOk && medsOk && moodOk; };
+  const isComplete = (iso) => { const l = DL.getDailyLog(iso, data); if (!l) return false; const moodOk = !moodReq(iso) || (typeof l.mood === 'number'); const relDone = relOk(iso); if (l.symptomsSubmittedAt) return moodOk && relDone; const symOk = typesOn(iso).every((s) => s.trackBy === 'single' ? (DL.getSeverity(iso, s.id, null, data) != null) : (DL.derivedOverall(s, l.symptoms || []) != null)); const medsOk = DL.requiredMedsOn(iso, data).every((m) => DL.getMedTaken(iso, m.id, data) != null); return symOk && medsOk && moodOk && relDone; };
   // 42-day (6-week) strip ending today: today is the rightmost tile, no future/empty days.
   // Horizontally scrollable; navigate by scrolling the strip or tapping a day.
   const DOWL = DOW_INITIALS[lang] || DOW_INITIALS.en;
@@ -1311,7 +1513,10 @@ function renderToday(state) {
     // mood was logged; completed days without a mood (e.g. before mood tracking started) keep the tick.
     const mv = done && moodOn ? DL.getMood(iso, data) : null;
     const glyph = done ? (mv != null ? moodFaceSVG(mv, 16) : '✓') : '·';
-    tiles += `<button class="wkday${sel ? ' sel' : ''}${isTod ? ' tod' : ''}" data-day="${iso}"><span class="wkdow">${dl}</span><span class="wkdate">${iso.slice(8, 10)}</span><span class="wktick">${glyph}</span></button>`;
+    // Month marker: on the 1st, prepend a vertical month label and give the tile a teal left-edge.
+    const firstOfMonth = iso.slice(8, 10) === '01';
+    if (firstOfMonth) tiles += `<span class="wkmonth" aria-hidden="true">${wd.toLocaleDateString(lang === 'es' ? 'es-ES' : 'en-GB', { month: 'short', timeZone: 'UTC' })}</span>`;
+    tiles += `<button class="wkday${sel ? ' sel' : ''}${isTod ? ' tod' : ''}${firstOfMonth ? ' month1' : ''}" data-day="${iso}"><span class="wkdow">${dl}</span><span class="wkdate">${iso.slice(8, 10)}</span><span class="wktick">${glyph}</span></button>`;
   }
   const head = `<div class="wkstrip">
     <div class="wkdays scroll">${tiles}</div>
@@ -1329,17 +1534,18 @@ function renderToday(state) {
     const ov = DL.derivedIntensity(s, (dayLog?.symptoms) || []);
     const overall = (ov == null && submitted) ? 0 : ov;
     const chip = overall != null ? `<span class="sev-chip sevsq sev-${overall}" title="${lang === 'es' ? 'Peor zona' : 'Worst area'}">${overall}</span>` : '<span class="muted small">—</span>';
-    // Sum-rollup symptoms (joint pain) also show their total burden (severity × breadth) as a teal chip beside the worst-site square.
-    let sumChip = '';
+    // Sum-rollup symptoms (joint pain) show their total burden (severity × breadth) as a labelled teal row INSIDE the
+    // expanded location list — not on the collapsed head, where it duplicated the worst-site square and the day-total pill.
+    let sumRow = '';
     if (s.overall === 'sum') {
       const sm = DL.derivedOverall(s, (dayLog?.symptoms) || []);
       const smv = (sm == null && submitted) ? 0 : sm;
-      if (smv != null) sumChip = `<span class="sev-chip sevsq sumsq" title="${lang === 'es' ? 'Suma de todas las articulaciones' : 'Sum of all joints'}">${smv}</span>`;
+      if (smv != null) sumRow = `<div class="loc-total"><span>${lang === 'es' ? 'Total de todas las articulaciones' : 'Total across joints'}</span><span class="sev-chip sevsq sumsq" title="${lang === 'es' ? 'Suma de todas las articulaciones' : 'Sum of all joints'}">${smv}</span></div>`;
     }
     const locsArr = DL.activeLocations(s);
     const locs = locsArr.map((l) => symRow(state, s.id, l.id, tx(l.name, lang))).join('');
-    return `<button type="button" class="symrow located-head sym-head expandable" data-expand="${s.id}" aria-expanded="${open}"><span class="symrow-name as-text">${esc(tx(s.name, lang))} <span class="muted small loc-count">${open ? '▾' : '▸'}</span></span><span class="chipgrp">${chip}${sumChip}</span></button>
-    <div class="loc-list" ${open ? '' : 'hidden'}>${locs}</div>`;
+    return `<button type="button" class="symrow located-head sym-head expandable" data-expand="${s.id}" aria-expanded="${open}"><span class="symrow-name as-text">${esc(tx(s.name, lang))} <span class="muted small loc-count">${open ? '▾' : '▸'}</span></span><span class="chipgrp">${chip}</span></button>
+    <div class="loc-list" ${open ? '' : 'hidden'}>${sumRow}${locs}</div>`;
   }).join('');
   const complete = isComplete(date);
   const symEditing = ui.editPick === 'symptomTypes';
@@ -1349,7 +1555,11 @@ function renderToday(state) {
   const bWords = lang === 'es' ? ['ninguno', 'perceptible', 'molesto', 'interfiere', 'impide'] : ['none', 'noticeable', 'distracting', 'interferes', 'prevents'];
   const bCols = ['#94a3b8', '#fde047', '#f59e0b', '#f97316', '#b91c1c'];
   const bTextCols = ['#fff', '#422006', '#422006', '#fff', '#fff'];
-  const burdenChip = bBand < 0 ? '' : `<span class="badge" style="background:${bCols[bBand]};color:${bTextCols[bBand]}">${bWords[bBand]}</span>`;
+  // Pill shows the day's total burden — every symptom's severity summed, joint pain summed across its sites —
+  // coloured by the peak-intensity band so colour still signals the worst symptom while the number gives total load.
+  // Computed inline (mirrors Records' symValue) because dayLoad/daySum live in the Records module and aren't in scope here.
+  const daySumV = types.reduce((a, s) => a + (s.trackBy === 'locations' ? (DL.derivedOverall(s, (dayLog?.symptoms) || []) || 0) : (DL.getSeverity(date, s.id, null, data) || 0)), 0);
+  const burdenChip = bBand < 0 ? '' : `<span class="badge" style="background:${bCols[bBand]};color:${bTextCols[bBand]}" title="${lang === 'es' ? 'Puntuación total del día' : 'Total score for the day'}">${daySumV}</span>`;
   const doneChip = `<span class="badge good">✓ ${lang === 'en' ? 'Complete' : 'Completado'}</span>`;
   // Burden depends only on symptom severities, so show it once all symptoms are logged — not gated on meds (which don't affect burden).
   const symComplete = dayTypes.length > 0 && dayTypes.every(isLogged);
@@ -1447,6 +1657,7 @@ function renderToday(state) {
     <div class="card" id="medsCard"><div class="card-h"><h2>${T.meds}</h2><span class="hgrp">${medEditBtns}</span></div>${medEditing ? `<div class="muted small" style="margin:2px 0 6px">${lang === 'es' ? 'Elige cuál editar:' : 'Choose which to edit:'}</div>${medPick}` : medsBody}</div>
     ${completeBar}
     ${epCardHtml}
+    ${Rel.checkinCard(state)}
     ${savedNote}</div>${infoModal}${epInfoModal}`;
 }
 
@@ -1468,6 +1679,7 @@ async function onClick(e, state, rerender) {
   document.querySelectorAll('.rownote').forEach((el) => DL.setSymptomNote(state.date, el.dataset.sym, el.dataset.loc || null, el.value));
   document.querySelectorAll('.epnote').forEach((el) => DL.setEpisodeNote(el.dataset.epnote, 'en', el.value));
   document.querySelectorAll('.moodnote').forEach((el) => DL.setMoodNote(state.date, el.value));
+  if (Rel.onLogClick(t, state)) { rerender(); return; }
   if (t.dataset.editpick != null) { ui.editPick = ui.editPick === t.dataset.editpick ? null : t.dataset.editpick; rerender(); return; }
   // Per-row UI state is keyed by symptom, not date — clear it on any date change so expanded ratings
   // and open note boxes don't bleed from one day to another.
@@ -1498,6 +1710,7 @@ async function onClick(e, state, rerender) {
 }
 let _noteTimer = null;
 function onInput(e, state) {
+  if (e.target.classList && e.target.classList.contains('us-ta')) { Rel.onLogInput(e, state); return; }
   if (e.target.classList.contains('rownote')) { DL.setSymptomNote(state.date, e.target.dataset.sym, e.target.dataset.loc || null, e.target.value); }
   else if (e.target.classList.contains('epnote')) { DL.setEpisodeNote(e.target.dataset.epnote, 'en', e.target.value); }
   else if (e.target.classList.contains('moodnote')) { DL.setMoodNote(state.date, e.target.value); e.target.style.height = 'auto'; e.target.style.height = e.target.scrollHeight + 'px'; }
@@ -1986,7 +2199,7 @@ const TSS = {
           sub: 'Cambio respecto al periodo anterior. Toca cualquier ⓘ para saber qué significa.', baseline: 'nueva base', close: 'Cerrar' } },
 };
 function dayLogged(log) { return !!log && (log.symptoms || []).some((r) => typeof r.severity === 'number'); }
-const WIN_DAYS = { '30d': 30, '3m': 90, '1y': 365 };
+const WIN_DAYS = { '1w': 7, '30d': 30, '3m': 90, '1y': 365 };
 const SEVHEX = ['#94a3b8', '#fde047', '#f59e0b', '#f97316', '#b91c1c'];
 // Burden value: located symptoms use derivedOverall (sum for joint pain → severity × breadth).
 function symValue(s, log) { if (s.trackBy === 'locations') { const d = DL.derivedOverall(s, log.symptoms || []); return d == null ? 0 : d; } const r = (log.symptoms || []).find((x) => x.symptomId === s.id && x.locationId == null); return (r && typeof r.severity === 'number') ? r.severity : 0; }
@@ -2491,7 +2704,8 @@ function renderTrends(state) {
   const win = ui.scoreWin || ((firstLog && firstLog <= isoBack(89)) ? '3m' : '30d');
   const allDays = (() => { const ds = (data.dailyLogs || []).map((l) => l.date).filter(Boolean).sort(); if (!ds.length) return 365; return Math.round((Date.now() - new Date(ds[0] + 'T00:00:00Z').getTime()) / 86400000) + 1; })();
   const days = win === 'all' ? allDays : (WIN_DAYS[win] || 30);
-  const winseg = `<div class="trendbar"><div class="winseg">${[['30d', '30d'], ['3m', '3m'], ['1y', '1y'], ['all', 'All']].map(([k, lbl]) => `<button class="${win === k ? 'on' : ''}" data-scorewin="${k}">${lbl}</button>`).join('')}</div></div>`;
+  // Shared window control for the whole Trends page — drives the health cards and the relationship group.
+  const winseg = `<div class="trendbar"><div class="winseg">${[['1w', '1W'], ['30d', '1M'], ['3m', '3M'], ['1y', '1Y'], ['all', 'All']].map(([k, lbl]) => `<button class="${win === k ? 'on' : ''}" data-scorewin="${k}">${lbl}</button>`).join('')}</div></div>`;
   // How am I trending — four window-aware charts (helpers above). Comparison pills hide when the prior period predates tracking.
   const reliable = win !== 'all' && !!firstLog && firstLog <= isoBack(2 * days - 1);
   const shiftCard = trendShiftCard(lang, TT, winAggPeak(data, types, 0, days), winAggPeak(data, types, days, 2 * days), reliable, days, win);
@@ -2532,7 +2746,8 @@ function renderTrends(state) {
     const body = cards.join('');
     return body.trim() ? `<div class="trendgrp-h"><span class="gbar"></span><span class="gtxt">${title}</span><span class="grule"></span></div>${body}` : '';
   }).join('');
-  return `<div class="ds">${winseg}${groupsHtml}</div>`;
+  const relHtml = Rel.trendsHTML(state, days, win);
+  return `<div class="ds">${winseg}${groupsHtml}${relHtml}</div>`;
 }
 // Progression timeline in the new design-system style (keeps filters + tap-for-detail).
 function renderProg(state) {
@@ -2646,6 +2861,7 @@ async function onClick(e, state, rerender) {
   if (t.dataset.hlinfo != null) { ui.hlInfo = ui.hlInfo === t.dataset.hlinfo ? null : t.dataset.hlinfo; rerender(); return; }
   if (t.dataset.hlclose != null) { ui.hlInfo = null; rerender(); return; }
   if (t.dataset.hltrend) { ui.hlTrend = (ui.hlTrend === t.dataset.hltrend) ? null : t.dataset.hltrend; rerender(); return; }
+  if (Rel.onTrendsClick(t)) { rerender(); return; }
   if (t.dataset.editpick != null) { ui.editPick = ui.editPick === t.dataset.editpick ? null : t.dataset.editpick; rerender(); return; }
   if (t.dataset.scorewin) { ui.scoreWin = t.dataset.scorewin; rerender(); return; }
   if (t.dataset.areasym) { ui.areaSym = t.dataset.areasym; rerender(); return; }
@@ -3175,6 +3391,7 @@ function buildSummary(d) {
   if (excl.length) { lines.push('## Ruled out'); excl.forEach((c) => lines.push('- ' + tx(c.name, L) + (tx(c.notes, L) ? ' — ' + tx(c.notes, L) : '') + (c.status === 'provisionally_excluded' ? ' (may re-test)' : ''))); lines.push(''); }
   const ongoing = (d.episodes || []).filter((e) => e.endDate == null);
   if (ongoing.length) { lines.push('## Ongoing episodes'); ongoing.forEach((e) => lines.push('- ' + tx(e.name, L) + ' (since ' + e.startDate + ')')); lines.push(''); }
+  if (d.meta && d.meta.context && String(d.meta.context).trim()) { lines.push(String(d.meta.context).trim()); lines.push(''); }
   if (d.meta && d.meta.updatedAt) lines.push('_Updated ' + d.meta.updatedAt + '_');
   return lines.join('\n');
 }
@@ -3203,11 +3420,12 @@ if (!_forceSeed && (!_isLocalDev || OneDrive.isConfigured())) setActiveSource(On
 
 
 
+
 const state = { lang: 'en', tab: 'today', showData: false, date: Today.todayISO() };
 const screen = document.getElementById('screen');
 const titleEl = document.getElementById('screenTitle');
 const statusStrip = document.getElementById('statusStrip');
-const TAB_TITLES = { today: 'Log', overview: 'Summary', records: 'Trends', timeline: 'Timeline', next: 'Visits', us: 'Us' };
+const TAB_TITLES = { today: 'Log', overview: 'Summary', records: 'Trends', timeline: 'Timeline', next: 'Visits' };
 (async function boot() {
   registerSW(); wireChrome();
   if (!_forceSeed && OneDrive.isConfigured()) { setActiveSource(OneDrive.oneDriveSource); try { await OneDrive.refreshAccount(); } catch {} setStatus('Loading from OneDrive …'); }
@@ -3227,7 +3445,6 @@ function wireChrome() {
     else { Today.ui.calView = 'month'; Today.ui.calMonth = state.date.slice(0, 7); }
     render();
   });
-  titleEl.addEventListener('click', (e) => { if (state.showData || state.tab !== 'us') return; if (e.target.closest('#usDate')) { Us.toggleCal(); render(); } });
   screen.addEventListener('click', async (e) => {
     if (e.target.id === 'resetSeedBtn') { resetToSeed().then(render); return; }
     if (e.target.id === 'exportBtn') { downloadJSON(); return; }
@@ -3245,21 +3462,20 @@ function wireChrome() {
     else if (state.tab === 'overview' && e.target.closest('[data-editpick="milestones"],[data-histyear],[data-lab],[data-labgrp],[data-win]')) Records.onClick(e, state, render);
     else if (state.tab === 'overview' || state.tab === 'next') Appt.onClick(e, state, render);
     else if (state.tab === 'records' || state.tab === 'timeline') Records.onClick(e, state, render);
-    else if (state.tab === 'us') Us.onClick(e, state, render);
   });
-  const onEdit = (e) => { if (Forms.isOpen()) { Forms.onInput(e); return; } if (state.showData) return; if (state.tab === 'today') Today.onInput(e, state, render); else if (state.tab === 'us') Us.onInput(e, state, render); };
+  const onEdit = (e) => { if (Forms.isOpen()) { Forms.onInput(e); return; } if (state.showData) return; if (state.tab === 'today') Today.onInput(e, state, render); };
   screen.addEventListener('input', onEdit);
   screen.addEventListener('change', async (e) => {
     if (e.target.id === 'importFile') { const f = e.target.files[0]; if (!f) return; try { const r = await importData(await f.text()); setStatus(r.ok ? 'Imported ✓ (' + r.warnings.length + ' notes)' : 'Imported with ' + r.errors.length + ' errors', r.ok ? 'ok' : 'err'); } catch (err) { setStatus('Import failed: ' + err.message, 'err'); } render(); return; }
     if (e.target.id === 'prefEnglishOnly') { setPref('englishOnly', e.target.checked); if (e.target.checked) setLang('en'); render(); return; }
     if (e.target.id === 'prefTrackEpisodes') { setPref('trackEpisodes', e.target.checked); render(); return; }
     if (e.target.id === 'prefTrackMood') { const on = e.target.checked; setPref('trackMood', on); if (on) setPrefStr('moodSince', new Date().toLocaleDateString('en-CA')); render(); return; }
-    if (e.target.id === 'prefShowUs') { const on = e.target.checked; setPref('showUs', on); if (on && !getPrefStr('usSince')) setPrefStr('usSince', new Date().toLocaleDateString('en-CA')); if (!on && state.tab === 'us') setTab('today'); else render(); return; }
+    if (e.target.id === 'prefShowUs') { const on = e.target.checked; setPref('showUs', on); if (on && !getPrefStr('usSince')) setPrefStr('usSince', new Date().toLocaleDateString('en-CA')); render(); return; }
     if (Forms.isOpen()) { Forms.onInput(e); if (e.target && e.target.dataset && e.target.dataset.rerender !== undefined) render(); return; }
   });
 }
 function setLang(lang) { state.lang = lang; document.documentElement.lang = lang; document.querySelectorAll('.lang-btn').forEach((b) => b.classList.toggle('is-active', b.dataset.lang === lang)); render(); }
-function setTab(tab) { state.tab = tab; if (Us.resetNotes) Us.resetNotes(); document.querySelectorAll('.tab').forEach((b) => b.classList.toggle('is-active', b.dataset.tab === tab)); render(); }
+function setTab(tab) { state.tab = tab; Rel.resetNotes(); document.querySelectorAll('.tab').forEach((b) => b.classList.toggle('is-active', b.dataset.tab === tab)); render(); }
 function setStatus(msg, kind) { if (!msg) { statusStrip.hidden = true; return; } statusStrip.hidden = false; statusStrip.className = 'status-strip' + (kind ? ' ' + kind : ''); statusStrip.textContent = msg; }
 function attachDrag(el) {
   let down = false, moved = false, startX = 0, startScroll = 0;
@@ -3360,261 +3576,6 @@ function attachSymptomReorder(container) {
     grip.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); }, true);
   });
 }
-const Us = (function () {
-  const ui = { win: '1w', nf: 'all', calOpen: false, calMonth: null, notesPage: false, notesMonth: 'all' };
-  const WD = { '1w': 7, '30d': 30, '3m': 90 };
-  const US_DOW = { en: ['M', 'T', 'W', 'T', 'F', 'S', 'S'], es: ['L', 'M', 'X', 'J', 'V', 'S', 'D'] };
-  const US_CAL_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z"/><path d="M16 3v4"/><path d="M8 3v4"/><path d="M4 11h16"/></svg>';
-  const HEART_SVG = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19.5 12.572l-7.5 7.428l-7.5 -7.428a5 5 0 1 1 7.5 -6.572a5 5 0 1 1 7.5 6.572"/></svg>';
-  const BULB_SVG = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12h1m8 -9v1m8 8h1m-15.4 -6.4l.7 .7m12.1 -.7l-.7 .7"/><path d="M9 16a5 5 0 1 1 6 0a3.5 3.5 0 0 0 -1 3a2 2 0 0 1 -4 0a3.5 3.5 0 0 0 -1 -3"/><path d="M9.7 17l4.6 0"/></svg>';
-  function noteRowHtml(l, lang, showG, showI) {
-    const g = l.us.grateful, im = l.us.improve;
-    let inner = `<div style="margin-bottom:5px"><span class="badge us">${fmtDay(l.date, lang)}</span></div>`;
-    if (showG && g) inner += `<div class="small" style="display:flex;gap:6px;align-items:flex-start;margin:3px 0"><span style="flex:0 0 1.2em;display:flex;justify-content:center;padding-top:2px;color:var(--us)">${HEART_SVG}</span><span>${esc(g)}</span></div>`;
-    if (showI && im) inner += `<div class="small" style="display:flex;gap:6px;align-items:flex-start;margin:3px 0;color:var(--muted)"><span style="flex:0 0 1.2em;display:flex;justify-content:center;padding-top:2px;color:var(--warn)">${BULB_SVG}</span><span>${esc(im)}</span></div>`;
-    return `<div class="us-note">${inner}</div>`;
-  }
-  function usMonthCal(state, data) {
-    const lang = state.lang, date = state.date, tISO = Today.todayISO();
-    const monthIso = ui.calMonth || date.slice(0, 7);
-    const [yy, mm] = monthIso.split('-').map(Number);
-    const first = new Date(Date.UTC(yy, mm - 1, 1));
-    const lead = (first.getUTCDay() + 6) % 7;
-    const daysIn = new Date(Date.UTC(yy, mm, 0)).getUTCDate();
-    const dows = US_DOW[lang] || US_DOW.en;
-    const mlabel = first.toLocaleDateString(lang === 'es' ? 'es-ES' : 'en-GB', { month: 'long', year: 'numeric' });
-    let cells = dows.map((d) => `<div class="caldow">${d}</div>`).join('');
-    for (let i = 0; i < lead; i++) cells += '<div class="calday empty"></div>';
-    for (let d = 1; d <= daysIn; d++) {
-      const iso = `${monthIso}-${String(d).padStart(2, '0')}`;
-      const fut = iso > tISO;
-      const du = fut ? null : DL.getUs(iso, data);
-      const has = du && (typeof du.connection === 'number' || du.time || du.friction || du.grateful || du.improve);
-      cells += `<button type="button" class="calday${has ? ' has' : ''}${iso === date ? ' sel' : ''}${iso === tISO ? ' tod' : ''}${fut ? ' fut' : ''}" data-usday="${iso}" ${fut ? 'disabled' : ''}>${d}</button>`;
-    }
-    const canNext = monthIso < tISO.slice(0, 7);
-    const note = `<div class="calnote">${lang === 'es' ? 'Toca un día para abrirlo.' : 'Tap a day to open it.'}</div>`;
-    return `<div class="card monthview us-cal" style="touch-action:pan-y"><div class="calhead"><span class="mlabel">${mlabel}</span><span class="hgrp"><button class="wknav" data-calnav="-1" aria-label="Previous month">‹</button><button class="wknav" data-calnav="1" aria-label="Next month" ${canNext ? '' : 'disabled'}>›</button><button class="wkcal on" data-uscalclose="1" aria-label="${lang === 'es' ? 'Cerrar calendario' : 'Close calendar'}">${US_CAL_SVG}</button></span></div><div class="calgrid">${cells}</div>${note}</div>`;
-  }
-  function monthLabel(mk, lang) { return new Date(mk + '-01T00:00:00').toLocaleDateString(lang === 'es' ? 'es-ES' : 'en-GB', { month: 'long', year: 'numeric' }); }
-  function monthShort(mk, lang) { return new Date(mk + '-01T00:00:00').toLocaleDateString(lang === 'es' ? 'es-ES' : 'en-GB', { month: 'short' }); }
-  function renderAllNotes(data, lang) {
-    const logs = (data.dailyLogs || []).filter((l) => l.us && (l.us.grateful || l.us.improve)).slice().sort((a, b) => (a.date < b.date ? 1 : -1));
-    const months = [...new Set(logs.map((l) => l.date.slice(0, 7)))];
-    const fm = (ui.notesMonth !== 'all' && !months.includes(ui.notesMonth)) ? 'all' : ui.notesMonth;
-    const chips = `<button type="button" class="us-mchip${fm === 'all' ? ' on' : ''}" data-usmonth="all">All</button>` + months.map((mk) => `<button type="button" class="us-mchip${fm === mk ? ' on' : ''}" data-usmonth="${mk}">${monthShort(mk, lang)}</button>`).join('');
-    const shown = logs.filter((l) => fm === 'all' || l.date.slice(0, 7) === fm);
-    let body = '', curM = '', buf = [];
-    const flush = () => { if (buf.length) { body += `<div class="us-mlabel">${monthLabel(curM, lang)}</div><div class="card">${buf.join('')}</div>`; buf = []; } };
-    shown.forEach((l) => { const mk = l.date.slice(0, 7); if (mk !== curM) { flush(); curM = mk; } buf.push(noteRowHtml(l, lang, true, true)); });
-    flush();
-    return `<div class="ds">
-      <button type="button" class="us-back" data-usnotesback="1"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6l6 6"/></svg>Back</button>
-      <div class="trendgrp-h"><span class="gbar"></span><span class="gtxt">All notes</span><span class="grule"></span></div>
-      <div class="us-monthchips">${chips}</div>
-      <div class="us-notescount">${shown.length} ${shown.length === 1 ? 'note' : 'notes'}</div>
-      ${body || '<div class="card"><p class="muted small" style="margin:0">No notes yet.</p></div>'}
-    </div>`;
-  }
-  let _pushTimer = null;
-  function save() { DL.persistLocal(); clearTimeout(_pushTimer); _pushTimer = setTimeout(() => { DL.persist(); }, 1000); }
-  function toggleCal() { ui.calOpen = !ui.calOpen; }
-  function daysAgo(iso, n) { const d = new Date(iso + 'T00:00:00'); d.setDate(d.getDate() - n); return d.toLocaleDateString('en-CA'); }
-  function fmtShort(iso, lang) { const d = new Date(iso + 'T00:00:00'); return d.toLocaleDateString(lang === 'es' ? 'es-ES' : 'en-GB', { weekday: 'short', day: 'numeric', month: 'short' }); }
-  function fmtDay(iso, lang) { const d = new Date(iso + 'T00:00:00'); return d.toLocaleDateString(lang === 'es' ? 'es-ES' : 'en-GB', { weekday: 'short', day: 'numeric' }); }
-  function allDays() { const ds = ((DL.getData() || {}).dailyLogs || []).map((l) => l.date).filter(Boolean).sort(); if (!ds.length) return 30; return Math.round((Date.now() - new Date(ds[0] + 'T00:00:00').getTime()) / 86400000) + 1; }
-  const CONN = { 1: 'Distant', 2: 'Off', 3: 'Okay', 4: 'Warm', 5: 'Close' };
-  const SATW = { 1: 'Not much', 2: 'Meh', 3: 'Good', 4: 'Great', 5: 'Thriving' };
-  // 5-face SVG (ordinal 1–5), pink ramp keyed to --us. Read the columns of the grid, no axis to decode.
-  const FACE = {
-    1: { c: '#e0a3b8', m: 'M13,30 Q20,23 27,30' },
-    2: { c: '#f48fb1', m: 'M13,28 Q20,25 27,28' },
-    3: { c: '#f06292', m: 'M13,27 L27,27' },
-    4: { c: '#e91e63', m: 'M13,26 Q20,31 27,26' },
-    5: { c: '#ad1457', m: 'M12,25 Q20,34 28,25' }
-  };
-  function face(level, size) {
-    const f = FACE[level]; if (!f) return `<span class="us-face-none"></span>`;
-    return `<svg viewBox="0 0 40 40" width="${size}" height="${size}"><circle cx="20" cy="20" r="18" fill="${f.c}"/><circle cx="14" cy="16" r="2" fill="#fff"/><circle cx="26" cy="16" r="2" fill="#fff"/><path d="${f.m}" stroke="#fff" stroke-width="2.4" fill="none" stroke-linecap="round"/></svg>`;
-  }
-  function isFriday(iso) { return new Date(iso + 'T00:00:00').getDay() === 5; }
-  function mondayOf(iso) { const d = new Date(iso + 'T00:00:00'); const wd = (d.getDay() + 6) % 7; d.setDate(d.getDate() - wd); return d.toLocaleDateString('en-CA'); }
-  function headerHTML(state) { if (ui.notesPage) return `<span class="dttxt">Us</span>`; return `<button class="datettl" id="usDate" aria-label="Choose day"><span class="dttxt">${fmtShort(state.date, state.lang)}</span><span class="dtchev${ui.calOpen ? ' up' : ''}">▾</span></button>`; }
-
-  function renderUsScreen(state) {
-    const data = DL.getData(); if (!data) return '<div class="card"><p class="muted">No data loaded.</p></div>';
-    const lang = state.lang, date = state.date;
-    if (ui.notesPage) return renderAllNotes(data, lang);
-    if (ui.calOpen) return `<div class="ds">${usMonthCal(state, data)}</div>`;
-    const u = DL.getUs(date, data) || {};
-    const wk = u.week || {};
-    const con = typeof u.connection === 'number' ? u.connection : null;
-
-    // ---- DAILY ----
-    const faceRow = [1, 2, 3, 4, 5].map((l) => `<button type="button" class="us-lab${con === l ? ' sel' : ''}" data-uscon="${l}">${face(l, 34)}<span>${CONN[l]}</span></button>`).join('');
-    const timeRow = [['none', 'Not really'], ['quality', 'Quality time'], ['date', 'A date']].map(([v, l]) => `<button type="button" class="us-state${u.time === v ? ' sel' : ''}" data-ustime="${v}">${l}</button>`).join('');
-    const friRow = [['none', 'None'], ['little', 'A little'], ['argument', 'A real argument']].map(([v, l]) => `<button type="button" class="us-state${u.friction === v ? ' sel' : ''}" data-usfrq="${v}">${l}</button>`).join('');
-    const logCard = `<div class="card">
-      <p class="us-q">How did it feel between you today?</p>
-      <div class="us-row us-faces">${faceRow}</div>
-      <p class="us-q mt16">Did you spend time together today?</p>
-      <div class="us-row">${timeRow}</div>
-      <p class="us-q mt16">Any friction today?</p>
-      <div class="us-row">${friRow}</div>
-      <p class="us-q mt16">Any area to improve?</p>
-      <textarea class="us-ta" data-usnote="improve" rows="2" placeholder="Something to work on together…">${esc(u.improve || '')}</textarea>
-      <p class="us-q mt16">What are you grateful for today?</p>
-      <textarea class="us-ta us-grat" data-usnote="grateful" rows="2" placeholder="Something they did, a moment together…">${esc(u.grateful || '')}</textarea>
-    </div>`;
-
-    // ---- WEEKLY (Fridays only) ----
-    let weeklyCard = '';
-    if (isFriday(date)) {
-      const satRow = [1, 2, 3, 4, 5].map((l) => `<button type="button" class="us-plab${wk.satisfaction === l ? ' sel' : ''}" data-ussatw="${l}"><span class="n">${l}</span>${SATW[l]}</button>`).join('');
-      const apprRow = [['rarely', 'Rarely'], ['sometimes', 'Sometimes'], ['often', 'Often']].map(([v, l]) => `<button type="button" class="us-state${wk.appreciated === v ? ' sel' : ''}" data-usappr="${v}">${l}</button>`).join('');
-      weeklyCard = `<div class="card">
-        <p class="us-q">How satisfied are you with us this week?</p>
-        <div class="us-row us-plabs">${satRow}</div>
-        <p class="us-q mt16">Did you feel appreciated this week?</p>
-        <div class="us-row">${apprRow}</div>
-        <p class="us-q mt16">One thing you’d like more of?</p>
-        <textarea class="us-ta" data-usweeknote="wantMore" rows="2" placeholder="More time, more affection, a plan…">${esc(wk.wantMore || '')}</textarea>
-      </div>`;
-    }
-
-    // ---- TRENDS — current period vs previous equal-length period (identical logic for 1w/30d/3m/All) ----
-    const today = Today.todayISO();
-    const days = ui.win === 'all' ? allDays() : (WD[ui.win] || 30);
-    const winLabel = { '1w': 'week', '30d': '30 days', '3m': '3 months' }[ui.win] || 'period';
-    // Only compare against the previous equal-length period when that period lies within tracked
-    // history. On a new user the prior window is entirely before they started, so an empty (all-zero)
-    // baseline would wrongly read as "worse/better vs 0" on their first days. ("All" has no prior period.)
-    const firstUs = ((data.dailyLogs || []).filter((l) => l.us).map((l) => l.date).filter(Boolean).sort())[0];
-    const hasPrev = ui.win !== 'all' && !!firstUs && firstUs <= daysAgo(today, 2 * days - 1);
-    function agg(fromBack, span) {
-      const a = { conn: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }, connLogged: 0, warm: 0, cDate: 0, cQual: 0, cNone: 0, together: 0, fNone: 0, fLittle: 0, fArg: 0, fricTotal: 0 };
-      for (let i = fromBack; i < fromBack + span; i++) { const du = DL.getUs(daysAgo(today, i), data); if (!du) continue;
-        if (typeof du.connection === 'number') { a.conn[du.connection] = (a.conn[du.connection] || 0) + 1; a.connLogged++; if (du.connection >= 4) a.warm++; }
-        if (du.time === 'date') { a.cDate++; a.together++; } else if (du.time === 'quality') { a.cQual++; a.together++; } else if (du.time === 'none') a.cNone++;
-        if (du.friction === 'none') a.fNone++; else if (du.friction === 'little') a.fLittle++; else if (du.friction === 'argument') a.fArg++;
-        if (du.friction && du.friction !== 'none') a.fricTotal++;
-      }
-      return a;
-    }
-    const cur = agg(0, days), prev = hasPrev ? agg(days, days) : null;
-    // compact whole-number delta vs previous period; colour by whether the change is an improvement
-    const delta = (c, p, higherBetter) => { if (!hasPrev || p == null) return ''; const d = c - p; if (d === 0) return ` <span class="muted">· ±0 vs ${p}</span>`; const better = higherBetter ? d > 0 : d < 0; return ` <span style="color:${better ? 'var(--ok)' : 'var(--err)'};font-weight:700">${d > 0 ? '▲' : '▼'}${Math.abs(d)}</span> <span class="muted">vs ${p}</span>`; };
-    const winseg = `<div class="winseg">${[['1w', '1w'], ['30d', '30d'], ['3m', '3m'], ['all', 'All']].map(([k, l]) => `<button class="${ui.win === k ? 'on' : ''}" data-uswin="${k}">${l}</button>`).join('')}</div>`;
-
-    // Connection: warm-days headline number + this-vs-previous distribution bars
-    // good days = connection >= 4 (Warm/Close), shown on a fixed axis = window length (7/30/90/all)
-    const goodBar = (a, isCur) => { const pct = days ? Math.min(100, a.warm / days * 100) : 0; const fill = a.connLogged ? `<div style="width:${pct.toFixed(2)}%;background:${isCur ? 'var(--us)' : 'var(--us-soft)'}"></div>` : ''; return `<div class="us-bar us-goodbar">${fill}</div><span class="us-goodn"${isCur ? '' : ' style="color:var(--muted)"'}>${a.connLogged ? a.warm : '–'}</span>`; };
-    const connCard = (cur.connLogged || (prev && prev.connLogged)) ? `<div class="metric"><div class="mtop"><span class="mname">Connection</span></div>
-      <div class="us-cmp-head"><span class="big">${cur.warm}</span><span class="lab">good ${cur.warm === 1 ? 'day' : 'days'}${delta(cur.warm, prev && prev.warm, true)}</span></div>
-      <div class="us-cmp"><span class="us-cmp-lab">This</span>${goodBar(cur, true)}</div>
-      ${hasPrev ? `<div class="us-cmp"><span class="us-cmp-lab">Prev</span>${goodBar(prev, false)}</div>` : ''}</div>` : `<div class="metric"><div class="mtop"><span class="mname">Connection</span></div><p class="muted small" style="margin:0">No check-ins yet.</p></div>`;
-
-    // Friction
-    const fTot = cur.fNone + cur.fLittle + cur.fArg;
-    const fpct = (n) => fTot ? Math.round(n / fTot * 100) : 0;
-    const fricBar = fTot ? `<div class="us-bar">
-        ${cur.fNone ? `<div style="width:${fpct(cur.fNone)}%;background:#e6d7de;color:#7a6b73">${cur.fNone} calm</div>` : ''}
-        ${cur.fLittle ? `<div style="width:${fpct(cur.fLittle)}%;background:var(--us)">${cur.fLittle} little</div>` : ''}
-        ${cur.fArg ? `<div style="width:${fpct(cur.fArg)}%;background:#9d174d">${cur.fArg} big</div>` : ''}
-      </div>` : '<p class="muted small" style="margin:0">No days logged.</p>';
-    const fricCard = `<div class="metric"><div class="mtop"><span class="mname">Friction</span></div>
-      <div class="us-cmp-head"><span class="big">${cur.fricTotal}</span><span class="lab">friction ${cur.fricTotal === 1 ? 'day' : 'days'}${delta(cur.fricTotal, prev && prev.fricTotal, false)}</span></div>
-      ${fricBar}</div>`;
-
-    // Time together
-    const timeCard = `<div class="metric"><div class="mtop"><span class="mname">Time together</span><span class="msub">${cur.together} together ${cur.together === 1 ? 'day' : 'days'}${delta(cur.together, prev && prev.together, true)}</span></div>
-      <div class="us-counts">
-        <div class="us-count rank1"><div class="big">${cur.cDate}</div><div class="cl">dates</div></div>
-        <div class="us-count rank2"><div class="big">${cur.cQual}</div><div class="cl">quality days</div></div>
-        <div class="us-count rank3"><div class="big">${cur.cNone}</div><div class="cl">neither</div></div>
-      </div></div>`;
-
-    // Weekly satisfaction — a once-a-week check-in, so this is driven by Fridays, not the
-    // rolling-day window: sparkline on 3m/All (enough Fridays), big-stat on 1w/30d. The current
-    // week's Friday shows as a hollow "awaiting" marker until it's filled, so we never imply a
-    // value that hasn't been entered. Delta is point-to-point (vs previous Friday), matching cadence.
-    const satPts = [];
-    for (let i = days - 1; i >= 0; i--) { const iso = daysAgo(today, i); if (!isFriday(iso)) continue; const du = DL.getUs(iso, data); const v = du && du.week && typeof du.week.satisfaction === 'number' ? du.week.satisfaction : null; if (v != null) satPts.push({ iso, v }); }
-    let nf = today; for (let k = 0; k < 7 && !isFriday(nf); k++) nf = daysAgo(nf, -1); // this/next Friday
-    const nfDu = DL.getUs(nf, data); const satPending = !(nfDu && nfDu.week && typeof nfDu.week.satisfaction === 'number');
-    const satLatest = satPts[satPts.length - 1] || null, satPrevPt = satPts[satPts.length - 2] || null;
-    const fmtFri = (iso) => new Date(iso + 'T00:00:00').toLocaleDateString(lang === 'es' ? 'es-ES' : 'en-GB', { weekday: 'short', month: 'short', day: 'numeric' });
-    const fmtShort = (iso) => new Date(iso + 'T00:00:00').toLocaleDateString(lang === 'es' ? 'es-ES' : 'en-GB', { month: 'short', day: 'numeric' });
-    let satDelta = '<span class="muted">1–5, Fridays</span>';
-    if (satLatest && satPrevPt) { const dd = satLatest.v - satPrevPt.v; satDelta = dd === 0 ? '<span class="muted">±0 vs previous Friday</span>' : `<span style="color:${dd > 0 ? 'var(--ok)' : 'var(--err)'};font-weight:700">${dd > 0 ? '▲' : '▼'} ${Math.abs(dd)}</span> <span class="muted">vs previous Friday</span>`; }
-    let weeklyTrend = '';
-    if (satLatest) {
-      const hero = `<div class="us-satrow"><div><span class="us-satnum">${satLatest.v}<span class="us-satden">/5</span></span><div class="us-satdate">${fmtFri(satLatest.iso)} · ${satPending ? 'last check-in' : 'this week'}</div></div><span class="msub">${satDelta}</span></div>`;
-      let chart = '';
-      if ((ui.win === '3m' || ui.win === 'all') && satPts.length >= 2) {
-        const pad = 12, yOf = (v) => 62 - ((v - 1) / 4) * 54;
-        const n = satPts.length + (satPending ? 1 : 0), step = n > 1 ? (340 - pad * 2) / (n - 1) : 0, xOf = (i) => pad + i * step;
-        const pts = satPts.map((p, i) => `${xOf(i).toFixed(1)},${yOf(p.v).toFixed(1)}`);
-        const lastX = xOf(satPts.length - 1).toFixed(1), lastY = yOf(satLatest.v).toFixed(1), firstX = xOf(0).toFixed(1);
-        const area = `M${pts.join(' ')} L${lastX},72 L${firstX},72 Z`;
-        const pend = satPending ? `<line x1="${lastX}" y1="${lastY}" x2="${xOf(satPts.length).toFixed(1)}" y2="${lastY}" stroke="var(--us-soft)" stroke-width="2" stroke-dasharray="3 3"/><circle cx="${xOf(satPts.length).toFixed(1)}" cy="${lastY}" r="4.5" fill="var(--card)" stroke="var(--us-soft)" stroke-width="2"/>` : '';
-        const axisR = satPending ? `<span class="pend">${fmtShort(nf)} · awaiting</span>` : `<span>${fmtShort(satLatest.iso)}</span>`;
-        chart = `<svg class="us-satspark" viewBox="0 0 340 72" role="img" aria-label="Weekly satisfaction trend, most recent ${satLatest.v} out of 5"><line x1="0" y1="8" x2="340" y2="8" stroke="#f1e6ec" stroke-width="1"/><line x1="0" y1="62" x2="340" y2="62" stroke="#f1e6ec" stroke-width="1"/><path d="${area}" fill="var(--us)" fill-opacity="0.10"/><polyline points="${pts.join(' ')}" fill="none" stroke="var(--us)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>${pend}<circle cx="${lastX}" cy="${lastY}" r="4.5" fill="var(--us)" stroke="var(--card)" stroke-width="2"/></svg><div class="us-sataxis"><span>${fmtShort(satPts[0].iso)}</span>${axisR}</div>`;
-      }
-      weeklyTrend = `<div class="metric"><div class="mtop"><span class="mname">Weekly satisfaction</span></div>${hero}${chart}</div>`;
-    }
-
-    const trendsCard = `<div class="card">${connCard}${fricCard}${timeCard}${weeklyTrend}</div>`;
-
-    // ---- GRATITUDE FEED + NOTES (dashboard: last 7 days; full history on the All-notes page) ----
-    const notesCutoff = daysAgo(today, 6); // last 7 days incl. today
-    const showG = ui.nf !== 'improve', showI = ui.nf !== 'grateful';
-    const noteLogs = (data.dailyLogs || []).filter((l) => l.us && (l.us.grateful || l.us.improve)).slice().sort((a, b) => (a.date < b.date ? 1 : -1));
-    const rows = [];
-    noteLogs.forEach((l) => {
-      if (l.date < notesCutoff) return;
-      if (ui.nf === 'grateful' && !l.us.grateful) return; if (ui.nf === 'improve' && !l.us.improve) return;
-      rows.push(noteRowHtml(l, lang, showG, showI));
-    });
-    const hasOlder = noteLogs.some((l) => l.date < notesCutoff);
-    const showAllBtn = (hasOlder || rows.length) ? `<button type="button" class="us-showall" data-usnotesopen="1">Show all notes<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6l-6 6"/></svg></button>` : '';
-    const nfSeg = `<div class="us-seg">${[['all', 'All'], ['grateful', 'Grateful'], ['improve', 'Improve']].map(([k, l]) => `<button type="button" class="${ui.nf === k ? 'on' : ''}" data-usnf="${k}">${l}</button>`).join('')}</div>`;
-    const notesCard = `<div class="card">${rows.length ? rows.join('') : '<p class="muted small" style="margin:0">No notes in the last 7 days.</p>'}${showAllBtn}</div>`;
-
-    const grpHead = (title, ctrl, sticky) => `<div class="trendgrp-h${sticky ? ' us-trendhead' : ''}"><span class="gbar"></span><span class="gtxt">${title}</span><span class="grule"></span>${ctrl || ''}</div>`;
-    return `<div class="ds">${grpHead('Daily check-in')}${logCard}${weeklyCard ? grpHead('Weekly check-in') + weeklyCard : ''}<div class="us-trendwrap">${grpHead('Trends', winseg, true)}${trendsCard}</div>${grpHead('Gratitude &amp; notes', nfSeg)}${notesCard}</div>`;
-  }
-
-  function onClick(e, state, rerender) {
-    const t = e.target.closest('button'); if (!t) return;
-    // flush any open textareas before a re-render loses them
-    document.querySelectorAll('.us-ta').forEach((el) => { if (el.dataset.usnote) DL.setUsField(state.date, el.dataset.usnote, el.value); else if (el.dataset.usweeknote) DL.setUsWeek(state.date, el.dataset.usweeknote, el.value); });
-    const cur = (k) => { const cu = DL.getUs(state.date, DL.getData()); return cu ? cu[k] : null; };
-    const curW = (k) => { const cu = DL.getUs(state.date, DL.getData()); return (cu && cu.week) ? cu.week[k] : null; };
-    if (t.dataset.usday) { state.date = t.dataset.usday; ui.calOpen = false; ui.calMonth = null; rerender(); return; }
-    if (t.dataset.calnav) { const base = ui.calMonth || state.date.slice(0, 7); const [yy, mm] = base.split('-').map(Number); ui.calMonth = new Date(Date.UTC(yy, mm - 1 + Number(t.dataset.calnav), 1)).toISOString().slice(0, 7); rerender(); return; }
-    if (t.dataset.uscalclose) { ui.calOpen = false; ui.calMonth = null; rerender(); return; }
-    if (t.dataset.uscon != null) { const v = Number(t.dataset.uscon); DL.setUsField(state.date, 'connection', cur('connection') === v ? null : v); save(); rerender(); return; }
-    if (t.dataset.ustime) { DL.setUsField(state.date, 'time', cur('time') === t.dataset.ustime ? null : t.dataset.ustime); save(); rerender(); return; }
-    if (t.dataset.usfrq) { const v = t.dataset.usfrq; const nv = cur('friction') === v ? null : v; DL.setUsField(state.date, 'friction', nv); save(); rerender(); return; }
-    if (t.dataset.ussatw != null) { const v = Number(t.dataset.ussatw); DL.setUsWeek(state.date, 'satisfaction', curW('satisfaction') === v ? null : v); save(); rerender(); return; }
-    if (t.dataset.usappr) { DL.setUsWeek(state.date, 'appreciated', curW('appreciated') === t.dataset.usappr ? null : t.dataset.usappr); save(); rerender(); return; }
-    if (t.dataset.uswin) { ui.win = t.dataset.uswin; rerender(); return; }
-    if (t.dataset.usnf) { ui.nf = t.dataset.usnf; rerender(); return; }
-    if (t.dataset.usnotesopen) { ui.notesPage = true; ui.notesMonth = 'all'; window.scrollTo(0, 0); rerender(); return; }
-    if (t.dataset.usnotesback) { ui.notesPage = false; window.scrollTo(0, 0); rerender(); return; }
-    if (t.dataset.usmonth) { ui.notesMonth = t.dataset.usmonth; rerender(); return; }
-  }
-  function onInput(e, state, rerender) {
-    if (!e.target.classList || !e.target.classList.contains('us-ta')) return;
-    if (e.target.dataset.usnote) DL.setUsField(state.date, e.target.dataset.usnote, e.target.value);
-    else if (e.target.dataset.usweeknote) DL.setUsWeek(state.date, e.target.dataset.usweeknote, e.target.value);
-    e.target.style.height = 'auto'; e.target.style.height = e.target.scrollHeight + 'px';
-    DL.persistLocal(); clearTimeout(_pushTimer); _pushTimer = setTimeout(() => DL.persist({ silent: true }), 600);
-  }
-  function resetNotes() { ui.notesPage = false; ui.notesMonth = 'all'; ui.calOpen = false; ui.calMonth = null; }
-  return { headerHTML, renderUsScreen, onClick, onInput, toggleCal, resetNotes };
-})();
 // A full render() replaces screen.innerHTML, which blows away focus + caret if the user is
 // typing in a note. Capture the focused field (by its stable data-*/id attributes) before the
 // swap and restore focus, selection, and scroll after, so re-renders don't kick you out mid-type.
@@ -3640,17 +3601,9 @@ function render() {
   const _savedFocus = captureFieldFocus();
   const titles = TAB_TITLES;
   const englishOnly = getPref('englishOnly');
-  const langToggle = document.querySelector('.lang-toggle'); if (langToggle) langToggle.hidden = englishOnly || (!state.showData && state.tab === 'us');
+  const langToggle = document.querySelector('.lang-toggle'); if (langToggle) langToggle.hidden = englishOnly;
   if (englishOnly && state.lang !== 'en') { state.lang = 'en'; document.documentElement.lang = 'en'; document.querySelectorAll('.lang-btn').forEach((b) => b.classList.toggle('is-active', b.dataset.lang === 'en')); }
   document.querySelectorAll('.tab').forEach((b) => { const el = b.querySelector('.tab-label'); if (el && titles[b.dataset.tab]) el.textContent = titles[b.dataset.tab]; });
-  const showUs = getPref('showUs');
-  if (!showUs && state.tab === 'us') state.tab = 'today';
-  const usTab = document.getElementById('tabUs'); if (usTab) usTab.hidden = !showUs;
-  const tabbarEl = document.querySelector('.tabbar'); if (tabbarEl) tabbarEl.classList.toggle('us-on', showUs);
-  const isUs = !state.showData && state.tab === 'us';
-  document.body.classList.toggle('tab-us', isUs);
-  const themeMeta = document.querySelector('meta[name="theme-color"]');
-  if (themeMeta) themeMeta.setAttribute('content', isUs ? '#be185d' : '#0f766e');
   let content;
   try {
     if (state.showData) { titleEl.textContent = 'Data'; content = renderDataScreen(); }
@@ -3660,7 +3613,6 @@ function render() {
       else if (state.tab === 'next') content = Appt.renderQuestions(state);
       else if (state.tab === 'records') content = Records.renderRecords(state);
       else if (state.tab === 'timeline') content = Records.renderTimeline(state);
-      else if (state.tab === 'us') { titleEl.innerHTML = Us.headerHTML(state); content = Us.renderUsScreen(state); }
       else content = '';
     }
   } catch (err) {
