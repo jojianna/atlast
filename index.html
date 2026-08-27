@@ -67,6 +67,7 @@ body { font:16px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helveti
 .badge.neutral { background:var(--chip); color:var(--muted); }
 .badge.accent { background:var(--teal-tint); color:var(--teal-d); }
 .badge.us { background:var(--us-tint); color:var(--us); }
+.badge.autoimmune { background:#efe9fb; color:#5b3aa8; }
 .badge.lg { font-size:13px; font-weight:600; padding:2px 10px; }
 details.msgs { margin-top:8px; } details.msgs summary { cursor:pointer; font-size:13px; color:var(--muted); }
 .msglist { margin:8px 0 0; padding:0; list-style:none; font-size:12px; } .msglist li { padding:4px 0; border-bottom:1px solid var(--line); color:var(--muted); }
@@ -101,7 +102,7 @@ button.sym-head { background:none; border-left:0; border-right:0; border-bottom:
 .mood.is-on { border-width:2px; padding:9px 0; }
 .mood svg { display:block; }
 .moodnote { width:100%; margin-top:11px; border:1px solid var(--line); border-radius:8px; padding:8px; font:inherit; font-size:14px; line-height:1.45; resize:vertical; box-sizing:border-box; min-height:64px; max-height:240px; overflow-y:auto; }
-.med { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 0; border-bottom:1px solid var(--line); } .med:last-child { border-bottom:0; }
+.med { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:7px 0; border-bottom:1px solid var(--line); } .med:last-child { border-bottom:0; }
 .med-name { font-weight:600; } .med-toggle { display:flex; gap:6px; }
 .tgl { width:38px; height:38px; border:1px solid var(--line); background:#fff; border-radius:8px; font-size:15px; cursor:pointer; color:var(--muted); touch-action:manipulation; -webkit-tap-highlight-color:transparent; user-select:none; }
 .tgl.is-yes { background:var(--ok); color:#fff; border-color:transparent; } .tgl.is-no { background:var(--err); color:#fff; border-color:transparent; }
@@ -224,6 +225,11 @@ ul.tight { margin: 4px 0 0; padding-left: 18px; } ul.tight li { padding: 1px 0; 
 .ds .hgrp{display:flex;align-items:center;gap:8px;}
 .ds .drow{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;padding:10px 0;border-top:1px solid var(--line);}
 .ds .drow:first-of-type{border-top:0;}
+.ds .drow.adj{border-left:3px solid var(--warn);padding-left:12px;border-radius:0;}
+.condinfo-legend{display:flex;flex-direction:column;gap:14px;text-align:left;margin-top:10px;}
+.condinfo-row{display:flex;align-items:center;gap:10px;font-size:14px;color:var(--ink);line-height:1.4;}
+.condinfo-row .badge{flex:none;}
+.condinfo-bar{flex:none;width:4px;height:22px;background:var(--warn);border-radius:2px;}
 .ds .dname{font-weight:600;}
 .ds .dmeta{font-size:13px;color:var(--muted);margin-top:1px;}
 .ds .dspec{color:var(--teal);}
@@ -682,7 +688,7 @@ const SCHEMA = (function(){
 const SEVERITY_MIN = 0;
 const SEVERITY_MAX = 4;
 const ENUMS = {
-  conditionStatus: ['current', 'investigating', 'excluded', 'provisionally_excluded', 'resolved'],
+  conditionStatus: ['current', 'excluded', 'provisionally_excluded', 'resolved'],
   conditionControl: ['treated', 'no_treatment', 'adjusting'],
   medStatus: ['active', 'tapering', 'stopped', 'prn'],
   medCategory: ['prescription', 'supplement', 'otc', 'therapy'],
@@ -842,7 +848,7 @@ function labWindow(lab, windowKey, now = new Date()) {
   if (windowKey === '3m') cutoff.setMonth(cutoff.getMonth() - 3); else if (windowKey === '1y') cutoff.setFullYear(cutoff.getFullYear() - 1);
   return all.filter((r) => new Date(r.date + 'T00:00:00Z') >= cutoff);
 }
-const CONDITION_STATUS_ORDER = { current: 0, investigating: 1, resolved: 2, provisionally_excluded: 3, excluded: 4 };
+const CONDITION_STATUS_ORDER = { current: 0, resolved: 2, provisionally_excluded: 3, excluded: 4 };
 const _alpha = (lang) => (a, b) => (tx(a.name, lang) || '').localeCompare(tx(b.name, lang) || '');
 const EXCLUDED_STATUSES = ['excluded', 'provisionally_excluded'];
 
@@ -1092,6 +1098,19 @@ function reorderSymptomTypes(orderedIds) {
   _data.symptomTypes = next;
 }
 
+// Reorder a subset of medications (e.g. the as-needed group) in place: the meds named in
+// orderedIds are slotted back into the array positions they currently occupy, in the new order,
+// leaving every other med untouched. Display order for the as-needed section follows array order.
+function reorderMedications(orderedIds) {
+  if (!_data || !Array.isArray(_data.medications)) return;
+  const meds = _data.medications;
+  const idSet = new Set(orderedIds || []);
+  const slots = []; // indices occupied by the reordered subset
+  meds.forEach((m, i) => { if (idSet.has(m.id)) slots.push(i); });
+  const byId = new Map(meds.map((m) => [m.id, m]));
+  (orderedIds || []).forEach((id, k) => { const m = byId.get(id); if (m && slots[k] != null) meds[slots[k]] = m; });
+}
+
 // Lab results add/remove (results editing)
 function addLabResult(labId, { date, value, qualitative }) {
   const lab = getRecord('labs', labId); if (!lab) return null;
@@ -1121,7 +1140,7 @@ async function importData(text) {
   return report;
 }
 
-return { CONFIG, getData, getLoadMeta, subscribe, setActiveSource, getActiveSource, loadData, resetToSeed, saveData, t, tx, specialistLabel, derivedOverall, derivedIntensity, activeSymptomTypes, activeLocations, latestLab, labWindow, activeConditions, excludedList, bigPicture, labStatus, labTrend, labPosNeg, labGroups, parseReport, weekdayOf, getDailyLog, setSeverity, getSeverity, setSymptomNote, getSymptomNote, setMood, getMood, setMoodNote, getMoodNote, getUs, setUsField, setUsWeek, setMedTaken, getMedTaken, setMedCount, getMedCount, medDueOn, medTimeOfDay, medsForDate, submitSymptoms, requiredMedsOn, symptomsSubmitted, startEpisode, endEpisode, reopenEpisode, setEpisodeNote, ongoingEpisodes, episodesEndedOn, persist, persistLocal, markQuestionAnswered, genId, getRecord, upsert, remove, archiveSymptomType, deleteSymptomType, addSymptomType, renameSymptomType, setSymptomOverall, addLocation, renameLocation, archiveLocation, reorderSymptomTypes, addLabResult, removeLabResult, recordDoseChange, exportJSON, importData };
+return { CONFIG, getData, getLoadMeta, subscribe, setActiveSource, getActiveSource, loadData, resetToSeed, saveData, t, tx, specialistLabel, derivedOverall, derivedIntensity, activeSymptomTypes, activeLocations, latestLab, labWindow, activeConditions, excludedList, bigPicture, labStatus, labTrend, labPosNeg, labGroups, parseReport, weekdayOf, getDailyLog, setSeverity, getSeverity, setSymptomNote, getSymptomNote, setMood, getMood, setMoodNote, getMoodNote, getUs, setUsField, setUsWeek, setMedTaken, getMedTaken, setMedCount, getMedCount, medDueOn, medTimeOfDay, medsForDate, submitSymptoms, requiredMedsOn, symptomsSubmitted, startEpisode, endEpisode, reopenEpisode, setEpisodeNote, ongoingEpisodes, episodesEndedOn, persist, persistLocal, markQuestionAnswered, genId, getRecord, upsert, remove, archiveSymptomType, deleteSymptomType, addSymptomType, renameSymptomType, setSymptomOverall, addLocation, renameLocation, archiveLocation, reorderSymptomTypes, reorderMedications, addLabResult, removeLabResult, recordDoseChange, exportJSON, importData };
 })();
 
 // Relationship ("Us") — optional daily check-in + trends, gated by the `showUs` pref.
@@ -1169,7 +1188,7 @@ const Rel = (function () {
     ui.usSeeded.add(key);
     const open = ui.usOpen.has(key);
     const body = open ? `<div class="us-disc-body"><textarea class="us-ta${field === 'grateful' ? ' us-grat' : ''}" data-usnote="${field}" rows="2" placeholder="${ph}">${esc(val)}</textarea></div>` : '';
-    return `<button type="button" class="us-disc" data-usexpand="${field}" aria-expanded="${open}"><span class="us-disc-l"><span class="us-disc-q">${q}</span><span class="us-disc-opt">optional</span></span>${CHEV_SVG}</button>${body}`;
+    return `<button type="button" class="us-disc" data-usexpand="${field}" aria-expanded="${open}"><span class="us-disc-l"><span class="us-disc-q">${q}</span></span>${CHEV_SVG}</button>${body}`;
   }
 
   // ---- DAILY CHECK-IN (Log tab) ----
@@ -1536,18 +1555,21 @@ function renderToday(state) {
     const ov = DL.derivedIntensity(s, (dayLog?.symptoms) || []);
     const overall = (ov == null && submitted) ? 0 : ov;
     const chip = overall != null ? `<span class="sev-chip sevsq sev-${overall}" title="${lang === 'es' ? 'Peor zona' : 'Worst area'}">${overall}</span>` : '<span class="muted small">—</span>';
-    // Sum-rollup symptoms (joint pain) show their total burden (severity × breadth) as a labelled teal row INSIDE the
-    // expanded location list — not on the collapsed head, where it duplicated the worst-site square and the day-total pill.
-    let sumRow = '';
-    if (s.overall === 'sum') {
-      const sm = DL.derivedOverall(s, (dayLog?.symptoms) || []);
-      const smv = (sm == null && submitted) ? 0 : sm;
-      if (smv != null) sumRow = `<div class="loc-total"><span>${lang === 'es' ? 'Total de todas las articulaciones' : 'Total across joints'}</span><span class="sev-chip sevsq sumsq" title="${lang === 'es' ? 'Suma de todas las articulaciones' : 'Sum of all joints'}">${smv}</span></div>`;
-    }
     const locsArr = DL.activeLocations(s);
     const locs = locsArr.map((l) => symRow(state, s.id, l.id, tx(l.name, lang))).join('');
-    return `<button type="button" class="symrow located-head sym-head expandable" data-expand="${s.id}" aria-expanded="${open}"><span class="symrow-name as-text">${esc(tx(s.name, lang))} <span class="muted small loc-count">${open ? '▾' : '▸'}</span></span><span class="chipgrp">${chip}</span></button>
-    <div class="loc-list" ${open ? '' : 'hidden'}>${sumRow}${locs}</div>`;
+    // Parent-level note (stored against the symptom with no location, mirroring a single symptom's note).
+    // Kept separate from the per-site notes; independent of severity, so it never marks the symptom graded.
+    const pkey = rowKey(s.id, null);
+    const pnote = DL.getSymptomNote(date, s.id, null, data);
+    if (pnote && !ui.noteInit.has(pkey)) { ui.noteOpen.add(pkey); ui.noteInit.add(pkey); }
+    const pNoteOpen = ui.noteOpen.has(pkey);
+    const pNoteBtn = `<button class="noteicon${pnote ? ' has' : ''}${pNoteOpen ? ' on' : ''}" data-note="${pkey}" aria-label="${STR[lang].addNote}">${NOTE_SVG}</button>`;
+    const pNoteArea = pNoteOpen ? `<div class="rownote-wrap"><textarea class="rownote" data-sym="${s.id}" rows="2" placeholder="${STR[lang].rowNotePh}">${esc(pnote)}</textarea><button class="rownote-done" data-noteclose="${pkey}" aria-label="${STR[lang].done}">${CHECK_SVG}</button></div>` : '';
+    return `<div class="symrow located-head sym-head">
+      <button type="button" class="symrow-name as-text expandable" data-expand="${s.id}" aria-expanded="${open}">${esc(tx(s.name, lang))} <span class="muted small loc-count">${open ? '▾' : '▸'}</span></button>
+      <span class="chipgrp">${chip}${pNoteBtn}</span>
+    </div>${pNoteArea}
+    <div class="loc-list" ${open ? '' : 'hidden'}>${locs}</div>`;
   }).join('');
   const complete = isComplete(date);
   const symEditing = ui.editPick === 'symptomTypes';
@@ -1566,7 +1588,7 @@ function renderToday(state) {
   // Burden depends only on symptom severities, so show it once all symptoms are logged — not gated on meds (which don't affect burden).
   const symComplete = dayTypes.length > 0 && dayTypes.every(isLogged);
   const headStatus = symComplete ? (burdenChip || doneChip) : '';
-  const scaleTop = `<div class="scale-head muted">${T.scaleHint}</div>`;
+  const scaleTop = '';
   const symptomsCard = symEditing
     ? `<div class="card"><div class="card-h"><h2>${T.symptoms}</h2><span class="hgrp">${symEditBtns}</span></div><div class="muted small" style="margin:2px 0 6px">${lang === 'es' ? 'Toca para editar · arrastra ⠿ para reordenar' : 'Tap to edit · drag ⠿ to reorder'}</div><div id="symReorder" class="sym-reorder">${symPick}</div></div>`
     : `<div class="card"><div class="card-h"><span class="hgrp"><h2>${T.symptoms}</h2><button class="infobtn" data-info aria-label="${T.symInfoAria}"><svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="7.5" r="1.4" fill="currentColor"/><rect x="10.8" y="10.5" width="2.4" height="7" rx="1.2" fill="currentColor"/></svg></button></span><span class="hgrp">${headStatus}${symEditBtns}</span></div>${scaleTop}${symptomCards}</div>`;
@@ -1770,10 +1792,13 @@ const { tx, specialistLabel } = DL;
 
 
 
-const ui = { answering: null, editPick: null, postVisit: null, qExpanded: null, apptView: 'upcoming', apptNotesOpen: new Set(), condView: 'active' };
+const ui = { answering: null, editPick: null, postVisit: null, qExpanded: null, apptView: 'upcoming', apptNotesOpen: new Set(), condView: 'active', condInfoOpen: false };
 
 const STR = {
   en: { dx: 'Diagnosed', conditions: 'Active conditions', activeManaged: 'Conditions', since: 'Since', currentMeds: 'Current medications',
+        autoimmune: 'Autoimmune', condInfoAria: 'About the conditions list', condInfoTitle: 'Conditions',
+        condInfoAi: 'Autoimmune conditions carry a purple <b>Autoimmune</b> tag.',
+        condInfoAdj: 'An amber line down the left edge means treatment is being adjusted (dose changing or titrating).',
         control: { treated: 'Treating', no_treatment: 'No treatment', adjusting: 'Adjusting' },
         ruledOut: 'Ruled out', other: 'Other', provShort: 'Provisional', none: 'None', revisit: 'may re-test',
         markAnswered: 'Mark answered', cont: 'Continue', answerNotePh: 'Add a note (optional)…', medStatus: { tapering: 'tapering off', prn: 'as needed', stopped: 'stopped' }, noQuestions: 'No open questions for this specialist.', noQuestionsAll: 'No open questions.', addQ: 'Add question', appointments: 'Upcoming appointments', pastAppts: 'Past appointments', addAppt: 'Add appointment', noAppt: 'No appointments yet',
@@ -1782,6 +1807,9 @@ const STR = {
         wd: { mon: 'Mon', tue: 'Tue', wed: 'Wed', thu: 'Thu', fri: 'Fri', sat: 'Sat', sun: 'Sun' },
         medLegend: 'X-X-X = morning · midday · evening (e.g. 0-0-1 = one at night).' },
   es: { dx: 'Diagnóstico', conditions: 'Condiciones activas', activeManaged: 'Condiciones', since: 'Desde', currentMeds: 'Medicación actual',
+        autoimmune: 'Autoinmune', condInfoAria: 'Sobre la lista de condiciones', condInfoTitle: 'Condiciones',
+        condInfoAi: 'Las condiciones autoinmunes llevan una etiqueta morada <b>Autoinmune</b>.',
+        condInfoAdj: 'Una línea ámbar en el borde izquierdo indica que se está ajustando el tratamiento (cambio o titulación de dosis).',
         control: { treated: 'En tratamiento', no_treatment: 'Sin tratamiento', adjusting: 'Ajustando' },
         ruledOut: 'Descartado', other: 'Otros', provShort: 'Provisional', none: 'Ninguno', revisit: 'puede reevaluarse',
         markAnswered: 'Marcar respondida', cont: 'Continuar', answerNotePh: 'Añadir una nota (opcional)…', medStatus: { tapering: 'en reducción', prn: 'según necesidad', stopped: 'suspendido' }, noQuestions: 'Sin preguntas pendientes para este especialista.', noQuestionsAll: 'Sin preguntas pendientes.', addQ: 'Añadir pregunta', appointments: 'Próximas citas', pastAppts: 'Citas anteriores', addAppt: 'Añadir cita', noAppt: 'Sin citas todavía',
@@ -1791,10 +1819,10 @@ const STR = {
         medLegend: 'X-X-X = mañana · mediodía · noche (p. ej. 0-0-1 = uno por la noche).' },
 };
 const STATUS = {
-  en: { current: 'Diagnosed', investigating: 'Investigating', excluded: 'Ruled out', provisionally_excluded: 'Provisionally excluded', resolved: 'Resolved' },
-  es: { current: 'Diagnosticado', investigating: 'En estudio', excluded: 'Descartado', provisionally_excluded: 'Excluido provisionalmente', resolved: 'Resuelto' },
+  en: { current: 'Diagnosed', excluded: 'Ruled out', provisionally_excluded: 'Provisionally excluded', resolved: 'Resolved' },
+  es: { current: 'Diagnosticado', excluded: 'Descartado', provisionally_excluded: 'Excluido provisionalmente', resolved: 'Resuelto' },
 };
-const STATUS_CLS = { current: 'ok', investigating: 'warn', excluded: 'err', provisionally_excluded: 'prov', resolved: 'ok' };
+const STATUS_CLS = { current: 'ok', excluded: 'err', provisionally_excluded: 'prov', resolved: 'ok' };
 function docLine(sp) { const bits = []; if (sp.doctor) bits.push(sp.doctor); if (sp.clinic) bits.push(sp.clinic); return bits.join(' · '); }
 
 function fmtDate(iso, lang) { if (!iso) return ''; return new Date(iso + 'T00:00:00').toLocaleDateString(lang === 'es' ? 'es-ES' : 'en-GB', { day: 'numeric', month: 'short', year: 'numeric' }); }
@@ -1814,9 +1842,7 @@ function buildDoctorSheet(lang) {
   const prepared = L('Prepared', 'Preparado') + ' ' + fmtDate(Today.todayISO(), lang);
   // --- Active conditions (same status text the Summary chips use) ---
   const byDateDesc = (a, b) => { const da = a.statusDate || '', db = b.statusDate || ''; if (da === db) return 0; if (!da) return 1; if (!db) return -1; return da < db ? 1 : -1; };
-  const condStatus = (c) => c.status === 'investigating'
-    ? STATUS[lang].investigating
-    : (c.control && c.control !== 'no_treatment' && T.control && T.control[c.control] ? T.control[c.control] : '');
+  const condStatus = (c) => (c.control && c.control !== 'no_treatment' && T.control && T.control[c.control] ? T.control[c.control] : '');
   const condRows = bp.conditions.filter((c) => c.status !== 'resolved').slice().sort(byDateDesc).map((c) => {
     const meta = [c.statusDate ? `${T.since} ${c.statusDate.slice(0, 4)}` : '', condStatus(c)].filter(Boolean).join(' · ');
     return `<tr><td>${esc(tx(c.name, lang))}</td><td class="ps-right">${esc(meta)}</td></tr>`;
@@ -1894,19 +1920,25 @@ function renderBig(state) {
   const condSub = (c) => {
     const names = (c.specialismIds || []).map((id) => spById[id] ? specialistLabel(spById[id], lang) : '').filter(Boolean);
     const parts = [];
-    if (c.statusDate) parts.push(`${T.since} ${c.statusDate.slice(0, 4)}`);
+    // Resolved conditions read as a start-finish range (onset → resolved). startDate is the onset year;
+    // statusDate is the year it resolved. Everything else keeps the single "Since YYYY" form.
+    if (c.status === 'resolved' && c.startDate) {
+      const end = c.statusDate ? c.statusDate.slice(0, 4) : '';
+      parts.push(`${c.startDate.slice(0, 4)}${end ? '-' + end : ''}`);
+    } else if (c.statusDate) {
+      parts.push(`${T.since} ${c.statusDate.slice(0, 4)}`);
+    }
     if (names.length) parts.push(names.join(', '));
     return parts.join(' · ');
   };
-  // ONE chip per condition: investigating → "Investigating"; otherwise the control state.
-  // A treatment control (Treating/Adjusting) takes precedence over the Investigating badge, so a condition
-  // still being worked up but already being treated shows its treatment state. Investigating with no treatment set still shows "Investigating".
-  const condChip = (c) => (c.control && c.control !== 'no_treatment' && T.control && T.control[c.control])
-    ? `<span class="badge ${CTRL_CLS[c.control] || 'neutral'}">${T.control[c.control]}</span>`
-    : (c.status === 'investigating' ? `<span class="badge info">${STATUS[lang].investigating}</span>` : '');
+  // Status is now shown visually, not as text chips: a purple "Autoimmune" tag on the right marks
+  // autoimmune conditions; an amber left bar (`.drow.adj`) flags a condition whose treatment is being
+  // adjusted. The old Treating/Adjusting/Investigating text badges were retired. Meaning lives in the (i) popover.
+  const aiTag = (c) => c.autoimmune ? `<span class="badge autoimmune">${T.autoimmune}</span>` : '';
   const condRow = (c) => {
     const sub = condSub(c);
-    return `<div class="drow"><div><div class="dname">${esc(tx(c.name, lang))}</div>${sub ? `<div class="dmeta">${esc(sub)}</div>` : ''}</div><div class="dright">${condChip(c)}</div></div>`;
+    const adj = c.control === 'adjusting' ? ' adj' : '';
+    return `<div class="drow${adj}"><div><div class="dname">${esc(tx(c.name, lang))}</div>${sub ? `<div class="dmeta">${esc(sub)}</div>` : ''}</div><div class="dright">${aiTag(c)}</div></div>`;
   };
   const byDateDesc = (a, b) => { const da = a.statusDate || '', db = b.statusDate || ''; if (da === db) return 0; if (!da) return 1; if (!db) return -1; return da < db ? 1 : -1; };
   const allConds = bp.conditions.slice().sort(byDateDesc);
@@ -1934,7 +1966,7 @@ function renderBig(state) {
   };
   const byTimeOfDay = (a, b) => ((TOD_ORDER[a.timeOfDay] != null ? TOD_ORDER[a.timeOfDay] : 1) - (TOD_ORDER[b.timeOfDay] != null ? TOD_ORDER[b.timeOfDay] : 1));
   const allMeds = bp.medications;
-  const asNeededMeds = allMeds.filter((m) => isPrnMed(m) || m.category === 'therapy').sort(byTimeOfDay);
+  const asNeededMeds = allMeds.filter((m) => isPrnMed(m) || m.category === 'therapy');
   const suppMeds = allMeds.filter((m) => !isPrnMed(m) && m.category === 'supplement').sort(byTimeOfDay);
   const regMeds = allMeds.filter((m) => !isPrnMed(m) && m.category !== 'supplement' && m.category !== 'therapy').sort(byTimeOfDay);
   const medSection = (label, list) => list.length ? `<div class="subsec">${label}</div>${list.map(medRowHtml).join('')}` : '';
@@ -1954,7 +1986,7 @@ function renderBig(state) {
   const editBtn = (coll) => `<button class="addmini" data-editpick="${coll}" aria-label="${lang === 'es' ? 'Editar' : 'Edit'}">${ui.editPick === coll ? '✕' : '✎'}</button>`;
   // Conditions + Ruled out share one card with a toggle (single column). Row contents/tags are unchanged.
   const condView = ui.condView || 'active';
-  const condSeg = `<div class="seg"><button class="${condView === 'active' ? 'on' : ''}" data-condview="active">${lang === 'es' ? 'Activas' : 'Active'} · ${activeConds.length}</button><button class="${condView === 'resolved' ? 'on' : ''}" data-condview="resolved">${lang === 'es' ? 'Resueltas' : 'Resolved'} · ${resolvedConds.length}</button><button class="${condView === 'ruled' ? 'on' : ''}" data-condview="ruled">${T.ruledOut} · ${bp.excluded.length}</button></div>`;
+  const condSeg = `<div class="seg"><button class="${condView === 'active' ? 'on' : ''}" data-condview="active">${lang === 'es' ? 'Activas' : 'Active'} · ${activeConds.length}</button><button class="${condView === 'resolved' ? 'on' : ''}" data-condview="resolved">${lang === 'es' ? 'Historial' : 'History'} · ${resolvedConds.length}</button><button class="${condView === 'ruled' ? 'on' : ''}" data-condview="ruled">${T.ruledOut} · ${bp.excluded.length}</button></div>`;
   const condHdr = condView === 'ruled'
     ? `${editBtn('excluded')}<button class="addmini" data-add="conditions" data-prefill='{"status":"excluded"}' aria-label="${lang === 'es' ? 'Añadir descartado' : 'Add ruled-out'}">＋</button>`
     : `${editBtn('conditions')}<button class="addmini" data-add="conditions" aria-label="Add condition">＋</button>`;
@@ -1969,13 +2001,33 @@ function renderBig(state) {
   const stoppedLbl = lang === 'es' ? 'suspendido' : 'stopped';
   const pastRows = pastMeds.map((m) => `<button class="pickrow" data-edit="medications:${m.id}">${esc(tx(m.name, lang))}${m.stopDate ? ` <span class="muted small">· ${stoppedLbl} ${fmtDate(m.stopDate, lang)}</span>` : ''}</button>`).join('');
   const pastSection = pastMeds.length ? `<details class="pastmeds" style="margin-top:10px;border-top:1px solid var(--line);padding-top:8px"><summary style="cursor:pointer;color:var(--muted);font-size:13px">${pastLbl} · ${pastMeds.length}</summary><div style="margin-top:6px">${pastRows}</div></details>` : '';
+  // Med edit mode: non-as-needed meds stay tap-to-edit; the as-needed group becomes a drag-to-reorder
+  // list (grips), since those have no time-of-day and their Summary order follows the data array.
+  const medEditRow = (m) => `<button class="pickrow" data-edit="medications:${m.id}">${esc(tx(m.name, lang))}${m.dose ? ` <span class="muted small">${esc(m.dose)}</span>` : ''}</button>`;
+  const asNeededIds = new Set(asNeededMeds.map((m) => m.id));
+  const editRest = (data.medications || []).filter((m) => m.status !== 'stopped' && !asNeededIds.has(m.id));
+  const medReoRow = (m) => `<div class="pickrow-wrap" data-medid="${m.id}"><span class="drag-grip" aria-hidden="true" title="${lang === 'es' ? 'Arrastra para reordenar' : 'Drag to reorder'}">⠿</span>${medEditRow(m)}</div>`;
+  const reoHint = lang === 'es' ? 'Arrastra ⠿ para reordenar' : 'Drag ⠿ to reorder';
+  const medEditBody = `<div class="muted small" style="margin:2px 0 6px">${editHint}</div>`
+    + editRest.map(medEditRow).join('')
+    + (asNeededMeds.length ? `<div class="subsec">${T.secPrn}</div><div class="muted small" style="margin:0 0 6px">${reoHint}</div><div id="medReorder" class="sym-reorder">${asNeededMeds.map(medReoRow).join('')}</div>` : '')
+    + ((!editRest.length && !asNeededMeds.length) ? `<p class="muted small">${T.none}</p>` : '');
+  const condInfoBtn = `<button class="infobtn" data-condinfo aria-label="${T.condInfoAria}"><svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="7.5" r="1.4" fill="currentColor"/><rect x="10.8" y="10.5" width="2.4" height="7" rx="1.2" fill="currentColor"/></svg></button>`;
+  const condInfoModal = ui.condInfoOpen ? `<div class="modal-bg" data-condinfobg><div class="modal sym-info" role="dialog" aria-label="${T.condInfoAria}">
+      <div class="sym-info-top"><button class="sym-info-x" data-condinfoclose aria-label="✕">✕</button></div>
+      <h2 class="sym-info-title">${T.condInfoTitle}</h2>
+      <div class="condinfo-legend">
+        <div class="condinfo-row"><span class="badge autoimmune">${T.autoimmune}</span><span>${T.condInfoAi}</span></div>
+        <div class="condinfo-row"><span class="condinfo-bar"></span><span>${T.condInfoAdj}</span></div>
+      </div>
+    </div></div>` : '';
   return `<div class="ds">
-    <div class="card"><div class="card-h"><h2>${T.activeManaged}</h2><span class="hgrp">${condHdr}</span></div>${condSeg}${condBody}</div>
-    <div class="card" id="medsTable"><div class="card-h"><h2>${T.currentMeds}</h2><span class="hgrp">${editBtn('medications')}<button class="addmini" data-add="medications" aria-label="Add medication">＋</button></span></div>${ui.editPick === 'medications' ? pickList((data.medications || []).filter((m) => m.status !== 'stopped'), 'medications', (m) => tx(m.name, lang)) : meds}${pastSection}</div>
+    <div class="card"><div class="card-h"><span class="hgrp"><h2>${T.activeManaged}</h2>${condInfoBtn}</span><span class="hgrp">${condHdr}</span></div>${condSeg}${condBody}</div>
+    <div class="card" id="medsTable"><div class="card-h"><h2>${T.currentMeds}</h2><span class="hgrp">${editBtn('medications')}<button class="addmini" data-add="medications" aria-label="Add medication">＋</button></span></div>${ui.editPick === 'medications' ? medEditBody : meds}${pastSection}</div>
     ${Records.renderLabs(state)}
     ${Records.renderProg(state)}
     <button class="printbtn" data-print><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>${lang === 'es' ? 'Imprimir / Guardar PDF' : 'Print / Save PDF'}</button>
-  </div>`;
+  </div>${condInfoModal}`;
 }
 
 function renderQuestions(state) {
@@ -2082,8 +2134,12 @@ function renderQuestions(state) {
 async function onClick(e, state, rerender) {
   const bg = e.target.closest('[data-pvcancelbg]');
   if (bg && e.target === bg) { ui.postVisit = null; rerender(); return; }
+  const cib = e.target.closest('[data-condinfobg]');
+  if (cib && e.target === cib) { ui.condInfoOpen = false; rerender(); return; }
   const t = e.target.closest('button');
   if (!t) return;
+  if (t.dataset.condinfo != null) { ui.condInfoOpen = true; rerender(); return; }
+  if (t.dataset.condinfoclose != null) { ui.condInfoOpen = false; rerender(); return; }
   if (t.dataset.print != null) { printDoctorSheet(state.lang); return; }
   if (t.dataset.pvopen != null) { ui.postVisit = t.dataset.pvopen; rerender(); return; }
   if (t.dataset.pvcancel != null) { ui.postVisit = null; rerender(); return; }
@@ -2124,7 +2180,7 @@ const ui = { labId: null, win: '1y', scoreWin: '3m', symTrend: null, hlTrend: 'p
 const STR = {
   en: { conditions: 'Conditions', meds: 'Meds', symptoms: 'Symptoms', episodes: 'Episodes', labs: 'Labs', timeline: 'Map',
         dx: 'Diagnosed', managedBy: 'Managed by', ruledOut: 'Ruled out', provShort: 'Provisional', none: 'None', revisit: 'may re-test', notTracked: 'Not tracked daily', medLegend: 'X-X-X = morning · midday · evening (e.g. 0-0-1 = one at night).',
-        status: { current: 'Diagnosed', investigating: 'Investigating', excluded: 'Ruled out', provisionally_excluded: 'Provisionally excluded', resolved: 'Resolved' },
+        status: { current: 'Diagnosed', excluded: 'Ruled out', provisionally_excluded: 'Provisionally excluded', resolved: 'Resolved' },
         medStatus: { active: 'Active', tapering: 'Tapering', stopped: 'Stopped', prn: 'PRN' },
         doseHistory: 'Dose history', since: 'since', latest: 'Latest', daysUnwell: 'Days unwell', ongoing: 'ongoing',
         all: 'All', noData: 'No data in this window.', window: { '3m': '3 mo', '1y': '1 yr', all: 'All' }, back: '‹ All labs', close: 'Close',
@@ -2135,7 +2191,7 @@ const STR = {
         addC: 'Add condition', addM: 'Add medication', addS: 'Add symptom', addE: 'Add episode', addL: 'Add marker', addMs: 'Add milestone', addR: 'Add ruled-out', editMarker: 'Edit marker / results' },
   es: { conditions: 'Condiciones', meds: 'Medicación', symptoms: 'Síntomas', episodes: 'Episodios', labs: 'Analíticas', timeline: 'Mapa',
         dx: 'Diagnóstico', managedBy: 'Seguimiento', ruledOut: 'Descartado', provShort: 'Provisional', none: 'Ninguno', revisit: 'puede reevaluarse', notTracked: 'No se registra a diario', medLegend: 'X-X-X = mañana · mediodía · noche (p. ej. 0-0-1 = uno por la noche).',
-        status: { current: 'Diagnosticado', investigating: 'En estudio', excluded: 'Descartado', provisionally_excluded: 'Excluido provisionalmente', resolved: 'Resuelto' },
+        status: { current: 'Diagnosticado', excluded: 'Descartado', provisionally_excluded: 'Excluido provisionalmente', resolved: 'Resuelto' },
         medStatus: { active: 'Activo', tapering: 'En reducción', stopped: 'Suspendido', prn: 'PRN' },
         doseHistory: 'Historial de dosis', since: 'desde', latest: 'Último', daysUnwell: 'Días enfermo', ongoing: 'en curso',
         all: 'Todos', noData: 'Sin datos en este periodo.', window: { '3m': '3 m', '1y': '1 año', all: 'Todo' }, back: '‹ Analíticas', close: 'Cerrar',
@@ -2145,7 +2201,7 @@ const STR = {
         positive: 'positivo', negative: 'negativo',
         addC: 'Añadir condición', addM: 'Añadir medicación', addS: 'Añadir síntoma', addE: 'Añadir episodio', addL: 'Añadir marcador', addMs: 'Añadir hito', addR: 'Añadir descartado', editMarker: 'Editar marcador / resultados' },
 };
-const STATUS_CLS = { current: 'ok', investigating: 'warn', excluded: 'err', provisionally_excluded: 'prov', resolved: 'ok' };
+const STATUS_CLS = { current: 'ok', excluded: 'err', provisionally_excluded: 'prov', resolved: 'ok' };
 const MS_TYPE = { diagnosis: ['🩺', '#378ADD'], medication: ['💊', '#7F77DD'], new_symptom: ['⚡', '#1d9e75'], episode: ['🤒', '#64748b'], milestone: ['◆', '#64748b'] };
 const MS_ICON = {
   new_symptom: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 3l0 7l6 0l-8 11l0 -7l-6 0l8 -11"/></svg>',
@@ -2897,13 +2953,14 @@ const WD = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
 const SPECS = {
   conditions: { title: 'Condition', archive: false, fields: [
     { key: 'name', type: 'i18n', label: 'Name' },
-    { key: 'status', type: 'select', label: 'Status', options: ['current', 'investigating', 'excluded', 'provisionally_excluded', 'resolved'] },
+    { key: 'status', type: 'select', label: 'Status', options: ['current', 'excluded', 'provisionally_excluded', 'resolved'] },
+    { key: 'autoimmune', type: 'checkbox', label: 'Autoimmune (shows a purple tag on Summary)' },
     { key: 'control', type: 'select', label: 'Control (shown to doctor on Overview)', options: ['', 'treated', 'no_treatment', 'adjusting'] },
-    { key: 'statusDate', type: 'date', label: 'Status date (diagnosed / investigating since / excluded / resolved)' },
+    { key: 'statusDate', type: 'date', label: 'Status date (diagnosed / excluded / resolved)' },
     { key: 'revisitNote', type: 'i18n', label: 'Re-test note (when / why to revisit)', textarea: true, showIf: (s) => s.status === 'provisionally_excluded' },
     { key: 'specialismIds', type: 'multiselect', label: 'Specialism(s)', source: 'specialisms' },
     { key: 'notes', type: 'i18n', label: 'Notes / evidence', textarea: true, enOnly: true },
-  ], defaults: { name: { en: '', es: '' }, status: 'investigating', control: '', statusDate: null, revisitNote: { en: '', es: '' }, specialismIds: [], notes: { en: '', es: '' } } },
+  ], defaults: { name: { en: '', es: '' }, status: 'current', autoimmune: false, control: '', statusDate: null, revisitNote: { en: '', es: '' }, specialismIds: [], notes: { en: '', es: '' } } },
   medications: { title: 'Medication', fields: [
     { key: 'name', type: 'i18n', label: 'Name', ph: 'e.g. Naproxen' },
     { key: 'dose', type: 'text', label: 'Dose', ph: 'e.g. 500 mg' },
@@ -3383,7 +3440,7 @@ function buildSummary(d) {
   const L = 'en'; const lines = [];
   lines.push('# Health summary (auto-generated — read only)'); lines.push('');
   lines.push('_Mirror of health-data.json. Do not edit by hand; edit the app or the JSON._'); lines.push('');
-  const active = (d.conditions || []).filter((c) => ['current', 'investigating'].includes(c.status));
+  const active = (d.conditions || []).filter((c) => c.status === 'current');
   if (active.length) { lines.push('## Active conditions'); active.forEach((c) => lines.push('- ' + tx(c.name, L) + ' — ' + c.status + (c.statusDate ? ' (' + c.statusDate + ')' : ''))); lines.push(''); }
   const meds = (d.medications || []).filter((m) => m.status !== 'stopped' && m.category !== 'otc');
   if (meds.length) {
@@ -3546,7 +3603,7 @@ function attachCalSwipe(el) {
 // (touch-action:none on the grip stops the page scrolling mid-drag). Reorders the DOM
 // live against sibling midpoints, then commits the final order to symptomTypes.
 let _symReoTimer = null;
-function attachSymptomReorder(container) {
+function attachReorder(container, idAttr, commit) {
   let drag = null, ph = null, offY = 0, moved = false, pid = null;
   const wraps = () => Array.from(container.querySelectorAll('.pickrow-wrap'));
   container.querySelectorAll('.drag-grip').forEach((grip) => {
@@ -3576,11 +3633,11 @@ function attachSymptomReorder(container) {
       container.insertBefore(drag, ph);
       ph.remove(); ph = null;
       drag.classList.remove('dragging'); drag.removeAttribute('style');
-      const ids = wraps().map((w) => w.dataset.symid);
+      const ids = wraps().map((w) => w.dataset[idAttr]);
       drag = null;
       try { grip.releasePointerCapture(pid); } catch {}
       if (moved) {
-        DL.reorderSymptomTypes(ids);
+        commit(ids);
         DL.persistLocal();
         clearTimeout(_symReoTimer); _symReoTimer = setTimeout(() => DL.persist(), 800);
         render();
@@ -3639,7 +3696,8 @@ function render() {
   const wd = screen.querySelector('.wkdays.scroll');
   if (wd) { const sel = wd.querySelector('.wkday.sel'); wd.scrollLeft = sel ? Math.max(0, sel.offsetLeft - wd.clientWidth / 2 + sel.offsetWidth / 2) : wd.scrollWidth; attachDrag(wd); }
   const cg = screen.querySelector('.monthview'); if (cg) attachCalSwipe(cg);
-  const symRe = screen.querySelector('#symReorder'); if (symRe) attachSymptomReorder(symRe);
+  const symRe = screen.querySelector('#symReorder'); if (symRe) attachReorder(symRe, 'symid', (ids) => DL.reorderSymptomTypes(ids));
+  const medRe = screen.querySelector('#medReorder'); if (medRe) attachReorder(medRe, 'medid', (ids) => DL.reorderMedications(ids));
   // Auto-size the mood journal note to its content on (re)render; CSS max-height caps it and scrolls past that.
   screen.querySelectorAll('.moodnote').forEach((el) => { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; });
   screen.querySelectorAll('.us-ta').forEach((el) => { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; });

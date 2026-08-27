@@ -2,3 +2,8 @@ health-data.json
 DATA-MODEL.md
 README.md
 CLAUDE.md
+
+# test-only (jsdom smoke test) - not part of the app
+node_modules/
+package.json
+package-lock.json
