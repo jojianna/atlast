@@ -731,6 +731,7 @@ function validate(data) {
     else if(!(m.scheduledDays==='prn'||(isArr(m.scheduledDays)&&m.scheduledDays.every((d)=>ENUMS.weekday.includes(d)))))E(at+'.scheduledDays');
     if(!ENUMS.medStatus.includes(m.status))E(at+'.status invalid');
     if(!isNullableDate(m.startDate))E(at+'.startDate'); if(!isNullableDate(m.stopDate))E(at+'.stopDate');
+    if(m.requiredSince!==undefined&&!isNullableDate(m.requiredSince))E(at+'.requiredSince');
     if(!isNullableDate(m.lastDoseChange))E(at+'.lastDoseChange');
     if(m.doseHistory===undefined){W(at+'.doseHistory missing');m.doseHistory=[];} else if(!isArr(m.doseHistory))E(at+'.doseHistory');
     else m.doseHistory.forEach((h,j)=>{ if(!isStr(h.date)||!ISO_DATE.test(h.date))E(at+'.doseHistory['+j+'].date'); if(!isStr(h.dose))E(at+'.doseHistory['+j+'].dose'); });
@@ -1016,7 +1017,10 @@ function requiredMedsOn(date, data = _data) {
   if (date < MEDS_REQUIRED_SINCE) return [];
   // Every scheduled (non-PRN) med counts — regular meds, supplements and therapies alike.
   // "Mark day complete" fills any unanswered ones with ✗, and each must be answered for the day to read complete.
-  return medsForDate(date, data).scheduled;
+  // A med only gates a day on/after its own `requiredSince` (the day it started/resumed being tracked),
+  // so adding or resuming a med never retroactively un-completes older days. Mirrors symptom `addedDate`
+  // and `moodSince`. Meds without the stamp fall back to the global floor above (existing behaviour).
+  return medsForDate(date, data).scheduled.filter((m) => !m.requiredSince || date >= m.requiredSince);
 }
 function submitSymptoms(date, data = _data) {
   const log = ensureLog(date);
@@ -1944,8 +1948,21 @@ function renderBig(state) {
   const allConds = bp.conditions.slice().sort(byDateDesc);
   const activeConds = allConds.filter((c) => c.status !== 'resolved');
   const resolvedConds = allConds.filter((c) => c.status === 'resolved');
-  const conds = activeConds.map(condRow).join('') || `<p class="muted small">${T.none}</p>`;
-  const resolvedRows = resolvedConds.map(condRow).join('') || `<p class="muted small">${T.none}</p>`;
+  // Hidden conditions stay fully tracked (still in the record, edit-pick, print + summary) but are
+  // tucked into a collapsible fold so they don't crowd the card. Toggled per condition via the form.
+  const isCondHidden = (c) => !!c.hiddenFromSummary;
+  const hiddenLbl = lang === 'es' ? 'Ocultas' : 'Hidden';
+  const condListHtml = (list) => {
+    const shown = list.filter((c) => !isCondHidden(c));
+    const hidden = list.filter(isCondHidden);
+    const shownHtml = shown.length ? shown.map(condRow).join('') : (hidden.length ? '' : `<p class="muted small">${T.none}</p>`);
+    const hiddenHtml = hidden.length ? `<details class="pastmeds" style="margin-top:10px;border-top:1px solid var(--line);padding-top:8px"><summary style="cursor:pointer;color:var(--muted);font-size:13px">${hiddenLbl} · ${hidden.length}</summary><div style="margin-top:6px">${hidden.map(condRow).join('')}</div></details>` : '';
+    return shownHtml + hiddenHtml;
+  };
+  const activeShownCount = activeConds.filter((c) => !isCondHidden(c)).length;
+  const resolvedShownCount = resolvedConds.filter((c) => !isCondHidden(c)).length;
+  const conds = condListHtml(activeConds);
+  const resolvedRows = condListHtml(resolvedConds);
   // Doctor-style med list: Regular / Supplements / PRN with an aligned schedule column.
   const isPrnMed = (m) => m.scheduledDays === 'prn' || (m.status === 'prn' && m.everyNDays == null);
   const medRowHtml = (m) => {
@@ -1986,7 +2003,7 @@ function renderBig(state) {
   const editBtn = (coll) => `<button class="addmini" data-editpick="${coll}" aria-label="${lang === 'es' ? 'Editar' : 'Edit'}">${ui.editPick === coll ? '✕' : '✎'}</button>`;
   // Conditions + Ruled out share one card with a toggle (single column). Row contents/tags are unchanged.
   const condView = ui.condView || 'active';
-  const condSeg = `<div class="seg"><button class="${condView === 'active' ? 'on' : ''}" data-condview="active">${lang === 'es' ? 'Activas' : 'Active'} · ${activeConds.length}</button><button class="${condView === 'resolved' ? 'on' : ''}" data-condview="resolved">${lang === 'es' ? 'Historial' : 'History'} · ${resolvedConds.length}</button><button class="${condView === 'ruled' ? 'on' : ''}" data-condview="ruled">${T.ruledOut} · ${bp.excluded.length}</button></div>`;
+  const condSeg = `<div class="seg"><button class="${condView === 'active' ? 'on' : ''}" data-condview="active">${lang === 'es' ? 'Activas' : 'Active'} · ${activeShownCount}</button><button class="${condView === 'resolved' ? 'on' : ''}" data-condview="resolved">${lang === 'es' ? 'Historial' : 'History'} · ${resolvedShownCount}</button><button class="${condView === 'ruled' ? 'on' : ''}" data-condview="ruled">${T.ruledOut} · ${bp.excluded.length}</button></div>`;
   const condHdr = condView === 'ruled'
     ? `${editBtn('excluded')}<button class="addmini" data-add="conditions" data-prefill='{"status":"excluded"}' aria-label="${lang === 'es' ? 'Añadir descartado' : 'Add ruled-out'}">＋</button>`
     : `${editBtn('conditions')}<button class="addmini" data-add="conditions" aria-label="Add condition">＋</button>`;
@@ -2955,12 +2972,13 @@ const SPECS = {
     { key: 'name', type: 'i18n', label: 'Name' },
     { key: 'status', type: 'select', label: 'Status', options: ['current', 'excluded', 'provisionally_excluded', 'resolved'] },
     { key: 'autoimmune', type: 'checkbox', label: 'Autoimmune (shows a purple tag on Summary)' },
+    { key: 'hiddenFromSummary', type: 'checkbox', label: 'Hide from Summary card (still tracked; tucked under "Hidden")' },
     { key: 'control', type: 'select', label: 'Control (shown to doctor on Overview)', options: ['', 'treated', 'no_treatment', 'adjusting'] },
     { key: 'statusDate', type: 'date', label: 'Status date (diagnosed / excluded / resolved)' },
     { key: 'revisitNote', type: 'i18n', label: 'Re-test note (when / why to revisit)', textarea: true, showIf: (s) => s.status === 'provisionally_excluded' },
     { key: 'specialismIds', type: 'multiselect', label: 'Specialism(s)', source: 'specialisms' },
     { key: 'notes', type: 'i18n', label: 'Notes / evidence', textarea: true, enOnly: true },
-  ], defaults: { name: { en: '', es: '' }, status: 'current', autoimmune: false, control: '', statusDate: null, revisitNote: { en: '', es: '' }, specialismIds: [], notes: { en: '', es: '' } } },
+  ], defaults: { name: { en: '', es: '' }, status: 'current', autoimmune: false, hiddenFromSummary: false, control: '', statusDate: null, revisitNote: { en: '', es: '' }, specialismIds: [], notes: { en: '', es: '' } } },
   medications: { title: 'Medication', fields: [
     { key: 'name', type: 'i18n', label: 'Name', ph: 'e.g. Naproxen' },
     { key: 'dose', type: 'text', label: 'Dose', ph: 'e.g. 500 mg' },
@@ -2980,7 +2998,7 @@ const SPECS = {
     { key: 'lastDoseChange', type: 'date', label: 'Last dose change' },
     { key: 'doseHistory', type: 'rows', label: 'Dose history', sub: [{ key: 'date', type: 'date', label: 'Date' }, { key: 'dose', type: 'text', label: 'Dose' }, { key: 'note', type: 'text', label: 'Note' }] },
     { key: 'notes', type: 'i18n', label: 'Notes', textarea: true },
-  ], defaults: { name: { en: '', es: '' }, dose: '', freqLabel: { en: '', es: '' }, scheduledDays: ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'], timeOfDay: 'morning', track: true, category: 'prescription', purpose: { en: '', es: '' }, conditionIds: [], specialismIds: [], status: 'active', startDate: null, stopDate: null, lastDoseChange: null, doseHistory: [], notes: { en: '', es: '' } } },
+  ], defaults: { name: { en: '', es: '' }, dose: '', freqLabel: { en: '', es: '' }, scheduledDays: ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'], timeOfDay: 'morning', track: true, category: 'prescription', purpose: { en: '', es: '' }, conditionIds: [], specialismIds: [], status: 'active', startDate: null, stopDate: null, requiredSince: null, lastDoseChange: null, doseHistory: [], notes: { en: '', es: '' } } },
   episodes: { title: 'Episode', fields: [
     { key: 'name', type: 'i18n', label: 'Name', enOnly: true },
     { key: 'type', type: 'select', label: 'Type', options: ['cold_flu', 'infection', 'gi', 'flare', 'other'] },
@@ -3246,6 +3264,8 @@ function postprocess() {
     Object.keys(fs).forEach((k) => fs[k] === undefined && delete fs[k]);
     if (!Array.isArray(fs.doseHistory)) fs.doseHistory = [];
     if (fs.lastDoseChange === undefined) fs.lastDoseChange = null;
+    // New meds gate day-completeness from creation only, never retroactively (mirrors symptom addedDate).
+    if (!fs.id && !fs.requiredSince) fs.requiredSince = medToday();
   }
   if (fcol === 'labs') {
     const rr = fs.referenceRange;
@@ -3272,7 +3292,7 @@ async function onClick(e, rerender) {
   if (a === 'addrow') { fs[t.dataset.row] = fs[t.dataset.row] || []; fs[t.dataset.row].push({}); rerender(); return true; }
   if (a === 'delrow') { fs[t.dataset.row].splice(Number(t.dataset.idx), 1); rerender(); return true; }
   if (a === 'medstop') { fs.status = 'stopped'; if (!fs.stopDate) fs.stopDate = medToday(); rerender(); return true; }
-  if (a === 'medresume') { fs.status = 'active'; fs.stopDate = null; rerender(); return true; }
+  if (a === 'medresume') { fs.status = 'active'; fs.stopDate = null; fs.requiredSince = medToday(); rerender(); return true; } // resuming re-arms completeness from today, not retroactively
   if (a === 'segpick') { sv(fs, t.dataset.segkey, t.dataset.segval); rerender(); return true; }
   if (a === 'dosepanel') { fdosePanel = true; fdoseDraft = { dose: fs.dose || '', date: medToday() }; rerender(); return true; }
   if (a === 'dosecancel') { fdosePanel = false; fdoseDraft = null; rerender(); return true; }
