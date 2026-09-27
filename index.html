@@ -1511,20 +1511,14 @@ function renderToday(state) {
   // Mood counts toward completion only from the day tracking was switched on (moodSince) up to today,
   // so enabling it never retroactively un-completes older days (mirrors symptom addedDate / MEDS_REQUIRED_SINCE).
   const moodReq = (iso) => moodOn && !!moodSince && iso >= moodSince && iso <= tISO;
-  // Relationship check-in: the three state questions (connection/time/friction) are mandatory and
-  // count toward completion from the day tracking was switched on (usSince) up to today; the two
-  // note fields (grateful/improve) stay optional. Gated + non-retroactive, mirroring mood.
-  const usOn = getPref('showUs');
-  const usSince = getPrefStr('usSince');
-  const relReq = (iso) => usOn && !!usSince && iso >= usSince && iso <= tISO;
-  const relOk = (iso) => { if (!relReq(iso)) return true; const u = DL.getUs(iso, data); return !!u && typeof u.connection === 'number' && !!u.time && !!u.friction; };
+  // Relationship check-in is optional every day: it never counts toward the day-complete tick.
   // A symptom only counts toward a day's completeness on/after the day it was added.
   // Symptoms carry an addedDate (stamped on creation); older ones without it are treated
   // as always-present. This stops a newly-added symptom from retroactively un-completing
   // past days (before it existed there was nothing to log for it).
   const typesOn = (iso) => types.filter((s) => !s.addedDate || s.addedDate <= iso);
   if (ui.calView === 'month') return `<div class="ds">${monthCal(state, data, types)}</div>`;
-  const isComplete = (iso) => { const l = DL.getDailyLog(iso, data); if (!l) return false; const moodOk = !moodReq(iso) || (typeof l.mood === 'number'); const relDone = relOk(iso); if (l.symptomsSubmittedAt) return moodOk && relDone; const symOk = typesOn(iso).every((s) => s.trackBy === 'single' ? (DL.getSeverity(iso, s.id, null, data) != null) : (DL.derivedOverall(s, l.symptoms || []) != null)); const medsOk = DL.requiredMedsOn(iso, data).every((m) => DL.getMedTaken(iso, m.id, data) != null); return symOk && medsOk && moodOk && relDone; };
+  const isComplete = (iso) => { const l = DL.getDailyLog(iso, data); if (!l) return false; const moodOk = !moodReq(iso) || (typeof l.mood === 'number'); if (l.symptomsSubmittedAt) return moodOk; const symOk = typesOn(iso).every((s) => s.trackBy === 'single' ? (DL.getSeverity(iso, s.id, null, data) != null) : (DL.derivedOverall(s, l.symptoms || []) != null)); const medsOk = DL.requiredMedsOn(iso, data).every((m) => DL.getMedTaken(iso, m.id, data) != null); return symOk && medsOk && moodOk; };
   // 42-day (6-week) strip ending today: today is the rightmost tile, no future/empty days.
   // Horizontally scrollable; navigate by scrolling the strip or tapping a day.
   const DOWL = DOW_INITIALS[lang] || DOW_INITIALS.en;
